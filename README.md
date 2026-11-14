@@ -3,7 +3,7 @@
 Invoice Spot is an invoicing app for freelancers and small businesses,
 featuring GST invoices, UPI QR codes, payment tracking, and client portals.
 It is available at
-[invoice.confidental.online](https://invoice.confidental.online).
+[invoice.confidental.space](https://invoice.confidental.space).
 
 ## Table of Contents
 
