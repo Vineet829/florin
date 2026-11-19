@@ -4,7 +4,7 @@
 services:
   postgres:
     image: postgres:16
-    container_name: invoicespot_postgres
+    container_name: florin_postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: invoicespot
@@ -17,7 +17,7 @@ services:
 
   mailpit:
     image: axllent/mailpit:v1.15
-    container_name: invoicespot_mailpit
+    container_name: florin_mailpit
     ports:
       - "127.0.0.1:1026:1025"
       - "127.0.0.1:8026:8025"

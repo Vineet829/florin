@@ -11,11 +11,11 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.invoicespot</groupId>
-    <artifactId>invoice-spot</artifactId>
+    <groupId>com.florin</groupId>
+    <artifactId>florin</artifactId>
     <version>0.1.0</version>
-    <name>invoice-spot</name>
-    <description>Invoice Spot backend</description>
+    <name>florin</name>
+    <description>Florin backend</description>
 
     <properties>
         <java.version>21</java.version>

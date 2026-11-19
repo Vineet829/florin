@@ -9,7 +9,7 @@ COPY src ./src
 # Tests run in CI, not here. The Maven cache outlives the build, so
 # dependencies download once.
 RUN --mount=type=cache,target=/root/.m2 mvn -B -ntp -DskipTests package \
-    && cp target/invoice-spot-*.jar app.jar \
+    && cp target/florin-*.jar app.jar \
     && java -Djarmode=tools -jar app.jar extract --layers --launcher --destination extracted
 
 # Not Alpine: PDFs need AWT and the fonts this image already has.

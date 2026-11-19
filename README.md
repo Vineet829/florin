@@ -1,6 +1,6 @@
-# Invoice Spot
+# Florin
 
-Invoice Spot is an invoicing app for freelancers and small businesses,
+Florin is an invoicing app for freelancers and small businesses,
 featuring GST invoices, UPI QR codes, payment tracking, and client portals.
 It is available at
 [invoice.confidental.space](https://invoice.confidental.space).
@@ -112,7 +112,7 @@ mvn spring-boot:run
 
 ```bash
 # Terminal 2: the client on port 3001
-cd invoice-spot/client
+cd florin/client
 npm install
 npm start
 ```
@@ -132,7 +132,7 @@ SELECT pkid, 'Admin' FROM users WHERE lower(email) = lower('you@example.com');
 ```
 
 If it prints `INSERT 0 0`, no account has that email. To open the database,
-run `docker exec -it invoicespot_postgres psql -U invoicespot -d invoicespot`
+run `docker exec -it florin_postgres psql -U invoicespot -d invoicespot`
 locally, or `docker compose exec db psql -U invoicespot -d invoicespot` with
 the Docker stack.
 
@@ -141,7 +141,7 @@ the Docker stack.
 ```bash
 mvn test                  # backend, needs Docker for PostgreSQL
 
-cd invoice-spot/client    # after npm install
+cd florin/client          # after npm install
 npm run lint
 npx vitest run
 ```
@@ -175,7 +175,7 @@ production:
 ## Project Structure
 
 - `src/`: The Spring Boot backend.
-- `invoice-spot/client/`: The React client.
+- `florin/client/`: The React client.
 - `docker/spring/local.yml`: PostgreSQL and Mailpit for local development.
 
 ## Contributing

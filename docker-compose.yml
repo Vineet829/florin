@@ -47,7 +47,7 @@ services:
         condition: service_healthy
 
   web:
-    build: ./invoice-spot/client
+    build: ./florin/client
     restart: unless-stopped
     ports:
       - "${WEB_PORT:-8088}:8080"

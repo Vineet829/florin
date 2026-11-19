@@ -1,6 +1,6 @@
 spring:
   application:
-    name: invoice-spot
+    name: florin
 
   servlet:
     multipart:
@@ -89,10 +89,10 @@ app:
     same-site: Lax
     secure: ${COOKIE_SECURE:true}
   site:
-    name: ${SITE_NAME:Invoice Spot}
+    name: ${SITE_NAME:Florin}
     client-url: ${CLIENT_URL:http://localhost:3000}
     server-url: ${SERVER_URL:http://localhost:8080}
-    default-from-email: ${SENDER_EMAIL:support@invoicespot.local}
+    default-from-email: ${SENDER_EMAIL:support@florin.local}
   verification:
     token-ttl: PT15M
   upload:
@@ -127,4 +127,4 @@ app:
 # The app's own logging, INFO unless LOG_LEVEL asks for more (or less).
 logging:
   level:
-    com.invoicespot: ${LOG_LEVEL:INFO}
+    com.florin: ${LOG_LEVEL:INFO}
