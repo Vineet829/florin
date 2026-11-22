@@ -8,15 +8,12 @@ import com.florin.Uncommitted;
 import com.florin.user.User;
 import java.util.Map;
 import javax.sql.DataSource;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-// A save of some of the business's details keeps the others as they are, even
-// when another member's save lands while it is under way.
 class BusinessProfileRaceIntegrationTest extends IntegrationTest {
 
     @Autowired
@@ -26,7 +23,6 @@ class BusinessProfileRaceIntegrationTest extends IntegrationTest {
     private JdbcTemplate jdbc;
 
     @Test
-    @DisplayName("a save of the city while another member's phone number lands keeps both")
     void savedMeanwhile() throws Exception {
         User owner = createUser();
         Business business = businessOf(owner);

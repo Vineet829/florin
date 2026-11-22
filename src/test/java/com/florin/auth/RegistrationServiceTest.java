@@ -20,7 +20,6 @@ import com.florin.user.UserRepository;
 import java.time.Duration;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -56,19 +55,18 @@ class RegistrationServiceTest {
     }
 
     private static RegisterRequest request(String password, String confirm) {
-        return new RegisterRequest("Ada@Example.com", "ada_user", "Ada", "Lovelace", password, confirm);
+        return new RegisterRequest("Neha@Example.com", "neha_user", "Neha", "Apte", password, confirm);
     }
 
     @Test
-    @DisplayName("a valid registration persists the user, issues a token and sends verification mail")
     void registersValidUser() {
-        when(userRepository.existsByUsername("ada_user")).thenReturn(false);
+        when(userRepository.existsByUsername("neha_user")).thenReturn(false);
         when(passwordEncoder.encode("Str0ng!pw")).thenReturn("hashed");
         when(tokenService.issue(any(User.class), eq(RegistrationService.VERIFICATION_LINK_TTL))).thenReturn("tok");
 
         String message = service.register(request("Str0ng!pw", "Str0ng!pw"));
 
-        assertThat(message).startsWith("A new user Ada has been registered!");
+        assertThat(message).startsWith("A new user Neha has been registered!");
         verify(userRepository).save(any(User.class));
         verify(businessService).createPersonal(any(User.class));
         verify(tokenService).issue(any(User.class), eq(RegistrationService.VERIFICATION_LINK_TTL));
@@ -76,9 +74,8 @@ class RegistrationServiceTest {
     }
 
     @Test
-    @DisplayName("registration lowercases the email before persisting")
     void lowercasesEmail() {
-        when(userRepository.existsByUsername("ada_user")).thenReturn(false);
+        when(userRepository.existsByUsername("neha_user")).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("hashed");
         when(tokenService.issue(any(User.class), eq(RegistrationService.VERIFICATION_LINK_TTL))).thenReturn("tok");
 
@@ -86,11 +83,10 @@ class RegistrationServiceTest {
         service.register(request("Str0ng!pw", "Str0ng!pw"));
         verify(userRepository).save(captor.capture());
 
-        assertThat(captor.getValue().getEmail()).isEqualTo("ada@example.com");
+        assertThat(captor.getValue().getEmail()).isEqualTo("neha@example.com");
     }
 
     @Test
-    @DisplayName("mismatched passwords are rejected before any persistence")
     void rejectsMismatchedPasswords() {
         assertThatThrownBy(() -> service.register(request("Str0ng!pw", "Other1!pw")))
                 .isInstanceOf(ApiException.class)
@@ -101,7 +97,6 @@ class RegistrationServiceTest {
     }
 
     @Test
-    @DisplayName("a weak password is rejected")
     void rejectsWeakPassword() {
         assertThatThrownBy(() -> service.register(request("weak", "weak")))
                 .isInstanceOf(ApiException.class)
@@ -110,30 +105,27 @@ class RegistrationServiceTest {
     }
 
     @Test
-    @DisplayName("an email with an account gets a new sign-up's answer, its password hashed alike, and its owner is"
-            + " told instead")
     void takenEmail() {
         User owner = new User();
-        owner.setEmail("ada@example.com");
-        owner.setFirstName("Ada");
+        owner.setEmail("neha@example.com");
+        owner.setFirstName("Neha");
         owner.setEmailVerified(true);
-        when(userRepository.findByEmailIgnoreCase("ada@example.com")).thenReturn(Optional.of(owner));
+        when(userRepository.findByEmailIgnoreCase("neha@example.com")).thenReturn(Optional.of(owner));
 
         String message = service.register(request("Str0ng!pw", "Str0ng!pw"));
 
-        assertThat(message).startsWith("A new user Ada has been registered!");
+        assertThat(message).startsWith("A new user Neha has been registered!");
         verify(passwordEncoder).encode("Str0ng!pw");
         verify(userRepository, never()).save(any());
         verify(tokenService, never()).issue(any(User.class), any(Duration.class));
-        verify(mailService).send(eq("ada@example.com"), eq("Someone tried to sign up with your email"), anyString());
+        verify(mailService).send(eq("neha@example.com"), eq("Someone tried to sign up with your email"), anyString());
     }
 
     @Test
-    @DisplayName("an email whose account was never verified gives way to the new sign-up")
     void unverifiedEmail() {
         User pending = new User();
-        pending.setEmail("ada@example.com");
-        when(userRepository.findByEmailIgnoreCase("ada@example.com")).thenReturn(Optional.of(pending));
+        pending.setEmail("neha@example.com");
+        when(userRepository.findByEmailIgnoreCase("neha@example.com")).thenReturn(Optional.of(pending));
         when(passwordEncoder.encode("Str0ng!pw")).thenReturn("hashed");
         when(tokenService.issue(any(User.class), eq(RegistrationService.VERIFICATION_LINK_TTL))).thenReturn("tok");
 
@@ -144,10 +136,9 @@ class RegistrationServiceTest {
     }
 
     @Test
-    @DisplayName("a blank email yields the email-required message")
     void rejectsBlankEmail() {
         RegisterRequest blank = new RegisterRequest(
-                " ", "ada_user", "Ada", "Lovelace", "Str0ng!pw", "Str0ng!pw");
+                " ", "neha_user", "Neha", "Apte", "Str0ng!pw", "Str0ng!pw");
 
         assertThatThrownBy(() -> service.register(blank))
                 .isInstanceOf(ApiException.class)

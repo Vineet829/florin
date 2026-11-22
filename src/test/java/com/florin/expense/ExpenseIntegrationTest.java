@@ -25,7 +25,6 @@ import java.time.ZoneOffset;
 import java.util.Comparator;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -38,8 +37,6 @@ class ExpenseIntegrationTest extends IntegrationTest {
 
     private static final LocalDate TODAY = LocalDate.now(ZoneOffset.UTC);
 
-    // UTC+14, the time zone furthest ahead: a day after its today is still to
-    // come everywhere.
     private static final ZoneId FURTHEST_AHEAD = ZoneId.of("Pacific/Kiritimati");
 
     @Autowired
@@ -85,8 +82,7 @@ class ExpenseIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("expenses are recorded, listed newest first, searched, filtered, changed and deleted")
-    void lifecycle() throws Exception {
+    void createListUpdateDelete() throws Exception {
         String hosting = expense(TODAY.minusDays(40), "Hostinger", "Software", "12.50");
         expense(TODAY, "Uber", "Travel", "8");
         expense(TODAY.minusDays(3), "IndiGo", "Travel", "120");
@@ -132,11 +128,7 @@ class ExpenseIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("expenses paid the same day come a page at a time, the last recorded first, however they are stored")
     void sameDayPages() throws Exception {
-        // Three expenses paid on one day, recorded in the order of their keys
-        // but stored first, third and second, so that neither the order they
-        // are stored in nor its reverse is the order they were recorded in.
         List<Long> keys = jdbcTemplate
                 .queryForList(
                         "select nextval(pg_get_serial_sequence('expenses', 'pkid')) from generate_series(1, 3)",
@@ -160,7 +152,6 @@ class ExpenseIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a category is found by its own spelling, whatever the letter case")
     void categorySpelling() throws Exception {
         expense(TODAY, "Yapi Market", "İnşaat", "120");
         expense(TODAY, "Uber", "Travel", "8");
@@ -172,8 +163,7 @@ class ExpenseIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("search reads the vendor, category, reference and notes, and takes wildcards as typed")
-    void search() throws Exception {
+    void searchMatchesTextFields() throws Exception {
         record("""
                 {"date": "%s", "vendor": "50%% Off Signs", "category": "Marketing", "amount": 40,
                  "reference": "PO_77", "notes": "Paid with code SAVE!NOW"}
@@ -188,7 +178,6 @@ class ExpenseIntegrationTest extends IntegrationTest {
         search("market").andExpect(jsonPath("$.expenses[*].vendor").value(contains("50% Off Signs")));
         search("pox7").andExpect(jsonPath("$.expenses[*].vendor").value(contains("500 Offices")));
         search("OFF").andExpect(jsonPath("$.expenses[*].vendor").value(contains("500 Offices", "50% Off Signs")));
-        // Each of these would match both if it were read as a wildcard.
         search("50%").andExpect(jsonPath("$.expenses[*].vendor").value(contains("50% Off Signs")));
         search("po_7").andExpect(jsonPath("$.expenses[*].vendor").value(contains("50% Off Signs")));
         search("e!n").andExpect(jsonPath("$.expenses[*].vendor").value(contains("50% Off Signs")));
@@ -199,7 +188,6 @@ class ExpenseIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the amount leaves out the tax paid, which is reclaimable or not, and the total adds them")
     void amountsAndTax() throws Exception {
         record("""
                 {"date": "%s", "category": "Office", "amount": 100, "taxAmount": 18, "taxReclaimable": true,
@@ -220,8 +208,7 @@ class ExpenseIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an expense needs a date, a category and an amount above zero, with sensible tax and method")
-    void validation() throws Exception {
+    void refusesInvalidExpenses() throws Exception {
         String valid = "\"date\": \"%s\", \"category\": \"Office\"".formatted(TODAY);
         refused("{\"category\": \"Office\", \"amount\": 5}", "Enter the day the expense was paid");
         refused("{%s}".formatted(valid), "Enter an amount greater than zero");
@@ -247,8 +234,7 @@ class ExpenseIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a category typed in another letter case takes the spelling in use, and each is listed once")
-    void categories() throws Exception {
+    void categoriesKeepFirstSpelling() throws Exception {
         expense(TODAY, "Uber", "Travel", "8");
         String rail = expense(TODAY, "IRCTC", " travel ", "30");
         String paper = expense(TODAY, "Staples", "office", "4");
@@ -257,7 +243,6 @@ class ExpenseIntegrationTest extends IntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.categories").value(contains("office", "Travel")));
         list("q=irctc").andExpect(jsonPath("$.expenses[0].category").value("Travel"));
-        // The only expense in a category can still change its spelling.
         send(patch("/api/v1/expense/{id}", paper), "{\"category\": \"Office\"}")
                 .andExpect(jsonPath("$.expense.category").value("Office"));
         send(patch("/api/v1/expense/{id}", rail), "{\"category\": \"TRAVEL\"}")
@@ -265,7 +250,6 @@ class ExpenseIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a category two members saved at once in their own spellings takes the one used first from then on")
     void categorySavedAtOnce() throws Exception {
         for (List<String> spellings : List.of(List.of("Travel", "travel"), List.of("travel", "Travel"))) {
             User someone = createUser();
@@ -285,7 +269,6 @@ class ExpenseIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an expense in another currency keeps a rate to the reporting currency, until its currency changes")
     void exchangeRates() throws Exception {
         send(put("/api/v1/settings"), """
                 {"defaultCurrency": "USD", "baseCurrency": "INR", "paymentTermsDays": 15, "defaultTaxRate": 0,
@@ -323,8 +306,7 @@ class ExpenseIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the CSV holds every expense the search matches, newest first")
-    void csv() throws Exception {
+    void csvHoldsMatchingExpenses() throws Exception {
         record("""
                 {"date": "%s", "vendor": "=cmd", "category": "Travel", "amount": 8, "taxAmount": 1.44,
                  "currency": "EUR", "paymentMethod": "Credit Card", "reference": "R-1", "notes": "Airport"}
@@ -350,9 +332,7 @@ class ExpenseIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a list longer than the CSV file reads at once comes out whole, in its order")
     void longCsv() throws Exception {
-        // 1,200 expenses paid the same day, recorded in the order of their references.
         jdbcTemplate.update("""
                 insert into expenses (business_pkid, expense_date, category, amount, currency, reference)
                 select ?, ?, 'Office', 5, 'USD', 'R-' || lpad(cast(n as text), 4, '0')
@@ -368,7 +348,6 @@ class ExpenseIntegrationTest extends IntegrationTest {
                 .lines()
                 .toList();
         assertThat(lines).hasSize(1201);
-        // The last recorded comes first within a day.
         assertThat(lines.subList(1, 1201))
                 .extracting(line -> line.split(",")[11])
                 .startsWith("R-1200", "R-1199")
@@ -379,7 +358,6 @@ class ExpenseIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("another business's expenses are neither listed nor changeable")
     void otherBusinesses() throws Exception {
         String id = expense(TODAY, "Uber", "Travel", "8");
         String stranger = bearer(createUser());
@@ -395,9 +373,7 @@ class ExpenseIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a viewer reads and downloads expenses but records nothing; a member records and changes them,"
-            + " and only the owner and admins delete them")
-    void roles() throws Exception {
+    void permissionsFollowRole() throws Exception {
         Business business = businessOf(owner);
         String id = expense(TODAY, "Uber", "Travel", "8");
         String viewer = bearer(createMember(business, BusinessRole.VIEWER), business);
@@ -420,7 +396,6 @@ class ExpenseIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an expense is dated no later than today somewhere in the world, when recorded and when changed")
     void notAfterToday() throws Exception {
         LocalDate tomorrowFurthestAhead = LocalDate.now(FURTHEST_AHEAD).plusDays(1);
 
@@ -436,9 +411,7 @@ class ExpenseIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an expense dated today in UTC+14 is taken while it is still the day before where the business is")
-    void todayAheadOfTheBusiness() throws Exception {
-        // Ten hours behind UTC, so always a day behind UTC+14.
+    void acceptsDateAheadOfBusiness() throws Exception {
         send(put("/api/v1/settings"), """
                 {"defaultCurrency": "USD", "paymentTermsDays": 15, "defaultTaxRate": 0,
                  "taxLabel": "Tax", "timeZone": "Pacific/Honolulu"}

@@ -14,9 +14,6 @@ import { useChangePasswordMutation } from "../securityApiSlice";
 
 const EMPTY = { currentPassword: "", newPassword: "", confirmPassword: "" };
 
-// A new password signs out every other device. This one stays signed in
-// with the access token the change sends back. An account made by Google
-// sign-in has no current password to type, so it gets a note instead.
 const ChangePassword = ({ demo, hasPassword }) => {
   const [values, setValues] = useState(EMPTY);
   const [change, { isLoading }] = useChangePasswordMutation();
@@ -32,7 +29,7 @@ const ChangePassword = ({ demo, hasPassword }) => {
       setValues(EMPTY);
       toast.success(result.message);
     } catch (error) {
-      toast.error(errorMessage(error, "Your password could not be changed."));
+      toast.error(errorMessage(error, "Your password couldn't be changed."));
     }
   };
   const disabled = demo || isLoading;
@@ -84,12 +81,12 @@ const ChangePassword = ({ demo, hasPassword }) => {
           <div className="flex flex-wrap items-center justify-end gap-4 max-[700px]:[&>button]:flex-1">
             {demo && (
               <p className={`mr-auto ${panelNote}`}>
-                This is a shared demo account, so its password can’t be changed.
+                This is a shared demo account, so its password can't be changed.
               </p>
             )}
             <button type="submit" className={primaryButton} disabled={disabled}>
               <FiKey aria-hidden="true" />
-              {isLoading ? "Changing…" : "Change password"}
+              {isLoading ? "Changing..." : "Change password"}
             </button>
           </div>
         </form>

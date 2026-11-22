@@ -8,7 +8,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Random;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class DocumentTotalsTest {
@@ -25,7 +24,6 @@ class DocumentTotalsTest {
         return item;
     }
 
-    // A document whose lines are all taxed at one rate.
     private static Document document(DocumentType type, String rate, BillingItem... items) {
         Document document = new Document();
         document.setDocumentType(type);
@@ -48,7 +46,6 @@ class DocumentTotalsTest {
     }
 
     @Test
-    @DisplayName("each line is quantity times price less its discount, rounded half up to the cent")
     void lineTotals() {
         assertThat(DocumentTotals.lineTotal(item("19.99", 3, "12.5"))).isEqualByComparingTo("52.47");
         assertThat(DocumentTotals.lineTotal(item("1.005", 1, "0"))).isEqualByComparingTo("1.01");
@@ -57,7 +54,6 @@ class DocumentTotalsTest {
     }
 
     @Test
-    @DisplayName("a quantity can be a fraction, and its line is still rounded half up to the cent")
     void fractionalQuantities() {
         assertThat(DocumentTotals.lineTotal(item("1000", "1.5", "0"))).isEqualByComparingTo("1500.00");
         assertThat(DocumentTotals.lineTotal(item("33.33", "1.5", "0"))).isEqualByComparingTo("50.00");
@@ -66,8 +62,7 @@ class DocumentTotalsTest {
     }
 
     @Test
-    @DisplayName("with one rate, the totals are exactly what the one-rate formula gave, on any document")
-    void oneRateAsBefore() {
+    void singleRateMatchesOldFormula() {
         Random random = new Random(20261001);
         for (int round = 0; round < 500; round++) {
             BigDecimal rate = BigDecimal.valueOf(random.nextInt(2001), 2);
@@ -98,7 +93,6 @@ class DocumentTotalsTest {
     }
 
     @Test
-    @DisplayName("lines at different rates are taxed per rate, each rounded, and 18 and 18.00 are one rate")
     void ratePerLine() {
         Document document = document(DocumentType.INVOICE, "0");
         document.getBillingItems().add(taxed(item("100.05", 1, "0"), "5"));
@@ -119,7 +113,6 @@ class DocumentTotalsTest {
     }
 
     @Test
-    @DisplayName("tax is the rate applied to the rounded subtotal, itself rounded half up")
     void taxAndTotal() {
         Document document = document(DocumentType.INVOICE, "10", item("150", 2, "10"), item("0.05", 1, "0"));
 
@@ -131,7 +124,6 @@ class DocumentTotalsTest {
     }
 
     @Test
-    @DisplayName("an invoice is unpaid, partially paid, then paid as payments add up")
     void invoiceStatus() {
         Document document = document(DocumentType.INVOICE, "0", item("100", 1, "0"));
         DocumentTotals.apply(document);
@@ -148,13 +140,11 @@ class DocumentTotalsTest {
     }
 
     @Test
-    @DisplayName("an invoice totalling zero has nothing to pay, so it is paid and never overdue")
     void zeroTotal() {
         Document invoice = document(DocumentType.INVOICE, "0", item("0", 2, "0"));
         DocumentTotals.apply(invoice);
         assertThat(invoice.getStatus()).isEqualTo(DocumentStatus.PAID);
 
-        // One saved unpaid before this rule still never falls due.
         invoice.setStatus(DocumentStatus.NOT_PAID);
         invoice.setIssuedAt(Instant.parse("2026-09-01T10:00:00Z"));
         invoice.setIssueDate(LocalDate.parse("2026-09-01"));
@@ -167,8 +157,7 @@ class DocumentTotalsTest {
     }
 
     @Test
-    @DisplayName("a receipt is always paid in full")
-    void receipt() {
+    void receiptAlwaysPaid() {
         Document document = document(DocumentType.RECEIPT, "18", item("100", 1, "0"));
 
         DocumentTotals.apply(document);

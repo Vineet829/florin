@@ -14,8 +14,8 @@ import {
 
 const read = (search) => readListState(new URLSearchParams(search));
 
-describe("list state in the URL", () => {
-  it("starts with every document, newest first, ten to a page", () => {
+describe("documents URL state", () => {
+  it("starts with the defaults", () => {
     expect(read("")).toEqual({
       q: "",
       status: "",
@@ -30,7 +30,7 @@ describe("list state in the URL", () => {
     });
   });
 
-  it("reads a search, filters, sort and page", () => {
+  it("reads URL parameters", () => {
     expect(
       read(
         "q=north&status=overdue&type=invoice&period=this-year&sort=total&dir=asc&page=3&size=25",
@@ -49,7 +49,7 @@ describe("list state in the URL", () => {
     });
   });
 
-  it("falls back to the defaults for unknown or malformed values", () => {
+  it("defaults for invalid values", () => {
     expect(
       read(
         "status=Maybe&type=memo&period=forever&due=someday&currency=usd&sort=password&dir=up&page=-2&size=7&extra=1",
@@ -58,7 +58,7 @@ describe("list state in the URL", () => {
     expect(read("sort=status").sort).toBe("createdAt");
   });
 
-  it("writes only what differs from the defaults", () => {
+  it("writes only changed values", () => {
     expect(listSearch(read("")).toString()).toBe("");
     const search = "q=a+b&status=paid&sort=createdAt&dir=asc&page=2&size=50";
     expect(listSearch(read(search)).toString()).toBe(search);
@@ -67,7 +67,7 @@ describe("list state in the URL", () => {
     expect(isFiltered(read("period=last-month"))).toBe(true);
   });
 
-  it("reads and writes what the overview's links ask for", () => {
+  it("round-trips overview links", () => {
     const search =
       "status=outstanding&due=next-week&type=billed&period=90d&currency=EUR&sort=dueDate&dir=asc";
     expect(read(search)).toMatchObject({
@@ -91,7 +91,7 @@ describe("list state in the URL", () => {
     }
   });
 
-  it("keeps a currency only when it is a three-letter code", () => {
+  it("accepts three-letter currencies only", () => {
     expect(read("currency=GBP").currency).toBe("GBP");
     for (const currency of ["gbp", "GBPX", "G1P", ""]) {
       expect(read(`currency=${currency}`).currency).toBe("");
@@ -100,7 +100,7 @@ describe("list state in the URL", () => {
 });
 
 describe("the server query", () => {
-  it("sends the stored status of a payment filter", () => {
+  it("sends the stored status", () => {
     expect(documentQuery(read("status=partial"))).toEqual({
       page: 1,
       size: 10,
@@ -110,7 +110,7 @@ describe("the server query", () => {
     });
   });
 
-  it("exports the list's filters and order without a page", () => {
+  it("export query has no page", () => {
     expect(
       documentFilterQuery(read("status=partial&q=acme&sort=total&dir=asc")),
     ).toEqual({
@@ -121,26 +121,26 @@ describe("the server query", () => {
     });
   });
 
-  it("asks for overdue documents rather than a status", () => {
+  it("queries overdue documents", () => {
     const query = documentQuery(read("status=overdue&type=invoice&q=inv"));
     expect(query).toMatchObject({ overdue: "true", type: "Invoice", q: "inv" });
     expect(query).not.toHaveProperty("status");
   });
 
-  it("asks for drafts by their state, since a draft has no payment status", () => {
+  it("queries drafts by state", () => {
     const query = documentQuery(read("status=drafts&type=quotation"));
     expect(query).toMatchObject({ state: "draft", type: "Quotation" });
     expect(query).not.toHaveProperty("status");
     expect(query).not.toHaveProperty("overdue");
   });
 
-  it("asks for void documents by their state", () => {
+  it("queries void documents by state", () => {
     const query = documentQuery(read("status=void"));
     expect(query).toMatchObject({ state: "void" });
     expect(query).not.toHaveProperty("status");
   });
 
-  it("asks for outstanding invoices, soonest due first, rather than a status", () => {
+  it("queries outstanding invoices", () => {
     expect(
       documentQuery(read("status=outstanding&sort=dueDate&dir=asc")),
     ).toEqual({
@@ -152,7 +152,7 @@ describe("the server query", () => {
     });
   });
 
-  it("asks for what was billed rather than a type", () => {
+  it("queries billed documents", () => {
     const query = documentFilterQuery(read("type=billed"));
     expect(query).toEqual({ sort: "createdAt", dir: "desc", billed: "true" });
     expect(TYPE_FILTERS[1].label).toBe(
@@ -160,7 +160,7 @@ describe("the server query", () => {
     );
   });
 
-  it("passes on a currency and a week of due dates as they are", () => {
+  it("passes currency and due week", () => {
     expect(
       documentFilterQuery(
         read("status=outstanding&due=week-after&currency=EUR"),
@@ -187,23 +187,21 @@ describe("issue date periods", () => {
     ["this-quarter", "2026-07-01", "2026-09-30"],
     ["this-year", "2026-01-01", "2026-09-30"],
     ["last-year", "2025-01-01", "2025-12-31"],
-  ])("%s runs from %s to %s", (period, from, to) => {
+  ])("Sep 30 %s: %s to %s", (period, from, to) => {
     expect(periodRange(period, today)).toEqual({ from, to });
   });
 
-  // This month, quarter and year run to today, as the server's views count
-  // them; the month and year gone by stay whole.
   it.each([
     ["this-month", "2026-10-01", "2026-10-08"],
     ["last-month", "2026-09-01", "2026-09-30"],
     ["this-quarter", "2026-10-01", "2026-10-08"],
     ["this-year", "2026-01-01", "2026-10-08"],
     ["last-year", "2025-01-01", "2025-12-31"],
-  ])("%s runs from %s to %s on Oct 8", (period, from, to) => {
+  ])("Oct 8 %s: %s to %s", (period, from, to) => {
     expect(periodRange(period, new Date(2026, 9, 8))).toEqual({ from, to });
   });
 
-  it("works across the turn of the year", () => {
+  it("handles the year boundary", () => {
     expect(periodRange("last-month", new Date(2027, 0, 15))).toEqual({
       from: "2026-12-01",
       to: "2026-12-31",
@@ -218,7 +216,7 @@ describe("issue date periods", () => {
     });
   });
 
-  it("sends a period as from and to dates, and no dates for all of them", () => {
+  it("sends period dates", () => {
     expect(documentQuery(read("period=this-month"), today)).toMatchObject({
       from: "2026-09-01",
       to: "2026-09-30",
@@ -229,17 +227,14 @@ describe("issue date periods", () => {
     expect(documentQuery(read(""), today)).not.toHaveProperty("from");
   });
 
-  it.each(["30d", "90d", "12m"])(
-    "sends the overview's %s by name, for the server to date",
-    (period) => {
-      const query = documentQuery(read(`period=${period}`), today);
-      expect(query).toMatchObject({ period });
-      expect(query).not.toHaveProperty("from");
-      expect(query).not.toHaveProperty("to");
-    },
-  );
+  it.each(["30d", "90d", "12m"])("sends %s by name", (period) => {
+    const query = documentQuery(read(`period=${period}`), today);
+    expect(query).toMatchObject({ period });
+    expect(query).not.toHaveProperty("from");
+    expect(query).not.toHaveProperty("to");
+  });
 
-  it("offers the last 30 and 90 days and 12 months before the calendar periods", () => {
+  it("orders the period options", () => {
     expect(PERIODS.map((period) => period.label)).toEqual([
       "All dates",
       "Last 30 days",
@@ -255,7 +250,7 @@ describe("issue date periods", () => {
 });
 
 describe("the sort menu", () => {
-  it("offers both directions of every field, newest first at the top", () => {
+  it("lists both directions per field", () => {
     expect(SORT_OPTIONS).toHaveLength(10);
     expect(SORT_OPTIONS[0]).toEqual({
       value: "createdAt:desc",
@@ -264,14 +259,14 @@ describe("the sort menu", () => {
   });
 });
 
-describe("the line above a filtered list", () => {
+describe("filter summary line", () => {
   const usd = (totals) => ({ currency: "USD", ...totals });
   const words = (parts) =>
     parts.map(({ before = "", strong = "", after = "" }) =>
       [before, strong, after].join(""),
     );
 
-  it("says how many documents were issued in the days the server took, and what they add up to", () => {
+  it("counts documents and their total", () => {
     const parts = documentResults(read("type=billed&period=90d"), {
       totalDocuments: 18,
       issuedFrom: "2026-07-07",
@@ -287,7 +282,7 @@ describe("the line above a filtered list", () => {
       ],
     });
     expect(words(parts)).toEqual([
-      "18 documents issued Jul 7 – Oct 4, 2026",
+      "18 documents issued Jul 7 - Oct 4, 2026",
       "Billed 68,848.08",
       "Balance due 24,285.79",
     ]);
@@ -298,7 +293,7 @@ describe("the line above a filtered list", () => {
     ]);
   });
 
-  it("names no days when the server gives none", () => {
+  it("omits missing days", () => {
     expect(
       words(
         documentResults(read("period=this-year"), {
@@ -311,7 +306,7 @@ describe("the line above a filtered list", () => {
     ).toEqual(["2 documents"]);
   });
 
-  it("names outstanding invoices by what is owed and how much of it is overdue", () => {
+  it("shows owed and overdue amounts", () => {
     const answer = {
       totalDocuments: 10,
       issuedFrom: null,
@@ -344,10 +339,10 @@ describe("the line above a filtered list", () => {
           issuedTo: "2026-10-04",
         }),
       )[0],
-    ).toBe("10 invoices with money owed, issued Sep 5 – Oct 4, 2026");
+    ).toBe("10 invoices with money owed, issued Sep 5 - Oct 4, 2026");
   });
 
-  it("names each currency's amount when the list holds several", () => {
+  it("names each currency's amount", () => {
     expect(
       words(
         documentResults(read("status=unpaid"), {
@@ -366,7 +361,7 @@ describe("the line above a filtered list", () => {
     ]);
   });
 
-  it("names the currency whenever the business bills in more than one", () => {
+  it("names currency for multi-currency business", () => {
     const answer = {
       totalDocuments: 2,
       totals: [usd({ documents: 2, billed: 1200, balanceDue: 950 })],
@@ -379,7 +374,7 @@ describe("the line above a filtered list", () => {
     ).toEqual(["2 documents", "Billed 1,200.00", "Balance due 950.00"]);
   });
 
-  it("leaves out amounts that are not above zero, and counts one as one", () => {
+  it("omits zero amounts", () => {
     expect(
       words(
         documentResults(read("type=credit-note"), {

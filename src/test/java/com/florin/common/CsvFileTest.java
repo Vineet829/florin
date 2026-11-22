@@ -7,7 +7,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +18,6 @@ class CsvFileTest {
     }
 
     @Test
-    @DisplayName("writes a UTF-8 header and quotes only the cells that need it")
     void writesRows() {
         CsvFile file = CsvFile.of(
                 "clients.csv",
@@ -34,7 +32,6 @@ class CsvFileTest {
     }
 
     @Test
-    @DisplayName("text a spreadsheet would run as a formula starts with an apostrophe; numbers are left alone")
     void guardsFormulas() {
         CsvFile file = CsvFile.of(
                 "x.csv",
@@ -45,7 +42,6 @@ class CsvFileTest {
     }
 
     @Test
-    @DisplayName("text that starts with apostrophes ahead of a formula character gets one more, so it reads back")
     void guardsApostrophes() {
         CsvFile file = CsvFile.of("x.csv", List.of("A", "B", "C"), List.of(List.of("'+Acme", "''=x", "'90s")));
 
@@ -53,8 +49,7 @@ class CsvFileTest {
     }
 
     @Test
-    @DisplayName("downloads as an attachment that is never cached")
-    void download() {
+    void downloadsUncachedAttachment() {
         ResponseEntity<byte[]> response = CsvFile.of("report.csv", List.of("A"), List.of()).download();
 
         assertThat(response.getHeaders().getContentType()).hasToString("text/csv;charset=UTF-8");

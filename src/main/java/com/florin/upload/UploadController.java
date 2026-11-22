@@ -13,9 +13,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-// Logos are the only uploads, so only those who can change a business's
-// details upload them. Each is kept on the server's disk, so one person
-// uploads a limited number an hour, in whichever businesses.
 @RestController
 @RequestMapping("/api/v1/upload")
 public class UploadController {

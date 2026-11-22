@@ -6,14 +6,11 @@ import com.florin.IntegrationTest;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-// V55 moves each Google ID into a sign-in identity: trimmed, a blank one
-// dropped, and one two accounts shared kept by the older account.
 class SignInIdentityMigrationIntegrationTest extends IntegrationTest {
 
     @Autowired
@@ -27,7 +24,6 @@ class SignInIdentityMigrationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("Google IDs become identities, and the old column goes")
     void movesGoogleIds() {
         try (MigrationDatabase database = MigrationDatabase.create(postgres)) {
             database.migrateTo("54");

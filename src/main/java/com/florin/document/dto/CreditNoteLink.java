@@ -7,7 +7,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
-// A credit note made against an invoice or receipt, in any state.
 public record CreditNoteLink(
         @JsonProperty("_id") UUID id, String documentNumber, DocumentState state, LocalDate issueDate, BigDecimal total) {
 

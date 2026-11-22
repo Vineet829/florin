@@ -11,7 +11,6 @@ import {
 import { overviewPanel } from "./DashboardPanels";
 import useBusinessToday from "../../business/useBusinessToday";
 
-// Each kind's colour, for its heading and its state.
 const TINTS = {
   paymentReport: "text-avatar-sage-ink",
   overdue: "text-overdue-strong",
@@ -19,24 +18,14 @@ const TINTS = {
   draft: "text-spot-muted",
 };
 
-// A row reads as Top clients' rows do: the client, a bar of how late an
-// overdue invoice is beside the most overdue one listed, then the
-// document's number, its day and its state, with the amount on the right.
-// Names and numbers wrap rather than push the amount out.
 const row =
   "relative -mx-2 grid grid-cols-[minmax(0,1fr)_minmax(96px,auto)] items-baseline gap-2.5 rounded-xl px-2 py-[7px] text-spot-ink transition-colors";
-// The row's own link, to its document, covers the whole row and shows its
-// focus around it. Its name reads the whole row, so the words beside it are
-// hidden from screen readers rather than read twice.
 const documentLink =
   "line-clamp-2 text-[17px] font-medium [overflow-wrap:anywhere] after:absolute after:inset-0 after:rounded-xl after:content-[''] focus-visible:outline-none focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-[#5b47a0]";
 
-// How late an overdue invoice is, in days, or nothing for the other kinds.
 const daysLate = (item) =>
   item.kind === "overdue" && Number(item.days) > 0 ? Number(item.days) : 0;
 
-// The rows in runs of one kind, in the order the list gives them, so each
-// kind is named once, above its rows.
 const kindGroups = (items) =>
   items.reduce((groups, item) => {
     const last = groups.at(-1);
@@ -45,14 +34,6 @@ const kindGroups = (items) =>
     return groups;
   }, []);
 
-// The few invoices that need doing now, and drafts to issue, most urgent
-// first, each opening its document. Quotations and recurring invoices are
-// in Coming up, the client is one click away on the document, and the
-// Overdue figure above opens every overdue invoice, so nothing here opens
-// what another panel opens. A document listed twice, such as an overdue
-// invoice with a payment reported on it, opens from its first row only. The
-// note names what there is none of, and what the list leaves out. A day in
-// another year than the business's today names its year.
 const AttentionPanel = ({ snapshot }) => {
   const { attention, currency } = snapshot;
   const items = attentionItems(attention);
@@ -133,7 +114,6 @@ const AttentionPanel = ({ snapshot }) => {
                                   <span
                                     className="block h-full origin-left animate-ov-bar rounded-[inherit] bg-owed-overdue"
                                     style={{
-                                      // The least late still shows a sliver.
                                       width: `${Math.max(late / mostLate, 0.03) * 100}%`,
                                     }}
                                   />

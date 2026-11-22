@@ -32,7 +32,7 @@ it.each([
   { status: 403, data: null },
   { status: "PARSING_ERROR", originalStatus: 403 },
   { status: "PARSING_ERROR", originalStatus: 403, data: "" },
-])("refreshes and retries a rejected token: %j", async (error) => {
+])("refreshes and retries: %j", async (error) => {
   request
     .mockResolvedValueOnce({ error })
     .mockResolvedValueOnce({ data: { accessToken: "renewed" } })
@@ -49,7 +49,7 @@ it.each([
   ]);
 });
 
-it("sends the refresh with keepalive, so a reload half-way through still keeps the new cookie", async () => {
+it("refresh uses keepalive", async () => {
   request
     .mockResolvedValueOnce({ error: { status: 403 } })
     .mockResolvedValueOnce({ data: { accessToken: "renewed" } })
@@ -63,7 +63,7 @@ it("sends the refresh with keepalive, so a reload half-way through still keeps t
   });
 });
 
-it("shares one cookie rotation between concurrent dashboard requests", async () => {
+it("shares one refresh between requests", async () => {
   request.mockImplementation(async (args) => {
     const path = pathOf(args);
     if (path === "/auth/new_access_token") {
@@ -91,7 +91,7 @@ it("shares one cookie rotation between concurrent dashboard requests", async () 
   expect(api.dispatch).toHaveBeenCalledTimes(1);
 });
 
-it("clears the session and what it loaded when the refresh cookie is rejected", async () => {
+it("clears session on rejected refresh", async () => {
   request
     .mockResolvedValueOnce({ error: { status: 403 } })
     .mockResolvedValueOnce({ error: { status: 401 } });
@@ -108,22 +108,19 @@ it.each([
   { status: "FETCH_ERROR", error: "TypeError: Failed to fetch" },
   { status: 502, data: "" },
   { status: 503, data: { message: "Try again" } },
-])(
-  "stays signed in when the refresh doesn't reach a working server: %j",
-  async (error) => {
-    request
-      .mockResolvedValueOnce({ error: { status: 403 } })
-      .mockResolvedValueOnce({ error });
+])("keeps session on server error: %j", async (error) => {
+  request
+    .mockResolvedValueOnce({ error: { status: 403 } })
+    .mockResolvedValueOnce({ error });
 
-    const result = await baseApiSlice.baseQuery("/customer/all", api, {});
+  const result = await baseApiSlice.baseQuery("/customer/all", api, {});
 
-    expect(result.error.status).toBe(403);
-    expect(api.getState().auth.user).toEqual({ accessToken: "expired" });
-    expect(api.dispatch).not.toHaveBeenCalled();
-  },
-);
+  expect(result.error.status).toBe(403);
+  expect(api.getState().auth.user).toEqual({ accessToken: "expired" });
+  expect(api.dispatch).not.toHaveBeenCalled();
+});
 
-it("returns an authentication error without retrying through another session", async () => {
+it("returns auth error without retry", async () => {
   request.mockResolvedValue({
     error: { status: 403, data: { message: "Login failed" } },
   });
@@ -134,7 +131,7 @@ it("returns an authentication error without retrying through another session", a
   expect(api.dispatch).not.toHaveBeenCalled();
 });
 
-it("returns a refusal with a message as it is, without a refresh", async () => {
+it("passes refusals through unchanged", async () => {
   const refusal = {
     status: 403,
     data: {
@@ -162,23 +159,20 @@ it.each([
     "6f1c2d3e-0000-4000-8000-000000000001",
   ],
   ["none", null],
-])(
-  "follows the business the server says the session is in: %s",
-  async (header, activeId) => {
-    request.mockResolvedValue({
-      error: { status: 409, data: { message: "Switched" } },
-      meta: {
-        response: { headers: new Headers({ "X-Active-Business": header }) },
-      },
-    });
+])("switches to server's business: %s", async (header, activeId) => {
+  request.mockResolvedValue({
+    error: { status: 409, data: { message: "Switched" } },
+    meta: {
+      response: { headers: new Headers({ "X-Active-Business": header }) },
+    },
+  });
 
-    await baseApiSlice.baseQuery("/customer/all", api, {});
+  await baseApiSlice.baseQuery("/customer/all", api, {});
 
-    expect(api.dispatch).toHaveBeenCalledWith(businessChanged(activeId));
-  },
-);
+  expect(api.dispatch).toHaveBeenCalledWith(businessChanged(activeId));
+});
 
-it("leaves other conflicts alone", async () => {
+it("ignores other conflicts", async () => {
   request.mockResolvedValue({
     error: { status: 409, data: { message: "That conflicts" } },
     meta: { response: { headers: new Headers() } },

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { returnPath } from "./returnPath";
 
 describe("returnPath", () => {
-  it("keeps the page's query and fragment", () => {
+  it("keeps query and hash", () => {
     expect(
       returnPath({
         pathname: "/documents",
@@ -13,7 +13,7 @@ describe("returnPath", () => {
     expect(returnPath({ pathname: "/customers" })).toBe("/customers");
   });
 
-  it("leads nowhere without a page", () => {
+  it("returns nothing without a page", () => {
     expect(returnPath(undefined)).toBeNull();
     expect(returnPath({})).toBeNull();
   });

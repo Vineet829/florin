@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
-// A reload through the app's own store and RTK Query, with only fetch faked.
 beforeEach(() => {
   localStorage.clear();
   vi.resetModules();
@@ -40,7 +39,7 @@ const json = (body, status = 200) =>
     headers: { "content-type": "application/json" },
   });
 
-it("gets a reload's token back with one keepalive refresh, and keeps it only in memory", async () => {
+it("restores token with one refresh", async () => {
   localStorage.setItem(
     "user",
     JSON.stringify({ username: "asha", accessToken: "old.jwt.x" }),
@@ -65,7 +64,7 @@ it("gets a reload's token back with one keepalive refresh, and keeps it only in 
   expect(store.getState().api.mutations).toEqual({});
 });
 
-it("signs out when the server has no session for the cookie", async () => {
+it("signs out without a session", async () => {
   localStorage.setItem("user", JSON.stringify({ username: "asha" }));
 
   const { after } = await reload(async () => new Response("", { status: 401 }));
@@ -74,7 +73,7 @@ it("signs out when the server has no session for the cookie", async () => {
   expect(localStorage.getItem("user")).toBeNull();
 });
 
-it("keeps who was signed in for the next load when the server can't be reached", async () => {
+it("keeps user when server is unreachable", async () => {
   localStorage.setItem("user", JSON.stringify({ username: "asha" }));
 
   const { after } = await reload(async () => {
@@ -87,7 +86,7 @@ it("keeps who was signed in for the next load when the server can't be reached",
   });
 });
 
-it("asks for nothing when no one was signed in", async () => {
+it("skips restore when signed out", async () => {
   const { before, sent } = await reload(async () => json({}, 401));
 
   expect(before).toEqual({ user: null, restoring: false });

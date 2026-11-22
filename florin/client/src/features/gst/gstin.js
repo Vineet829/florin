@@ -1,6 +1,3 @@
-// A GSTIN as the server checks it, for feedback while typing: 15 letters and
-// digits, a state code first and a check character last. The server stays
-// the judge; this only saves a round trip.
 const ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 export const normalizeGstin = (value) =>
@@ -8,7 +5,6 @@ export const normalizeGstin = (value) =>
     .trim()
     .toUpperCase();
 
-// Shaped like a GSTIN, whether or not its check character is right.
 export const looksLikeGstin = (value) =>
   /^[0-9]{2}[0-9A-Z]{13}$/.test(normalizeGstin(value));
 
@@ -30,8 +26,6 @@ export const isValidGstin = (value) => {
   );
 };
 
-// What is wrong with a GSTIN being typed, once it can be told; nothing while
-// it may still be right.
 export const gstinProblem = (value) => {
   const gstin = normalizeGstin(value);
   if (!gstin) return null;
@@ -43,7 +37,7 @@ export const gstinProblem = (value) => {
   }
   if (gstin.length > 15) return "A GSTIN has 15 letters and digits.";
   if (gstin.length === 15 && !isValidGstin(gstin)) {
-    return "Its last character doesn’t match the rest. Check it for a typing mistake.";
+    return "Its last character doesn't match the rest. Check it for a typing mistake.";
   }
   return null;
 };

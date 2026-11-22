@@ -9,13 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-// A credit note takes an amount off an issued invoice or receipt. It is made
-// as a draft from that document and keeps its client, currency and exchange
-// rate; its lines can change until it is issued. Issued, it takes no more
-// off than is left to credit, and is dated no earlier than the document it
-// credits. Everything that changes both locks the credited document first,
-// then the note, then the settings that number it, so notes issued at once
-// for one invoice take turns.
 @Service
 public class CreditNoteService {
 
@@ -27,8 +20,6 @@ public class CreditNoteService {
         this.activity = activity;
     }
 
-    // A draft credit note for the whole of what is left to credit, line by line
-    // as the document was issued.
     @Transactional(propagation = Propagation.MANDATORY)
     public Document create(Document credited, User author) {
         if (credited.getDocumentType() != DocumentType.INVOICE && credited.getDocumentType() != DocumentType.RECEIPT) {
@@ -68,7 +59,6 @@ public class CreditNoteService {
         return note;
     }
 
-    // Checked as a credit note is issued, with the credited document locked.
     static void requireRoom(Document note, LocalDate issueDate) {
         Document credited = note.getCredited();
         if (credited.state() != DocumentState.ISSUED) {
@@ -93,7 +83,6 @@ public class CreditNoteService {
         }
     }
 
-    // The credited document now owes less, or is settled.
     @Transactional(propagation = Propagation.MANDATORY)
     public void issued(Document note, User actor) {
         Document credited = note.getCredited();
@@ -105,7 +94,6 @@ public class CreditNoteService {
                 actor);
     }
 
-    // The credited document owes again what the note took off.
     @Transactional(propagation = Propagation.MANDATORY)
     public void voided(Document note, User actor) {
         Document credited = note.getCredited();
@@ -114,7 +102,6 @@ public class CreditNoteService {
         activity.record(credited, DocumentEventType.CREDIT_VOIDED, note.getDocumentNumber(), actor);
     }
 
-    // A document with credit notes that still count, or drafts that may, stays.
     static void requireNoCreditNotes(Document document) {
         if (document.getCreditNotes().stream().anyMatch(note -> !note.isVoid())) {
             throw new ApiException(HttpStatus.CONFLICT, "Void or delete its credit notes before voiding it");

@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import javax.sql.DataSource;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -67,7 +66,6 @@ class AuditLogIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a failed sign-in is kept though the sign-in fails, with the address and browser it came from")
     void signIns() throws Exception {
         User user = withPassword();
         login(user.getEmail(), "Wrong!pass1").andExpect(status().isUnauthorized());
@@ -89,7 +87,6 @@ class AuditLogIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("signing out and resetting a password are recorded")
     void signOutAndReset() throws Exception {
         User user = withPassword();
         Cookie refresh = login(user.getEmail(), PASSWORD).andReturn().getResponse().getCookie("jwt");
@@ -108,7 +105,6 @@ class AuditLogIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an admin's actions name the admin, and a deleted account's entries keep its email")
     void adminActionsAndDeletion() throws Exception {
         User admin = createAdmin();
         User target = createUser();
@@ -138,14 +134,11 @@ class AuditLogIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an entry is written while every one of the app's own connections is in use")
-    void ownConnections() throws Exception {
+    void writesWhilePoolIsBusy() throws Exception {
         User user = createUser();
         int connections = dataSource.unwrap(HikariDataSource.class).getMaximumPoolSize();
         List<Connection> inUse = new ArrayList<>();
         try {
-            // As when that many requests are each in a transaction, and each
-            // records an entry before it ends.
             for (int index = 0; index < connections; index++) {
                 inUse.add(dataSource.getConnection());
             }

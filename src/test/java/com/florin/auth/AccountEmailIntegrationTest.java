@@ -13,7 +13,6 @@ import com.florin.auth.dto.RegisterRequest;
 import com.florin.auth.dto.ResetPasswordRequest;
 import com.florin.user.User;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,10 +21,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-// An email about a change to an account goes out once the change is saved.
-// Each change first runs in a transaction of the test's own that rolls back,
-// as one does when saving it fails at the very end, and nobody is emailed;
-// then it runs for real, and the email goes out.
 class AccountEmailIntegrationTest extends IntegrationTest {
 
     private static final String PASSWORD = "Str0ng!pass";
@@ -56,7 +51,6 @@ class AccountEmailIntegrationTest extends IntegrationTest {
         });
     }
 
-    // Waits long enough for an email handed over to have arrived.
     private void nothingSent() {
         verify(mailSender, after(1000).never()).send(any(SimpleMailMessage.class));
     }
@@ -68,7 +62,6 @@ class AccountEmailIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a password change that rolls back emails nobody; saved, the owner is told")
     void passwordChange() {
         User user = createUser();
         user.setPassword(passwordEncoder.encode(PASSWORD));
@@ -86,7 +79,6 @@ class AccountEmailIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a reset link that isn't saved is never sent; saved, it is")
     void resetLink() {
         User user = createUser();
 
@@ -100,8 +92,7 @@ class AccountEmailIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a password reset that rolls back emails nobody; saved, the owner is told")
-    void reset() {
+    void resetNoticeSentAfterCommit() {
         User user = createUser();
         String token = tokenService.issue(user);
         ResetPasswordRequest request =
@@ -117,11 +108,10 @@ class AccountEmailIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a sign-up that rolls back sends no verification link; saved, it does")
     void signUp() {
         String handle = "signup-" + UUID.randomUUID().toString().substring(0, 8);
         RegisterRequest request =
-                new RegisterRequest(handle + "@example.test", handle, "Ada", "Lovelace", PASSWORD, PASSWORD);
+                new RegisterRequest(handle + "@example.test", handle, "Neha", "Apte", PASSWORD, PASSWORD);
 
         rolledBack(() -> registrationService.register(request));
         nothingSent();
@@ -133,8 +123,7 @@ class AccountEmailIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a verification that rolls back sends no welcome; saved, it does")
-    void verification() {
+    void welcomeSentAfterCommit() {
         User user = createUser();
         user.setEmailVerified(false);
         userRepository.save(user);

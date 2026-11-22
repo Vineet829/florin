@@ -47,7 +47,6 @@ const BusinessFields = ({ business }) => {
   );
   const [save, { isLoading: saving }] = useUpdateBusinessMutation();
   const [upload, { isLoading: uploading }] = useUploadProfileLogoMutation();
-  // The shared demo business's business details show on every visitor's documents.
   const demo = useGetUserProfileQuery().data?.userProfile?.demo;
   const roleRefusal = useBusiness().reason("MANAGE_BUSINESS");
   const refusal = demo
@@ -69,7 +68,7 @@ const BusinessFields = ({ business }) => {
       toast.success(result.message || "Your business details were saved.");
     } catch (error) {
       toast.error(
-        errorMessage(error, "Your business details could not be saved."),
+        errorMessage(error, "Your business details couldn't be saved."),
       );
     }
   };
@@ -88,7 +87,7 @@ const BusinessFields = ({ business }) => {
       setValues((current) => ({ ...current, logo: url }));
       toast.success("Logo uploaded. Save your changes to use it.");
     } catch (error) {
-      toast.error(errorMessage(error, "Your logo could not be uploaded."));
+      toast.error(errorMessage(error, "Your logo couldn't be uploaded."));
     }
     event.target.value = "";
   };
@@ -205,7 +204,7 @@ const BusinessFields = ({ business }) => {
                   role="status"
                   className="col-span-full text-[13px] text-spot-violet"
                 >
-                  Uploading your logo…
+                  Uploading your logo...
                 </p>
               )}
             </div>
@@ -218,14 +217,14 @@ const BusinessFields = ({ business }) => {
               title={refusal}
             >
               <FiCheck aria-hidden="true" />
-              {saving ? "Saving…" : "Save changes"}
+              {saving ? "Saving..." : "Save changes"}
             </button>
           </div>
         </div>
         <aside className="min-w-0 max-[1359px]:hidden min-[1360px]:sticky min-[1360px]:top-[30px]">
           <div className="rounded-[30px] border border-white/85 bg-white/50 p-6 shadow-panel-soft backdrop-blur-[16px] compact:p-[18px] [&>p]:mt-3 [&>p]:text-[13.5px] [&>p]:leading-[1.7] [&>p]:text-spot-body [&>svg]:mb-4 [&>svg]:size-7 [&>svg]:stroke-[1.4] [&>svg]:text-spot-violet">
             <FiBriefcase aria-hidden="true" />
-            <h2 className={sectionTitle}>Your business, on every document.</h2>
+            <h2 className={sectionTitle}>Shown on documents.</h2>
             <p>
               Invoices, quotations, receipts and statements show these details,
               and so do the links you share with clients.
@@ -238,7 +237,7 @@ const BusinessFields = ({ business }) => {
 };
 
 const BusinessProfilePage = () => {
-  useTitle("Business details — Florin");
+  useTitle("Business details - Florin");
   const query = useGetBusinessQuery();
   return (
     <WorkspacePage section="Settings">

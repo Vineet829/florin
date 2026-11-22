@@ -17,8 +17,6 @@ import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 
-// An invitation to join a business, sent to an email address. It is waiting
-// until someone accepts or revokes it, or it expires.
 @Entity
 @Table(name = "business_invitations")
 @Getter

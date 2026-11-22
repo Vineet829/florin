@@ -3,8 +3,6 @@ import { createRoot } from "react-dom/client";
 import { act } from "react-dom/test-utils";
 import PortalDialog from "./PortalDialog";
 
-// The dialog reads the link's status and acts on it through these hooks, so
-// it needs no store or server; the browser's modal is left out.
 const status = vi.hoisted(() => ({ current: null }));
 const idle = () => [vi.fn(), { isLoading: false }];
 vi.mock("../customersApiSlice", () => ({
@@ -58,19 +56,19 @@ const buttons = (container) =>
     button.textContent.trim(),
   );
 
-it("shows a viewer that a link is on, but not the link or the ways to change or send it", () => {
+it("viewer sees link status only", () => {
   status.current = ON;
   const { container, root } = render({ refusal: VIEWER });
   expect(container.textContent).toContain("Opened 2 times");
   expect(container.textContent).toContain(
     "Only members who can send the link see it.",
   );
-  expect(container.textContent).not.toContain("can’t be shown again");
+  expect(container.textContent).not.toContain("can't be shown again");
   expect(buttons(container)).toEqual([]);
   act(() => root.unmount());
 });
 
-it("tells a viewer when no link is on, without a way to make one", () => {
+it("viewer sees no link", () => {
   status.current = { active: false };
   const { container, root } = render({ refusal: VIEWER });
   expect(container.textContent).toContain("No link is on.");
@@ -78,7 +76,7 @@ it("tells a viewer when no link is on, without a way to make one", () => {
   act(() => root.unmount());
 });
 
-it("gives a member who can send the link the ways to change and send it", () => {
+it("sender can change and send", () => {
   status.current = ON;
   const { container, root } = render({});
   expect(buttons(container)).toEqual(

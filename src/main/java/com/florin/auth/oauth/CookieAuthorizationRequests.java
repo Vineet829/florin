@@ -20,11 +20,6 @@ import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequ
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.stereotype.Component;
 
-// A sign-in on its way to a provider, kept in the browser rather than in a
-// server session, so the server stays stateless: a cookie holding a signed
-// token for ten minutes, sent back only to the sign-in URLs. Lax, so it
-// comes back on the provider's redirect. Nothing in it is deserialized as
-// Java; a cookie that doesn't verify is no sign-in at all.
 @Component
 public class CookieAuthorizationRequests implements AuthorizationRequestRepository<OAuth2AuthorizationRequest> {
 
@@ -40,9 +35,6 @@ public class CookieAuthorizationRequests implements AuthorizationRequestReposito
         this.secure = properties.cookie().secure();
     }
 
-    // Only the sign-in the callback's state names, as Spring's session store
-    // does: a callback left over from an earlier start, in another tab say,
-    // finds nothing.
     @Override
     public OAuth2AuthorizationRequest loadAuthorizationRequest(HttpServletRequest request) {
         String state = request.getParameter(OAuth2ParameterNames.STATE);
@@ -71,8 +63,6 @@ public class CookieAuthorizationRequests implements AuthorizationRequestReposito
         response.addHeader(HttpHeaders.SET_COOKIE, cookie(token, TTL).toString());
     }
 
-    // A stale callback leaves the cookie alone, so the newer sign-in it holds
-    // can still finish.
     @Override
     public OAuth2AuthorizationRequest removeAuthorizationRequest(
             HttpServletRequest request, HttpServletResponse response) {
@@ -139,8 +129,6 @@ public class CookieAuthorizationRequests implements AuthorizationRequestReposito
         return scopes;
     }
 
-    // Every value as text: what Spring puts here, a nonce, a code verifier and
-    // the like, is text already.
     private static Map<String, Object> texts(Object value) {
         Map<String, Object> texts = new LinkedHashMap<>();
         if (value instanceof Map<?, ?> map) {

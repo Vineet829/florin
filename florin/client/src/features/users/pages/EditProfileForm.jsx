@@ -30,7 +30,6 @@ const ProfileFields = ({ profile }) => {
     Object.fromEntries(keys.map((key) => [key, profile[key] || ""])),
   );
   const [save, { isLoading: saving }] = useUpdateUserProfileMutation();
-  // Everyone who tries the demo shares its account, so nobody renames it.
   const locked = saving || profile.demo;
   const change = (key) => (event) =>
     setValues((current) => ({ ...current, [key]: event.target.value }));
@@ -41,7 +40,7 @@ const ProfileFields = ({ profile }) => {
       toast.success(result.message || "Profile updated.");
       navigate("/profile");
     } catch (error) {
-      toast.error(errorMessage(error, "Your profile could not be saved."));
+      toast.error(errorMessage(error, "Your profile couldn't be saved."));
     }
   };
   return (
@@ -88,19 +87,19 @@ const ProfileFields = ({ profile }) => {
           <div className="flex flex-wrap items-center justify-end gap-4 max-[700px]:[&>button]:flex-1">
             {profile.demo && (
               <p className={`mr-auto ${panelNote}`}>
-                This is a shared demo account, so its profile can’t be changed.
+                This is a shared demo account, so its profile can't be changed.
               </p>
             )}
             <button type="submit" className={primaryButton} disabled={locked}>
               <FiCheck aria-hidden="true" />
-              {saving ? "Saving…" : "Save changes"}
+              {saving ? "Saving..." : "Save changes"}
             </button>
           </div>
         </div>
         <aside className="min-w-0 max-[1359px]:hidden min-[1360px]:sticky min-[1360px]:top-[30px]">
           <div className="rounded-[30px] border border-white/85 bg-white/50 p-6 shadow-panel-soft backdrop-blur-[16px] compact:p-[18px] [&>p]:mt-3 [&>p]:text-[13.5px] [&>p]:leading-[1.7] [&>p]:text-spot-body [&>svg]:mb-4 [&>svg]:size-7 [&>svg]:stroke-[1.4] [&>svg]:text-spot-violet">
             <FiUser aria-hidden="true" />
-            <h2 className={sectionTitle}>Just you.</h2>
+            <h2 className={sectionTitle}>Your account.</h2>
             <p>
               Your name and username are yours alone. The details your documents
               carry belong to your business, in{" "}
@@ -116,7 +115,7 @@ const ProfileFields = ({ profile }) => {
   );
 };
 const EditProfileForm = () => {
-  useTitle("Edit profile — Florin");
+  useTitle("Edit profile - Florin");
   const query = useGetUserProfileQuery();
   return (
     <WorkspacePage section="Profile">

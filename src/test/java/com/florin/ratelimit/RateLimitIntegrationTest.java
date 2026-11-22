@@ -21,7 +21,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import javax.sql.DataSource;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -70,7 +69,6 @@ class RateLimitIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("five failed sign-ins lock that email from that address, even with the right password")
     void failedSignIns() throws Exception {
         User user = userWithPassword();
         String address = address();
@@ -86,7 +84,6 @@ class RateLimitIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("thirty failed sign-ins from one address, whatever the emails, stop that address for a while")
     void sprayedPasswords() throws Exception {
         User user = userWithPassword();
         String address = address();
@@ -102,7 +99,6 @@ class RateLimitIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("wrong passwords sent all at once for one email are checked five times at most")
     void attemptsAtOnce() throws Exception {
         User user = userWithPassword();
         String address = address();
@@ -130,7 +126,6 @@ class RateLimitIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an address gets at most three sign-up, verification and reset emails an hour, from anywhere")
     void emailsToOneAddress() throws Exception {
         String email = "inbox-" + UUID.randomUUID() + "@example.test";
         for (String path : new String[] {"/reset_password_request", "/resend_email_token", "/reset_password_request"}) {
@@ -156,7 +151,6 @@ class RateLimitIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a sign-up counts toward its address's emails once it sends one, not when refused before")
     void signUpEmails() throws Exception {
         String taken = createUser().getUsername();
         String email = "inbox-" + UUID.randomUUID() + "@example.test";
@@ -165,7 +159,6 @@ class RateLimitIntegrationTest extends IntegrationTest {
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message").value("That username is already taken"));
         }
-        // Each one replaces the account the one before made and never verified.
         for (int attempt = 0; attempt < 3; attempt++) {
             signUp(email, "fresh" + UUID.randomUUID().toString().substring(0, 8)).andExpect(status().isOk());
         }
@@ -189,7 +182,6 @@ class RateLimitIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a successful sign-in clears the failures before it")
     void successResets() throws Exception {
         User user = userWithPassword();
         String address = address();
@@ -205,7 +197,6 @@ class RateLimitIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an address can sign up at most five times an hour")
     void signUps() throws Exception {
         String address = address();
         for (int attempt = 0; attempt < 6; attempt++) {
@@ -237,15 +228,11 @@ class RateLimitIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("with every connection of the limiter busy, a sign-in is refused within seconds with a 503 to retry,"
-            + " not a 500 half a minute later")
     void busyLimiter() throws Exception {
         String flooding = address();
         rateLimiter.consume(RateLimit.SIGN_UP, flooding);
         ExecutorService waiting = Executors.newFixedThreadPool(PostgresBucketStore.POOL_SIZE);
         try (Connection holder = dataSource.getConnection()) {
-            // A lock held on one bucket, as by a slow request: every call for
-            // that bucket waits on one of the limiter's connections.
             holder.setAutoCommit(false);
             try (PreparedStatement lock =
                     holder.prepareStatement("select id from rate_limit_buckets where id = ? for update")) {

@@ -14,7 +14,6 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -79,8 +78,6 @@ class CustomerExportIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("clients export in the list's order, with what each owes in every currency; a phone number that a"
-            + " spreadsheet would read as a formula stays text")
     void clientsCsv() throws Exception {
         User owner = createUser();
         String[] alpha = client(owner, "Alpha Ltd", "Toronto");

@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -37,9 +36,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// What the payments list adds up to over a period: its received total beside
-// the period before, by method, receipts being one, and by the clients who
-// paid most.
 class PaymentSummaryIntegrationTest extends IntegrationTest {
 
     @Autowired
@@ -54,7 +50,6 @@ class PaymentSummaryIntegrationTest extends IntegrationTest {
         today = LocalDate.now(ZoneOffset.UTC);
     }
 
-    // Puts the business in the time zone, and dates what follows from its today.
     private void inZone(ZoneId zone) throws Exception {
         send(put("/api/v1/settings"), """
                 {"defaultCurrency": "USD", "paymentTermsDays": 15, "defaultTaxRate": 0,
@@ -82,7 +77,6 @@ class PaymentSummaryIntegrationTest extends IntegrationTest {
                 "$.createdCustomer._id");
     }
 
-    // A document for the client dated the given day, for one amount.
     private String issue(String client, String type, String currency, String amount, LocalDate issued)
             throws Exception {
         return JsonPath.read(
@@ -109,7 +103,6 @@ class PaymentSummaryIntegrationTest extends IntegrationTest {
                 .andExpect(status().isCreated());
     }
 
-    // A credit note taking the amount off the document, dated the given day.
     private void credit(String document, String amount, LocalDate issued) throws Exception {
         String note = JsonPath.read(
                 body(send(post("/api/v1/document/{id}/credit-note", document), "")
@@ -138,8 +131,6 @@ class PaymentSummaryIntegrationTest extends IntegrationTest {
         return send(request, "");
     }
 
-    // The payments list in dollars over the days, or every day, with any
-    // other filters given.
     private String listed(LocalDate from, LocalDate to, String... params) throws Exception {
         MockHttpServletRequestBuilder request = get("/api/v1/payments").param("currency", "USD");
         if (from != null) {
@@ -151,7 +142,6 @@ class PaymentSummaryIntegrationTest extends IntegrationTest {
         return body(send(request, "").andExpect(status().isOk()));
     }
 
-    // What the list received, or nothing when it has no rows.
     private static BigDecimal received(String list) {
         List<Object> totals = JsonPath.read(list, "$.totals[*].received");
         return totals.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totals.get(0).toString());
@@ -161,7 +151,6 @@ class PaymentSummaryIntegrationTest extends IntegrationTest {
         return new BigDecimal(JsonPath.read(body, path).toString());
     }
 
-    // The amounts at the path added up.
     private static BigDecimal sum(String body, String path) {
         List<Object> amounts = JsonPath.read(body, path);
         return amounts.stream()
@@ -176,18 +165,12 @@ class PaymentSummaryIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("a period's payments, receipts and refunds add up in all, by method and by who paid, beside the"
-            + " period before")
-    void figures(ZoneId zone) throws Exception {
+    void summarisesPeriodPayments(ZoneId zone) throws Exception {
         inZone(zone);
         String acme = client("Acme");
         String birch = client("Birch Studio");
         String cedar = client("Cedar Works");
         String oak = client("Oak Joinery");
-        // In the last 30 days: two payments on an invoice, one on their first
-        // day and one with tax withheld; an invoice paid in full, credited
-        // and partly paid back; a receipt; and a payment from a client
-        // deleted since.
         String invoice = issue(acme, "Invoice", "USD", "1000", today.minusDays(40));
         pay(invoice, "400", "0", "Bank Transfer", today.minusDays(29));
         pay(invoice, "100", "50", "Cash", today.minusDays(5));
@@ -198,10 +181,8 @@ class PaymentSummaryIntegrationTest extends IntegrationTest {
         issue(cedar, "Receipt", "USD", "300", today);
         pay(issue(oak, "Invoice", "USD", "500", today.minusDays(20)), "250", "0", "UPI", today.minusDays(1));
         send(delete("/api/v1/customer/{id}", oak), "").andExpect(status().isOk());
-        // In the 30 days before: a receipt on their last day and a cheque.
         issue(acme, "Receipt", "USD", "80", today.minusDays(30));
         pay(issue(birch, "Invoice", "USD", "70", today.minusDays(60)), "70", "0", "Cheque", today.minusDays(45));
-        // Euros are summed apart.
         pay(issue(acme, "Invoice", "EUR", "900", today.minusDays(3)), "900", "0", "Cash", today);
 
         summary("period", "30d", "currency", "USD")
@@ -229,8 +210,6 @@ class PaymentSummaryIntegrationTest extends IntegrationTest {
                         "\"methods\":[{\"method\":\"Cash\",\"payments\":2,\"amount\":700.00},")))
                 .andExpect(content().string(containsString(
                         "{\"clientId\":null,\"client\":\"Oak Joinery\",\"payments\":1,\"amount\":250.00}")));
-        // The euros begin three days ago, so there is nothing to compare them
-        // with.
         summary("period", "30d", "currency", "EUR")
                 .andExpect(jsonPath("$.currency").value("EUR"))
                 .andExpect(jsonPath("$.total").value(900.0))
@@ -241,8 +220,6 @@ class PaymentSummaryIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("over every period the totals are the payments list's for the same days, and the overview's"
-            + " Received over its own, and each method is the list's rows by that method")
     void addsUpToTheList(ZoneId zone) throws Exception {
         inZone(zone);
         String acme = client("Acme");
@@ -250,9 +227,6 @@ class PaymentSummaryIntegrationTest extends IntegrationTest {
         LocalDate year = today.minusMonths(12).plusDays(1);
         LocalDate month = today.withDayOfMonth(1);
         LocalDate january = today.withDayOfYear(1);
-        // Money on the first day of each period and the day before it, and
-        // on the first and last days of the periods before them, by several
-        // methods, with receipts and refunds.
         List<LocalDate> days = List.of(
                 today,
                 today.minusDays(29),
@@ -308,8 +282,6 @@ class PaymentSummaryIntegrationTest extends IntegrationTest {
                 String before = listed(date(summary, "$.period.previousFrom"), date(summary, "$.period.previousTo"));
                 assertThat(amount(summary, "$.previousTotal")).as(key).isEqualByComparingTo(received(before));
             }
-            // Each method is the list's rows by it; the list's method filter
-            // asks for receipts as receipt.
             List<Map<String, Object>> rows = JsonPath.read(summary, "$.methods");
             assertThat(rows).as(key).isNotEmpty();
             assertThat(rows).as(key).anyMatch(method -> method.get("method").equals("On a receipt"));
@@ -324,7 +296,6 @@ class PaymentSummaryIntegrationTest extends IntegrationTest {
                         .isEqualTo(method.get("payments"));
             }
         }
-        // The overview's periods are its Received, now and before.
         for (String period : List.of("30d", "90d", "12m", "ytd")) {
             String overview = body(send(
                     get("/api/v1/report/overview").param("currency", "USD").param("period", period), ""));
@@ -341,13 +312,9 @@ class PaymentSummaryIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("the period before is compared only when the currency's records reach back to its first day, as"
-            + " the overview compares it")
-    void previousWhenCovered(ZoneId zone) throws Exception {
+    void previousTotalNeedsHistory(ZoneId zone) throws Exception {
         inZone(zone);
         String acme = client("Acme");
-        // The 30 days before the last 30 begin 59 days ago; records from the
-        // day after cover only part of them.
         String invoice = issue(acme, "Invoice", "USD", "1000", today.minusDays(10));
         pay(invoice, "100", "0", "Cash", today.minusDays(58));
         pay(invoice, "200", "0", "Cash", today);
@@ -357,33 +324,27 @@ class PaymentSummaryIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.previousTotal").value(nullValue()));
         hasPrevious("30d", false);
 
-        // A payment made on their first day.
         pay(invoice, "50", "0", "Cash", today.minusDays(59));
         summary("period", "30d").andExpect(jsonPath("$.previousTotal").value(150.0));
         hasPrevious("30d", true);
         summary("period", "90d").andExpect(jsonPath("$.previousTotal").value(nullValue()));
         hasPrevious("90d", false);
 
-        // Older records cover the 90 days before the last 90 as well.
         issue(acme, "Receipt", "USD", "30", today.minusDays(400));
         summary("period", "90d").andExpect(jsonPath("$.previousTotal").value(0.0));
         hasPrevious("90d", true);
     }
 
-    // Whether the overview compares the period with the one before.
     private void hasPrevious(String period, boolean compared) throws Exception {
         send(get("/api/v1/report/overview").param("currency", "USD").param("period", period), "")
                 .andExpect(jsonPath("$.totals.hasPrevious").value(compared));
     }
 
     @Test
-    @DisplayName("five payers are listed, largest first and by name when two paid the same, and money on"
-            + " documents linked to no client and saved without a name is one payer with neither")
     void topFive() throws Exception {
         for (String name : List.of("delta", "Acme", "echo", "birch", "Cedar", "Zed")) {
             issue(client(name), "Receipt", "USD", name.equals("Zed") ? "300" : "100", today);
         }
-        // Saved before a client was named or linked, as the oldest receipts were.
         String nameless = issue(client("Fir"), "Receipt", "USD", "500", today);
         jdbcTemplate.update(
                 "update documents set customer_pkid = null, customer_name = null where id = ?",
@@ -399,7 +360,6 @@ class PaymentSummaryIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the currency is chosen as the overview chooses it, and a period with no money has nothing in it")
     void currencyAndEmpty() throws Exception {
         summary("period", "90d")
                 .andExpect(status().isOk())
@@ -413,7 +373,6 @@ class PaymentSummaryIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.period.key").value(""))
                 .andExpect(jsonPath("$.previousTotal").value(nullValue()));
 
-        // Only euros are billed, so euros are shown whatever is asked for.
         String acme = client("Acme");
         pay(issue(acme, "Invoice", "EUR", "400", today.minusDays(100)), "400", "0", "PayPal", today.minusDays(100));
         summary("period", "30d", "currency", "USD")
@@ -426,8 +385,7 @@ class PaymentSummaryIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a viewer may see the summary, it counts only its business, and a period from no list is refused")
-    void route() throws Exception {
+    void summaryRouteAccess() throws Exception {
         String acme = client("Acme");
         pay(issue(acme, "Invoice", "USD", "100", today), "60", "0", "Cash", today);
 

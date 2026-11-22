@@ -7,7 +7,6 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
-// The business whose details its documents carry.
 @Entity
 @Table(name = "businesses")
 @Getter

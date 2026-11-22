@@ -15,9 +15,6 @@ import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 
-// One signed-in browser. Its refresh token is kept as a hash, rotated by a
-// refresh at most once in a few seconds, and the one before it is remembered
-// for a short while.
 @Entity
 @Table(name = "user_sessions")
 @Getter

@@ -23,7 +23,6 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -34,8 +33,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// The money bar over the documents list: what is owed now, and what came in
-// over the last 30 days, as the overview counts them.
 class DocumentSummaryIntegrationTest extends IntegrationTest {
 
     @Autowired
@@ -56,7 +53,6 @@ class DocumentSummaryIntegrationTest extends IntegrationTest {
         today = LocalDate.now(ZoneOffset.UTC);
     }
 
-    // Puts the business in the time zone, and dates what follows from its today.
     private void inZone(ZoneId zone) throws Exception {
         send(put("/api/v1/settings"), """
                 {"defaultCurrency": "USD", "paymentTermsDays": 15, "defaultTaxRate": 0,
@@ -76,8 +72,6 @@ class DocumentSummaryIntegrationTest extends IntegrationTest {
         return result.andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
     }
 
-    // A document dated the given day and due on the other, for one amount; a
-    // draft is only planned for that day.
     private String create(
             String type, String currency, String amount, LocalDate issued, LocalDate due, boolean draft)
             throws Exception {
@@ -109,7 +103,6 @@ class DocumentSummaryIntegrationTest extends IntegrationTest {
                 .andExpect(status().isCreated());
     }
 
-    // A credit note taking the amount off the document, dated the given day.
     private void credit(String document, String amount, LocalDate issued) throws Exception {
         String note = JsonPath.read(
                 body(send(post("/api/v1/document/{id}/credit-note", document), "")
@@ -130,7 +123,6 @@ class DocumentSummaryIntegrationTest extends IntegrationTest {
                 .andExpect(status().isCreated());
     }
 
-    // Moves a document's due date to a moment on the business's clock.
     private void dueAt(String document, LocalDateTime moment, ZoneId zone) {
         jdbcTemplate.update(
                 "update documents set due_date = ? where id = ?",
@@ -160,12 +152,8 @@ class DocumentSummaryIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("what is owed now and what came in over the last 30 days are the overview's figures")
     void overviewFigures(ZoneId zone) throws Exception {
         inZone(zone);
-        // Owed: overdue and partly paid with tax withheld, due today, credited,
-        // partly paid today, and due in the last minutes of yesterday and the
-        // first of today by the business's clock.
         pay(issue("Invoice", "1000", today.minusDays(40), today.minusDays(1)), "400", "50", today.minusDays(29));
         issue("Invoice", "300", today.minusDays(5), today);
         credit(issue("Invoice", "800", today.minusDays(60), today.plusDays(10)), "100", today.minusDays(2));
@@ -174,15 +162,12 @@ class DocumentSummaryIntegrationTest extends IntegrationTest {
         dueAt(late, today.minusDays(1).atTime(23, 30), zone);
         String early = issue("Invoice", "60", today.minusDays(3), today);
         dueAt(early, today.atTime(0, 30), zone);
-        // Paid the day before the last 30 days, then credited and paid back today.
         String refunded = issue("Invoice", "600", today.minusDays(50), today.minusDays(20));
         pay(refunded, "600", "0", today.minusDays(30));
         credit(refunded, "150", today.minusDays(1));
         refund(refunded, "150", today);
-        // Receipts today and the day before the last 30 days.
         issue("Receipt", "90", today, null);
         issue("Receipt", "40", today.minusDays(30), null);
-        // Never counted: a quotation, a draft, a void invoice, and money in euros.
         issue("Quotation", "5000", today, today.plusDays(5));
         create("Invoice", "USD", "6000", today, today.plusDays(5), true);
         send(post("/api/v1/document/{id}/void", issue("Invoice", "7000", today, today.plusDays(5))),
@@ -199,7 +184,6 @@ class DocumentSummaryIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.outstanding.notDue").value(1210.0))
                 .andExpect(jsonPath("$.outstanding.invoices").value(6))
                 .andExpect(jsonPath("$.outstanding.overdueInvoices").value(2))
-                // 400 and 50 paid, the 90 receipt, less the 150 paid back.
                 .andExpect(jsonPath("$.receivedLast30Days.total").value(390.0))
                 .andExpect(jsonPath("$.receivedLast30Days.payments").value(4)));
         String overview = body(overview("USD", "30d"));
@@ -210,8 +194,7 @@ class DocumentSummaryIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the currency is chosen as the overview chooses it: the one asked for if there is money in it, else the default")
-    void currencies() throws Exception {
+    void picksCurrencyLikeOverview() throws Exception {
         pay(issue("Invoice", "100", today.minusDays(2), today.plusDays(5)), "40", "0", today);
         pay(create("Invoice", "EUR", "50", today.minusDays(2), today.minusDays(1), false), "10", "0", today);
         create("Quotation", "GBP", "70", today, today.plusDays(5), false);
@@ -229,7 +212,6 @@ class DocumentSummaryIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.outstanding.overdue").value(40.0))
                 .andExpect(jsonPath("$.receivedLast30Days.total").value(10.0))
                 .andExpect(jsonPath("$.receivedLast30Days.payments").value(1));
-        // An offer isn't money, and a currency without any falls back to the default.
         for (String currency : new String[] {"GBP", "JPY", ""}) {
             summary(currency)
                     .andExpect(jsonPath("$.currency").value("USD"))
@@ -238,7 +220,6 @@ class DocumentSummaryIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a document made without a currency counts in its business's default currency")
     void noCurrency() throws Exception {
         create("Invoice", null, "70", today.minusDays(2), today.plusDays(5), false);
         pay(issue("Invoice", "100", today.minusDays(2), today.plusDays(5)), "40", "0", today);
@@ -256,8 +237,7 @@ class DocumentSummaryIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a business without documents sees nothing owed or received, in its default currency")
-    void empty() throws Exception {
+    void emptyBusinessShowsZeros() throws Exception {
         summary(null)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.currency").value("USD"))
@@ -270,8 +250,7 @@ class DocumentSummaryIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the summary isn't read as a document's id, a viewer may see it, and it counts only its business")
-    void route() throws Exception {
+    void summaryRouteAccess() throws Exception {
         String invoice = issue("Invoice", "100", today.minusDays(2), today.plusDays(5));
         pay(invoice, "30", "0", today);
 
@@ -288,7 +267,6 @@ class DocumentSummaryIntegrationTest extends IntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.outstanding.total").value(70.0))
                 .andExpect(jsonPath("$.receivedLast30Days.payments").value(1));
-        // Another business has nothing in it.
         mockMvc.perform(get("/api/v1/document/summary").header(HttpHeaders.AUTHORIZATION, bearer(createUser())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.outstanding.total").value(0.0))

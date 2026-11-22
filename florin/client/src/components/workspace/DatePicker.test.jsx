@@ -7,7 +7,6 @@ import { DatePicker } from "./DatePicker";
 
 window.IS_REACT_ACT_ENVIRONMENT = true;
 
-// jsdom has no modal dialogs; these stand in for the browser's.
 HTMLDialogElement.prototype.showModal = function showModal() {
   this.open = true;
 };
@@ -18,7 +17,6 @@ HTMLDialogElement.prototype.close = function close() {
 let root;
 let container;
 beforeEach(() => {
-  // Today is Wednesday, October 7, 2026.
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date(2026, 9, 7, 10, 30));
   container = document.body.appendChild(document.createElement("div"));
@@ -33,7 +31,6 @@ afterEach(() => {
   window.innerHeight = 768;
 });
 
-// The field with its own value, as a form holds it, under a label.
 const Harness = ({ initial = "", onChange, ...props }) => {
   const [value, setValue] = useState(initial);
   return (
@@ -55,7 +52,6 @@ const Harness = ({ initial = "", onChange, ...props }) => {
   );
 };
 const render = (element) => act(async () => root.render(element));
-// Each shows a fresh field, whatever was rendered before.
 let shown = 0;
 const show = (props) => render(<Harness key={(shown += 1)} {...props} />);
 
@@ -75,7 +71,6 @@ const press = (element, key, init = {}) =>
       }),
     ),
   );
-// What the field is called: the words its aria-labelledby points at.
 const nameOf = (element) =>
   element
     .getAttribute("aria-labelledby")
@@ -83,7 +78,7 @@ const nameOf = (element) =>
     .map((id) => document.getElementById(id).textContent.trim())
     .join(" ");
 
-it("shows the chosen day in words, named by its label and the day", async () => {
+it("shows the chosen day in words", async () => {
   await show({ initial: "2026-10-21" });
   const button = trigger();
   expect(button.getAttribute("role")).toBe("combobox");
@@ -97,7 +92,7 @@ it("shows the chosen day in words, named by its label and the day", async () => 
   expect(trigger().textContent).toBe("Not yet");
 });
 
-it("opens on the chosen day's month, today ringed, the chosen day pressed and focused", async () => {
+it("opens on the chosen month", async () => {
   await show({ initial: "2026-11-03" });
   await click(trigger());
   expect(trigger().getAttribute("aria-expanded")).toBe("true");
@@ -106,8 +101,6 @@ it("opens on the chosen day's month, today ringed, the chosen day pressed and fo
     calendar(),
   );
   expect(title()).toBe("November 2026");
-  // Only the weeks November spans: Sunday, November 1 to Saturday,
-  // December 5.
   expect(
     [...calendar().querySelectorAll("tbody tr")].map(
       (week) => week.firstElementChild.textContent,
@@ -129,13 +122,11 @@ it("opens on the chosen day's month, today ringed, the chosen day pressed and fo
   expect(chosen.getAttribute("aria-label")).toBe("Tuesday, November 3, 2026");
   expect(chosen.className).toContain("bg-spot-night");
   expect(document.activeElement).toBe(chosen);
-  // Only the focused day is a stop for Tab.
   expect(
     [...calendar().querySelectorAll("[data-day]")].filter(
       (cell) => cell.tabIndex === 0,
     ),
   ).toEqual([chosen]);
-  // With nothing chosen, it opens on today.
   await click(trigger());
   await show({ initial: "" });
   await click(trigger());
@@ -146,7 +137,7 @@ it("opens on the chosen day's month, today ringed, the chosen day pressed and fo
   expect(document.activeElement).toBe(today);
 });
 
-it("reports a clicked day as a native field would, and closes on the field", async () => {
+it("reports clicked day and closes", async () => {
   const onChange = vi.fn();
   await show({ initial: "2026-10-21", onChange });
   await click(trigger());
@@ -158,7 +149,7 @@ it("reports a clicked day as a native field would, and closes on the field", asy
   expect(document.activeElement).toBe(trigger());
 });
 
-it("keeps days outside its limits out of reach, faded", async () => {
+it("disables days outside limits", async () => {
   const onChange = vi.fn();
   await show({ initial: "", min: "2026-10-07", max: "2026-10-20", onChange });
   await click(trigger());
@@ -170,14 +161,13 @@ it("keeps days outside its limits out of reach, faded", async () => {
   expect(onChange).not.toHaveBeenCalled();
   expect(calendar()).not.toBeNull();
   expect(day("2026-10-20").hasAttribute("aria-disabled")).toBe(false);
-  // It opens on the nearest day it takes when today is out of reach.
   await show({ initial: "", min: "2026-12-14" });
   await click(trigger());
   expect(title()).toBe("December 2026");
   expect(document.activeElement).toBe(day("2026-12-14"));
 });
 
-it("moves through the days with the keys and picks with Enter", async () => {
+it("navigates days with keyboard", async () => {
   const onChange = vi.fn();
   await show({ initial: "2026-10-21", onChange });
   await click(trigger());
@@ -198,19 +188,16 @@ it("moves through the days with the keys and picks with Enter", async () => {
     await press(document.activeElement, key, init);
     expect(document.activeElement.dataset.day).toBe(expected);
   }
-  // A month's last day carries over as the next month's last.
   await press(document.activeElement, "ArrowRight");
   await press(document.activeElement, "PageDown");
   expect(document.activeElement.dataset.day).toBe("2026-11-30");
-  // Enter or Space on the focused day presses it.
   await click(document.activeElement);
   expect(onChange).toHaveBeenCalledWith("2026-11-30");
-  // Arrow keys on the closed field open it.
   await press(trigger(), "ArrowDown");
   expect(calendar()).not.toBeNull();
 });
 
-it("changes month with its arrows, which keep focus, and picks today", async () => {
+it("month arrows and today button", async () => {
   const onChange = vi.fn();
   await show({ initial: "2026-10-21", onChange });
   await click(trigger());
@@ -230,7 +217,6 @@ it("changes month with its arrows, which keep focus, and picks today", async () 
   );
   await click(today);
   expect(onChange).toHaveBeenCalledWith("2026-10-07");
-  // Today is off when today is out of reach.
   await show({ initial: "", max: "2026-10-01" });
   await click(trigger());
   expect(
@@ -240,7 +226,7 @@ it("changes month with its arrows, which keep focus, and picks today", async () 
   ).toBe(true);
 });
 
-it("closes on Escape, on the field, or on a press outside, leaving the date alone", async () => {
+it("closes without changing the date", async () => {
   const onChange = vi.fn();
   await show({ initial: "2026-10-21", onChange });
   await click(trigger());
@@ -258,7 +244,7 @@ it("closes on Escape, on the field, or on a press outside, leaving the date alon
   expect(onChange).not.toHaveBeenCalled();
 });
 
-it("keeps Tab within the open calendar", async () => {
+it("traps Tab in the calendar", async () => {
   await show({ initial: "2026-10-21" });
   await click(trigger());
   const stops = [
@@ -271,7 +257,7 @@ it("keeps Tab within the open calendar", async () => {
   expect(document.activeElement).toBe(day("2026-10-21"));
 });
 
-it("clears an optional date, and offers no clearing when one is required", async () => {
+it("clears only optional dates", async () => {
   const onChange = vi.fn();
   await show({ initial: "2026-10-21", onChange });
   const clear = container.querySelector('[aria-label="Clear the date"]');
@@ -284,7 +270,7 @@ it("clears an optional date, and offers no clearing when one is required", async
   expect(container.querySelector('[aria-label="Clear the date"]')).toBeNull();
 });
 
-it("keeps a native field in step, which the form checks and which takes a day set on it directly", async () => {
+it("syncs the native input", async () => {
   const onChange = vi.fn();
   await show({
     initial: "",
@@ -304,8 +290,6 @@ it("keeps a native field in step, which the form checks and which takes a day se
   ]);
   expect(input.tabIndex).toBe(-1);
   expect(input.getAttribute("aria-hidden")).toBe("true");
-  // Empty and required, the browser stops the form here and the field
-  // shows it.
   expect(input.validity.valueMissing).toBe(true);
   await act(async () => input.dispatchEvent(new Event("invalid")));
   expect(trigger().getAttribute("aria-invalid")).toBe("true");
@@ -322,7 +306,7 @@ it("keeps a native field in step, which the form checks and which takes a day se
   expect(trigger().hasAttribute("aria-invalid")).toBe(false);
 });
 
-it("picks a month from the year's months with type month", async () => {
+it("picks a month in month mode", async () => {
   const onChange = vi.fn();
   await show({ type: "month", initial: "2026-08", max: "2026-10", onChange });
   expect(trigger().textContent).toBe("August 2026");
@@ -365,7 +349,7 @@ it("picks a month from the year's months with type month", async () => {
   expect(onChange).toHaveBeenLastCalledWith("2026-10");
 });
 
-it("draws the calendar inside the dialog its field is in", async () => {
+it("renders inside its dialog", async () => {
   await render(
     <Dialog open title="Record a payment" onClose={() => {}}>
       <Harness initial="2026-10-21" />
@@ -375,7 +359,7 @@ it("draws the calendar inside the dialog its field is in", async () => {
   expect(calendar().closest("dialog")).toBe(document.querySelector("dialog"));
 });
 
-it("opens as a sheet with larger days on a phone", async () => {
+it("opens as a sheet on phones", async () => {
   vi.stubGlobal(
     "matchMedia",
     vi.fn((query) => ({

@@ -6,8 +6,6 @@ import { useInterval, useReveal, useRunning } from "./motion";
 
 window.IS_REACT_ACT_ENVIRONMENT = true;
 
-// An observer the test drives: it records what it was asked to watch and
-// reports it in view on `enter`.
 let observers;
 class Observer {
   constructor(callback, options) {
@@ -56,7 +54,7 @@ const unmount = () => {
   mounted = false;
 };
 
-it("keeps a section out of sight until it comes into view, then rises it in once", async () => {
+it("reveals a section once", async () => {
   const section = await mount(true);
   expect(section.className).toBe("opacity-0 print:opacity-100");
   expect(observers).toHaveLength(1);
@@ -69,25 +67,24 @@ it("keeps a section out of sight until it comes into view, then rises it in once
   expect(observers[0].disconnect).toHaveBeenCalled();
 });
 
-it("stops watching a section that goes away", async () => {
+it("stops observing removed sections", async () => {
   await mount(true);
   unmount();
   expect(observers[0].disconnect).toHaveBeenCalledTimes(1);
 });
 
-it("shows a section straight away for a visitor who prefers less motion", async () => {
+it("shows at once with reduced motion", async () => {
   const section = await mount(false);
   expect(section.className).toBe("");
   expect(observers).toHaveLength(0);
 });
 
-it("shows a section straight away where nothing can watch it", async () => {
+it("shows at once without observer", async () => {
   vi.stubGlobal("IntersectionObserver", undefined);
   const section = await mount(true);
   expect(section.className).toBe("animate-ov-rise print:animate-none");
 });
 
-// Something that plays while it is on screen in a tab being looked at.
 const Player = ({ motion }) => {
   const ref = useRef(null);
   const running = useRunning(ref, motion);
@@ -99,7 +96,7 @@ const show = async (element) => {
   return container.firstElementChild;
 };
 
-it("plays while the element is on screen and the tab is being looked at", async () => {
+it("plays only when visible", async () => {
   const section = await show(<Player motion />);
   expect(section.dataset.running).toBe("false");
   expect(observers[0].watched).toEqual([section]);
@@ -119,7 +116,7 @@ it("plays while the element is on screen and the tab is being looked at", async 
   expect(section.dataset.running).toBe("true");
 });
 
-it("never plays for a visitor who prefers less motion, and plays where nothing can watch it", async () => {
+it("handles reduced motion and no observer", async () => {
   const still = await show(<Player motion={false} />);
   expect(still.dataset.running).toBe("false");
   await act(async () => observers[0].enter());
@@ -131,14 +128,13 @@ it("never plays for a visitor who prefers less motion, and plays where nothing c
   expect(section.dataset.running).toBe("true");
 });
 
-// A count that goes up by `step` every second while `running`.
 const Counter = ({ running, step }) => {
   const [count, setCount] = useState(0);
   useInterval(() => setCount((current) => current + step), 1000, running);
   return <output>{count}</output>;
 };
 
-it("ticks while running, with the latest tick", async () => {
+it("ticks while running", async () => {
   vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
   try {
     const pass = (ms) =>

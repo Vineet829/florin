@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { oauthErrorMessage } from "./oauthErrors";
 
 describe("oauthErrorMessage", () => {
-  it("explains each reason the server gives", () => {
+  it("explains each server reason", () => {
     expect(oauthErrorMessage("cancelled")).toBe(
       "You cancelled signing in with Google.",
     );
@@ -29,7 +29,7 @@ describe("oauthErrorMessage", () => {
     );
   });
 
-  it("falls back to the general message for a code it doesn't know", () => {
+  it("falls back for unknown codes", () => {
     for (const code of ["something_new", "toString", "", undefined]) {
       expect(oauthErrorMessage(code)).toBe(
         "Signing in with Google didn't work. Please try again.",
@@ -37,7 +37,7 @@ describe("oauthErrorMessage", () => {
     }
   });
 
-  it("names the provider it's given", () => {
+  it("names the given provider", () => {
     expect(oauthErrorMessage("cancelled", "GitHub")).toBe(
       "You cancelled signing in with GitHub.",
     );

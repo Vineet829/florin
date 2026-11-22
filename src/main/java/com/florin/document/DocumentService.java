@@ -111,7 +111,6 @@ public class DocumentService {
         this.clock = clock;
     }
 
-    // A new document is issued as it is made, unless it is saved as a draft.
     @Transactional
     public DocumentResponse create(BusinessAccess access, CreateDocumentRequest request) {
         Customer customer = findCustomer(access.businessPkid(), request.customerId(), request.customer())
@@ -130,8 +129,6 @@ public class DocumentService {
         document.setAdditionalInfo(request.additionalInfo());
         document.setTermsConditions(request.termsConditions());
         document.setShowPaymentDetails(!Boolean.FALSE.equals(request.showPaymentDetails()));
-        // One sent without a currency, as only through the API, is in the
-        // business's own, as the app's form starts it.
         document.setCurrency(request.currency() != null
                 ? request.currency()
                 : settingsService.forBusiness(access.businessPkid()).getDefaultCurrency());
@@ -147,9 +144,6 @@ public class DocumentService {
         return respond(document);
     }
 
-    // Voids an issued document instead of deleting it: it keeps its number,
-    // says why, and no longer counts toward anything owed. One with payments,
-    // or that a schedule copies, is refused.
     @Transactional
     public DocumentResponse voidDocument(BusinessAccess access, String id, VoidDocumentRequest request) {
         Document document = lockInBusiness(access, id);
@@ -170,7 +164,6 @@ public class DocumentService {
         document.setVoidReason(request.reason().trim());
         document.setOverdueAlertedAt(null);
         activity.record(document, DocumentEventType.VOIDED, document.getVoidReason(), actor(access));
-        // Reports still waiting can't be confirmed on a void document, so they are dismissed.
         claimRepository.findByDocumentAndStatusOrderByCreatedAtAscPkidAsc(document, PaymentClaim.Status.PENDING)
                 .forEach(claim -> PaymentClaimService.dismissed(
                         claim, "The document was voided", actor(access), document.getVoidedAt(), activity));
@@ -180,7 +173,6 @@ public class DocumentService {
         return respond(document);
     }
 
-    // Issues a draft: it takes its number, and the day and due date asked for.
     @Transactional
     public DocumentResponse issue(BusinessAccess access, String id, IssueDocumentRequest request) {
         Document document = lockInBusiness(access, id);
@@ -203,10 +195,6 @@ public class DocumentService {
         return respond(document);
     }
 
-    // A page of the documents, and what all of them come to, read at one
-    // moment so the two agree; the totals count them. A period is read as the
-    // dates it covers today, which the list sends back with the dates it was
-    // asked for.
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public DocumentListResponse listMine(BusinessAccess access, DocumentSearch search) {
         ZoneId zone = zoneOf(access.businessPkid());
@@ -241,8 +229,6 @@ public class DocumentService {
         return LocalDate.now(clock.withZone(zone)).atStartOfDay(zone).toInstant();
     }
 
-    // The day a document is to be dated, if one is chosen. A day still to
-    // come is refused; without one, a document is dated the day it is issued.
     private LocalDate issueDate(LocalDate requested, ZoneId zone) {
         if (requested != null && requested.isAfter(LocalDate.now(clock.withZone(zone)))) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "A document can't be dated after today");
@@ -276,8 +262,6 @@ public class DocumentService {
                 envelope(document));
     }
 
-    // What an email of the document starts from. Only an issued document
-    // goes to a client, and a void one no longer does.
     @Transactional(readOnly = true)
     public DocumentEnvelope envelopeToSend(BusinessAccess access, String id) {
         Document document = requireReadable(access, id);
@@ -314,9 +298,6 @@ public class DocumentService {
                 "You are not authorized to view this document. It's not yours");
     }
 
-    // A document's email: its title, number and total, and for an invoice
-    // what is left to pay and when it is due, or for a quotation the day it is
-    // valid until.
     private DocumentEnvelope envelope(Document document) {
         DocumentType type = document.getDocumentType();
         String title = document.getDocumentNumber() == null
@@ -348,8 +329,6 @@ public class DocumentService {
                 document.getId());
     }
 
-    // How to pay an unpaid invoice that shows it, as email lines; nothing
-    // otherwise.
     private String howToPay(Document document) {
         return PaymentSection.of(
                         document, settingsService.forBusiness(document.getBusiness().getPkid()).getPaymentDetails())
@@ -370,15 +349,12 @@ public class DocumentService {
         return DocumentActivity.amount(document, Objects.requireNonNullElse(document.getTotal(), BigDecimal.ZERO));
     }
 
-    // The day a document is due, in the business's time zone.
     private String dueDate(Document document) {
         return document.getDueDate() == null
                 ? null
                 : PdfService.DATE.format(document.getDueDate().atZone(zoneOf(document.getBusiness().getPkid())));
     }
 
-    // The latest email of a kind the business could send, for previewing what
-    // its subject and message would say.
     @Transactional(readOnly = true)
     public DocumentEnvelope latestEnvelope(BusinessAccess access, EmailTemplateKind kind) {
         Long businessPkid = access.businessPkid();
@@ -409,11 +385,6 @@ public class DocumentService {
         return new ApiException(HttpStatus.NOT_FOUND, "There's no " + what + " to preview this email with yet");
     }
 
-    // A draft changes freely. An issued document keeps its client, lines,
-    // currency, tax and issue date: only its due date, notes and terms, and
-    // whether it shows how to pay, change. Its amounts stay as they went out.
-    // It is locked while it changes, so an edit can't land on a draft that was
-    // issued meanwhile.
     @Transactional
     public DocumentResponse update(BusinessAccess access, String id, UpdateDocumentRequest request) {
         Document document = lockInBusiness(
@@ -446,8 +417,6 @@ public class DocumentService {
             document.setDocumentType(documentType(request.documentType()));
         }
         ZoneId zone = zoneOf(access.businessPkid());
-        // Only dates that change are checked, so a document saved due before
-        // its issue date still takes other changes.
         LocalDate issuedOn = document.getIssueDate();
         LocalDate dueOn = document.dueDay(zone);
         if (request.issueDate() != null) {
@@ -479,8 +448,6 @@ public class DocumentService {
         if (document.isDraft()) {
             exchangeRate(document, request.exchangeRate(), currencyChanged, access.businessPkid());
         }
-        // Lines sent without a rate take the rate sent with them, else the one
-        // rate the draft had; a rate sent alone applies to every line.
         if (request.billingItems() != null) {
             BigDecimal rate = request.rates() != null
                     ? percentage(request.rates(), "Tax rate")
@@ -506,8 +473,6 @@ public class DocumentService {
         return respond(document);
     }
 
-    // The original is locked while it is copied, so the copy is of one
-    // version of it.
     @Transactional
     public DocumentResponse duplicate(BusinessAccess access, String id) {
         Document original = lockInBusiness(
@@ -524,8 +489,6 @@ public class DocumentService {
         return respond(copy);
     }
 
-    // A draft credit note for an issued invoice or receipt, made while the
-    // document is locked, so it isn't voided at the same moment.
     @Transactional
     public DocumentResponse creditNote(BusinessAccess access, String id) {
         Document credited = lockInBusiness(
@@ -534,8 +497,6 @@ public class DocumentService {
         return respond(creditNotes.create(credited, actor(access)));
     }
 
-    // The quotation is locked, so two conversions at once take turns and the
-    // second finds the invoice the first made.
     @Transactional
     public DocumentResponse convert(BusinessAccess access, String id) {
         Document quotation = lockInBusiness(
@@ -562,10 +523,6 @@ public class DocumentService {
         return respond(invoice);
     }
 
-    // The next invoice of a recurring schedule, made in the name of whoever
-    // set up the schedule, and issued at once or left as a draft to review.
-    // It isn't linked to the template as a copy, or a monthly template would
-    // list every month.
     Document createRecurring(Document template, RecurringFrequency frequency, User author, boolean issue) {
         Document invoice = copyOf(template, DocumentType.INVOICE, false, author);
         activity.record(
@@ -579,9 +536,6 @@ public class DocumentService {
         return invoice;
     }
 
-    // A new draft with the original's client and lines, due as the
-    // business's payment terms say from today, unless it is a receipt.
-    // Payments stay behind.
     private Document copyOf(Document original, DocumentType type, boolean linkSource, User author) {
         Long businessPkid = original.getBusiness().getPkid();
         BusinessSettings settings = settingsService.forBusiness(businessPkid);
@@ -602,16 +556,11 @@ public class DocumentService {
         copy.setTermsConditions(original.getTermsConditions());
         copy.setShowPaymentDetails(original.isShowPaymentDetails());
         copy.setCurrency(original.getCurrency());
-        // The original's rate, while it is still to the reporting currency;
-        // like any draft's, it can change until the copy is issued.
         if (settings.getBaseCurrency().equals(original.getExchangeBase())) {
             copy.setExchangeRate(original.getExchangeRate());
             copy.setExchangeBase(original.getExchangeBase());
         }
         copy.setBillingItems(original.getBillingItems().stream().map(DocumentService::copyOf).toList());
-        // A GST copy goes where the original was sent by choice, else where its
-        // client is now, with the original's reverse charge and export choice,
-        // under the business's regime as a draft is saved.
         copy.setSupplyType(original.getSupplyType());
         String chosen = GstSupply.chosenPlace(original, original.getCustomerSnapshot());
         gstSupply.place(copy, chosen, original.isReverseCharge(), null);
@@ -649,10 +598,6 @@ public class DocumentService {
         return snapshot;
     }
 
-    // Only a draft is deleted: an issued document keeps its number, and is
-    // voided instead. It is locked first, so a draft being issued meanwhile
-    // isn't deleted. A draft a schedule copies stays until the schedule is
-    // stopped, or the schedule and its runs would go with it.
     @Transactional
     public void delete(BusinessAccess access, String id) {
         Document document = lockInBusiness(
@@ -678,8 +623,6 @@ public class DocumentService {
         return respond(document);
     }
 
-    // Records a payment on a document the caller has locked, as everything
-    // that takes a payment does, and returns it.
     public Payment recordPayment(Document document, CreatePaymentRequest request, User actor) {
         requireIssued(document, "Issue this draft before recording a payment");
         requireNotVoid(document, "A void document can't take payments");
@@ -763,7 +706,6 @@ public class DocumentService {
                         .add(DocumentTotals.withheld(document))
                         .subtract(payment.getAmountPaid())
                         .subtract(payment.getTdsAmount()));
-        // Found before the payment goes, as deleting it unlinks the report.
         Optional<PaymentClaim> confirmed = claimRepository.findByPayment(payment);
         document.getPayments().remove(payment);
         DocumentTotals.settle(document);
@@ -869,7 +811,6 @@ public class DocumentService {
         return reminderEnvelope(document);
     }
 
-    // A reminder names what is still owed and when it was, or is, due.
     private DocumentEnvelope reminderEnvelope(Document document) {
         String title = document.getDocumentType().getValue() + " " + document.getDocumentNumber();
         String due = dueDate(document);
@@ -888,9 +829,6 @@ public class DocumentService {
         return envelope(EmailTemplateKind.REMINDER, title, document, values);
     }
 
-    // Counted with the invoice locked, as any change to it is, so a reminder
-    // counted while the invoice is paid or voided adds to that change and
-    // undoes none of it.
     @Transactional
     public void recordReminder(BusinessAccess access, String id, String to, boolean automatic) {
         Document document = lockInBusiness(access, id);
@@ -910,14 +848,10 @@ public class DocumentService {
         }
     }
 
-    // A receipt is numbered in the order its payment was recorded, and keeps
-    // that number.
     private static String receiptNumber(Document document, Payment payment) {
         return document.getDocumentNumber() + "-P" + payment.getReceiptNumber();
     }
 
-    // A payment receipt's email: the receipt, what was paid, and what is
-    // still to pay on the document.
     private static DocumentEnvelope receiptEnvelope(Document document, Payment payment) {
         String number = receiptNumber(document, payment);
         String title = "Payment receipt " + number;
@@ -929,10 +863,6 @@ public class DocumentService {
         return envelope(EmailTemplateKind.PAYMENT_RECEIPT, title, document, values);
     }
 
-    // The document, locked until the transaction ends, so two changes to it
-    // take turns.
-    // A credit note's document is locked before the note, as everything that
-    // changes both does.
     private Document lockInBusiness(BusinessAccess access, String id) {
         return lockInBusiness(
                 access, id, "That document does not exist!",
@@ -952,8 +882,6 @@ public class DocumentService {
         return document;
     }
 
-    // An invoice falls due and a quotation is valid until a day; a receipt is
-    // paid as it is made, and a credit note takes its invoice's terms.
     private static boolean takesDueDate(Document document) {
         return document.getDocumentType() == DocumentType.INVOICE
                 || document.getDocumentType() == DocumentType.QUOTATION;
@@ -967,8 +895,6 @@ public class DocumentService {
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "That payment does not exist"));
     }
 
-    // A payment settles at most what is still owed, counting the tax the
-    // client withholds and what credit notes took off.
     private static void requireWithinBalance(Document document, BigDecimal extra) {
         BigDecimal owed = document.getTotal()
                 .subtract(document.getTotalCredited())
@@ -983,7 +909,6 @@ public class DocumentService {
         }
     }
 
-    // Money received and tax the client withheld from a payment.
     private record Amounts(BigDecimal received, BigDecimal withheld) {
 
         BigDecimal settled() {
@@ -991,8 +916,6 @@ public class DocumentService {
         }
     }
 
-    // Neither below nothing, each to the cent, and together more than nothing:
-    // a payment can be only the tax withheld.
     private static Amounts paymentAmounts(BigDecimal received, BigDecimal withheld) {
         Amounts amounts = new Amounts(cents(received, "An amount"), cents(withheld, "Tax withheld"));
         if (amounts.settled().signum() <= 0) {
@@ -1014,9 +937,6 @@ public class DocumentService {
         return wholeDigits(amount).setScale(2);
     }
 
-    // Amounts are kept with 15 digits before the point at most, and one
-    // written with an exponent could otherwise run to millions: it is
-    // refused before any digit of it is written out.
     static BigDecimal wholeDigits(BigDecimal amount) {
         if (amount.precision() - amount.scale() > 15) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Amounts can have at most 15 whole digits");
@@ -1024,9 +944,6 @@ public class DocumentService {
         return amount;
     }
 
-    // The day a payment was made, today where the business is unless one is
-    // given. A day still to come everywhere is refused: money not received
-    // yet, such as a post-dated cheque, is recorded the day it comes in.
     private LocalDate paymentDate(String value, Long businessPkid) {
         if (value == null || value.isBlank()) {
             return LocalDate.now(clock.withZone(zoneOf(businessPkid)));
@@ -1045,9 +962,6 @@ public class DocumentService {
         return day;
     }
 
-    // A due date comes as a day in the business's calendar, YYYY-MM-DD. A
-    // moment from an older client counts as the day it falls on in the
-    // business's time zone, the day its PDF and emails always gave it.
     private static Instant dueAt(String value, ZoneId zone) {
         if (value == null || value.isBlank()) {
             return null;
@@ -1062,9 +976,6 @@ public class DocumentService {
         }
     }
 
-    // The rate from a draft's currency to the reporting currency, typed in as
-    // "1 {currency} = x {base}"; a blank one removes it. A document in the
-    // reporting currency has none, and a new currency needs a new rate.
     private void exchangeRate(Document document, String value, boolean currencyChanged, Long businessPkid) {
         BigDecimal rate = ExchangeRate.parse(value);
         if (rate != null) {
@@ -1087,9 +998,6 @@ public class DocumentService {
         }
     }
 
-    // A credit note keeps the client, currency and exchange rate of what it
-    // credits, and has no due date; its lines, date, notes and reason change
-    // while it is a draft.
     private static void requireOnlyCreditLines(UpdateDocumentRequest request) {
         if (request.customerId() != null
                 || request.customer() != null
@@ -1108,14 +1016,10 @@ public class DocumentService {
         }
     }
 
-    // A blank due date is none, as dueAt reads it.
     private static boolean hasDueDate(UpdateDocumentRequest request) {
         return request.dueDate() != null && !request.dueDate().isBlank();
     }
 
-    // Only the due date, notes and terms of an issued document change; a
-    // receipt has no due date, and a quotation the client answered stays as
-    // it was. An expired quotation opens again with a later date.
     private static void requireOnlyDetails(Document document, UpdateDocumentRequest request) {
         if (document.getAcceptedAt() != null) {
             throw new ApiException(HttpStatus.CONFLICT, "An accepted quotation can't be changed");
@@ -1191,7 +1095,6 @@ public class DocumentService {
         return snapshot;
     }
 
-    // Each line is taxed at its own rate, or at the given one when it has none.
     private static List<BillingItem> toBillingItems(List<BillingItemDto> items, BigDecimal defaultRate) {
         List<BillingItem> result = new ArrayList<>();
         if (items == null) {
@@ -1227,7 +1130,6 @@ public class DocumentService {
         return (number.isBlank() ? "document" : number) + ".pdf";
     }
 
-    // A credit note is made from the document it credits, not chosen.
     private static DocumentType documentType(String value) {
         if (value == null) {
             return DocumentType.INVOICE;

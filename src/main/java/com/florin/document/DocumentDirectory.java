@@ -17,16 +17,9 @@ import java.util.stream.Collectors;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
-// The documents list's queries. Its filters are read in SQL, as the overview
-// and the reports read documents, so that the list, its CSV file and what it
-// comes to cover the same documents. Callers read in a transaction that sees
-// the documents as they were at one moment, so the keys read first and the
-// documents then read by them agree.
 @Repository
 class DocumentDirectory {
 
-    // What each of the list's sorts orders documents aliased d by; a number
-    // or a client is ordered whatever its case.
     private static final Map<String, String> ORDER_BY = Map.of(
             "createdAt", "d.created_at",
             "dueDate", "d.due_date",
@@ -35,11 +28,8 @@ class DocumentDirectory {
             "client", "lower(d.customer_name)",
             "status", "d.status");
 
-    // The most keys one query for a CSV file reads documents by, so that a
-    // long list never becomes one query with a key for every document.
     private static final int BATCH = 500;
 
-    // A search's conditions on documents aliased d, and their values.
     private record Filter(String where, Map<String, Object> params) {}
 
     private final JdbcClient jdbc;
@@ -52,9 +42,6 @@ class DocumentDirectory {
         this.entityManager = entityManager;
     }
 
-    // One page of the documents the search matches, in its order, with
-    // their clients; the totals count them all. Days are the business's, in
-    // its time zone, and a period has been read as the dates it covers.
     List<Document> page(Long businessPkid, DocumentSearch search, LocalDate today, ZoneId zone) {
         Filter filter = filter(businessPkid, search, today, zone);
         List<Long> pkids = jdbc.sql("""
@@ -71,10 +58,6 @@ class DocumentDirectory {
         return load(pkids, documentRepository::findByPkidIn);
     }
 
-    // Every document the search matches, in its order, handed over a batch at
-    // a time. Each batch is let go once handed over, so a business's whole
-    // history is never held at once. A CSV file names each document's client
-    // from the document itself, so clients aren't read.
     void forEach(Long businessPkid, DocumentSearch search, LocalDate today, ZoneId zone, Consumer<Document> each) {
         Filter filter = filter(businessPkid, search, today, zone);
         List<Long> pkids = jdbc.sql("select d.pkid from documents d where %s order by %s"
@@ -89,10 +72,6 @@ class DocumentDirectory {
         }
     }
 
-    // What every document the search matches comes to in each currency: how
-    // many there are, what the invoices, receipts and credit notes among them
-    // billed, and what is owed on the invoices, as each row's balance due
-    // says, with how much of that was due before today.
     List<DocumentListTotals> totals(Long businessPkid, DocumentSearch search, LocalDate today, ZoneId zone) {
         Filter filter = filter(businessPkid, search, today, zone);
         return jdbc.sql("""
@@ -124,8 +103,6 @@ class DocumentDirectory {
                 .list();
     }
 
-    // The documents with these keys, in the same order. Read without one
-    // moment's view, a document deleted since its key was read is left out.
     private static List<Document> load(List<Long> pkids, Function<List<Long>, List<Document>> reader) {
         if (pkids.isEmpty()) {
             return List.of();
@@ -135,8 +112,6 @@ class DocumentDirectory {
         return pkids.stream().map(found::get).filter(Objects::nonNull).toList();
     }
 
-    // The field asked for, then the order the documents were made in, both
-    // in the direction asked for.
     private static String orderBy(DocumentSearch search) {
         String direction = search.ascending() ? "asc" : "desc";
         return ORDER_BY.get(search.sort()) + " " + direction + ", d.pkid " + direction;
@@ -152,8 +127,6 @@ class DocumentDirectory {
                      or lower(d.customer_email) like :pattern escape '!')""");
             params.put("pattern", SearchText.containing(search.query()));
         }
-        // Payment statuses are an issued document's; a draft has none yet, and
-        // a void one none any more.
         if (search.state() == DocumentState.DRAFT) {
             conditions.add("d.issued_at is null");
         }
@@ -163,8 +136,6 @@ class DocumentDirectory {
         if (search.state() == DocumentState.ISSUED || search.status() != null || search.overdueOnly()) {
             conditions.add(DocumentLedger.COUNTED);
         }
-        // A payment status is an invoice's or a receipt's: a credit note has
-        // none, and a quotation is an offer, which nobody pays.
         if (search.status() != null) {
             conditions.add("d.status = :status and d.document_type not in ('Credit Note', 'Quotation')");
             params.put("status", search.status().getValue());
@@ -177,17 +148,12 @@ class DocumentDirectory {
             conditions.add("d.document_type = 'Invoice' and d.status <> 'Paid' and d.due_date < :startOfToday");
             params.put("startOfToday", startOf(today, zone));
         }
-        // What the overview counts as owed now, and what its Billed adds up.
         if (search.outstanding()) {
             conditions.add(DocumentLedger.OWED_INVOICE);
         }
         if (search.billed()) {
             conditions.add(DocumentLedger.BILLED_DOCUMENT);
         }
-        // A week begins when its first day does in the business's time zone.
-        // Current keeps to the invoices with money owed on them, as the
-        // overview's band of what is not due yet does, and begins today: an
-        // invoice is overdue only once the day after its due date has begun.
         if (search.due() != null) {
             LocalDate first = search.due().firstDay(today);
             params.put("dueFrom", startOf(first, zone));

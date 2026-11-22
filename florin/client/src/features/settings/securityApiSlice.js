@@ -40,7 +40,6 @@ export const securityApiSlice = baseApiSlice.injectEndpoints({
         method: "POST",
         body: { code },
       }),
-      // Turning it on or off signs out the other devices.
       invalidatesTags: ["TwoFactor", "Activity", "Session"],
     }),
     disableTwoFactor: builder.mutation({

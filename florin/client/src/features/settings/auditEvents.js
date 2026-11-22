@@ -1,4 +1,3 @@
-// What each audit log entry means, in the words the app uses.
 export const EVENT_LABELS = {
   SIGN_IN: "Signed in",
   SIGN_IN_FAILED: "Sign-in failed",
@@ -28,12 +27,9 @@ export const EVENT_LABELS = {
   INVITATION_RESENT: "Invitation sent again",
   INVITATION_REVOKED: "Invitation withdrawn",
   MEMBER_JOINED: "Joined the business",
-  // A static label because this list also fills the audit log's filter. The
-  // detail line under it names the provider, such as "Google".
   PROVIDER_LINKED: "Sign-in method added",
 };
 
-// Entries that may mean someone else is trying the account.
 export const WARNING_EVENTS = new Set([
   "SIGN_IN_FAILED",
   "SESSION_TOKEN_REUSED",
@@ -51,5 +47,5 @@ export const whenLabel = (value) => {
         hour: "numeric",
         minute: "2-digit",
       })
-    : "—";
+    : "-";
 };

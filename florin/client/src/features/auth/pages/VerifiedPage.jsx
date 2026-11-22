@@ -4,8 +4,6 @@ import useTitle from "../../../hooks/useTitle";
 import PublicPage, { CardHeading } from "../../../components/public/PublicPage";
 import { primaryButton } from "../../../components/workspace/pastel";
 
-// The backend checks the emailed link, then sends the visitor here: verified,
-// verified before, or with a link that expired or was already used.
 const VerifiedPage = () => {
   useTitle("Verify User - Florin");
   const [params] = useSearchParams();

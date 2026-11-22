@@ -13,8 +13,8 @@ import {
 
 const read = (search) => readExpenseList(new URLSearchParams(search));
 
-describe("the expenses list in the URL", () => {
-  it("starts with every expense, ten to a page", () => {
+describe("expenses URL state", () => {
+  it("starts with the defaults", () => {
     expect(read("")).toEqual({
       q: "",
       category: "",
@@ -26,7 +26,7 @@ describe("the expenses list in the URL", () => {
     expect(isFiltered(read("page=2&size=25"))).toBe(false);
   });
 
-  it("keeps a search, category, period, currency and page, and writes only what differs", () => {
+  it("writes only changed values", () => {
     const search =
       "q=uber&category=Travel&period=last-month&currency=EUR&page=2&size=25";
     expect(expenseListSearch(read(search)).toString()).toBe(search);
@@ -47,7 +47,7 @@ describe("the expenses list in the URL", () => {
     }
   });
 
-  it("reads a category, a period and a currency together from the address", () => {
+  it("reads combined filters from URL", () => {
     const search =
       "category=Software+and+subscriptions&period=90d&currency=EUR";
     expect(read(search)).toMatchObject({
@@ -58,7 +58,7 @@ describe("the expenses list in the URL", () => {
     expect(expenseListSearch(read(search)).toString()).toBe(search);
   });
 
-  it("asks the server for the period's first and last day", () => {
+  it("sends the period's date range", () => {
     const today = new Date(2026, 9, 1);
     expect(
       expenseQuery(read("category=Travel&period=last-month"), today),
@@ -74,9 +74,6 @@ describe("the expenses list in the URL", () => {
     });
   });
 
-  // The menu's last 30 and 90 days and 12 months are the overview's, whose
-  // days the server works out in the business's time zone. This month,
-  // quarter and year run to today.
   it.each([
     ["", {}],
     ["30d", { period: "30d" }],
@@ -87,7 +84,7 @@ describe("the expenses list in the URL", () => {
     ["this-quarter", { from: "2026-10-01", to: "2026-10-04" }],
     ["this-year", { from: "2026-01-01", to: "2026-10-04" }],
     ["last-year", { from: "2025-01-01", to: "2025-12-31" }],
-  ])("sends the period %j as %j", (period, sent) => {
+  ])("sends %j as %j", (period, sent) => {
     const today = new Date(2026, 9, 4, 12);
     expect(expenseFilterQuery(read(`period=${period}`), today)).toEqual(sent);
     expect(
@@ -95,7 +92,7 @@ describe("the expenses list in the URL", () => {
     ).toEqual({ page: 2, size: 10, category: "Travel", ...sent });
   });
 
-  it("passes on a currency as it is", () => {
+  it("passes the currency through", () => {
     expect(
       expenseQuery(read("q=figma&period=12m&currency=EUR&size=25")),
     ).toEqual({
@@ -108,13 +105,13 @@ describe("the expenses list in the URL", () => {
   });
 });
 
-describe("the line above a filtered list", () => {
+describe("filter summary line", () => {
   const words = (parts) =>
     parts.map(({ before = "", strong = "", after = "" }) =>
       [before, strong, after].join(""),
     );
 
-  it("says how many expenses were paid in the days the server took, and what they cost", () => {
+  it("counts expenses and their total", () => {
     const parts = expenseResults({
       totalExpenses: 2,
       from: "2026-07-07",
@@ -122,7 +119,7 @@ describe("the line above a filtered list", () => {
       totals: [{ currency: "USD", expenses: 2, spent: 3600 }],
     });
     expect(words(parts)).toEqual([
-      "2 expenses from Jul 7 – Oct 4, 2026",
+      "2 expenses from Jul 7 - Oct 4, 2026",
       "Spent 3,600.00",
     ]);
     expect(parts.map((part) => part.strong)).toEqual([
@@ -131,7 +128,7 @@ describe("the line above a filtered list", () => {
     ]);
   });
 
-  it("names no days when the server gives none, and counts one as one", () => {
+  it("handles no days and one expense", () => {
     expect(
       words(
         expenseResults({
@@ -147,7 +144,7 @@ describe("the line above a filtered list", () => {
     ]);
   });
 
-  it("names each currency when the list holds several, or the business bills in more than one", () => {
+  it("names currencies when several", () => {
     const answer = {
       totalExpenses: 5,
       from: "2026-01-01",
@@ -158,7 +155,7 @@ describe("the line above a filtered list", () => {
       ],
     };
     expect(words(expenseResults(answer))).toEqual([
-      "5 expenses from Jan 1 – Dec 31, 2026",
+      "5 expenses from Jan 1 - Dec 31, 2026",
       "Spent 980.00 EUR, 1,240.00 USD",
     ]);
     expect(
@@ -182,8 +179,7 @@ describe("the line above a filtered list", () => {
     ).toBe("Spent 1,25,000.00");
   });
 
-  // An expense can be paid in a currency the business doesn't bill in.
-  it("names a currency that isn't the business's main one, even alone", () => {
+  it("names a non-main currency", () => {
     const paidInDollars = {
       totalExpenses: 1,
       totals: [{ currency: "USD", expenses: 1, spent: 120 }],
@@ -202,15 +198,14 @@ describe("the line above a filtered list", () => {
         ),
       )[1],
     ).toBe("Spent 1,25,000.00");
-    // Until the business's currencies are known, one currency goes unnamed.
     expect(words(expenseResults(paidInDollars))[1]).toBe("Spent 120.00");
   });
 });
 
-describe("an expense in the dialog", () => {
+describe("expense dialog values", () => {
   const defaults = { today: "2026-10-01", currency: "INR", base: "INR" };
 
-  it("starts today, in the business's currency", () => {
+  it("starts today in business currency", () => {
     expect(expenseForm(null, defaults)).toEqual({
       date: "2026-10-01",
       category: "",
@@ -226,7 +221,7 @@ describe("an expense in the dialog", () => {
     });
   });
 
-  it("shows what was paid and the tax in it", () => {
+  it("shows amount and tax", () => {
     const expense = {
       date: "2026-09-12",
       category: "Software",
@@ -261,7 +256,7 @@ describe("an expense in the dialog", () => {
     ).toBe("");
   });
 
-  it("sends the amount before tax, to the cent", () => {
+  it("sends amount before tax", () => {
     const values = {
       ...expenseForm(null, defaults),
       category: " Travel ",
@@ -285,7 +280,7 @@ describe("an expense in the dialog", () => {
     });
   });
 
-  it("refuses tax that leaves nothing paid for", () => {
+  it("tax must be below the total", () => {
     expect(taxError({ total: "100", tax: "100" })).toMatch(
       /less than the total/,
     );

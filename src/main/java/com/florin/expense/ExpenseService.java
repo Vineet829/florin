@@ -52,10 +52,6 @@ public class ExpenseService {
         this.clock = clock;
     }
 
-    // A page of the expenses, and what all of them come to, read at one
-    // moment so the two agree; the totals count them. A period is read as the
-    // dates it covers today, by the business's calendar, which the list sends
-    // back with the dates it was asked for; without one, today isn't read.
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public ExpenseListResponse list(BusinessAccess access, ExpenseSearch search) {
         ExpenseSearch dated = search.period() == null ? search : search.on(today(access.businessPkid()));
@@ -154,8 +150,6 @@ public class ExpenseService {
         expenseRepository.delete(requireInBusiness(access, id));
     }
 
-    // Every expense the list's search matches, in its order, as they all
-    // stood when the file was begun. A period is read as the list reads it.
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public CsvFile csv(BusinessAccess access, ExpenseSearch search) {
         LocalDate today = today(access.businessPkid());
@@ -181,13 +175,10 @@ public class ExpenseService {
                         .toList());
     }
 
-    // Today by the business's calendar.
     private LocalDate today(Long businessPkid) {
         return LocalDate.now(clock.withZone(ZoneId.of(settingsService.forBusiness(businessPkid).getTimeZone())));
     }
 
-    // The day an expense was paid, which can't be a day still to come
-    // everywhere.
     private LocalDate paidOn(LocalDate date) {
         if (date.isAfter(Today.latest(clock))) {
             throw badRequest("An expense can't be dated after today");
@@ -195,9 +186,6 @@ public class ExpenseService {
         return date;
     }
 
-    // A category typed in another letter case than the business's other
-    // expenses use takes their spelling, so each category is listed and
-    // totalled once.
     private String category(Long businessPkid, String value, long expensePkid) {
         String category = value == null ? "" : value.trim();
         if (category.isEmpty()) {
@@ -208,9 +196,6 @@ public class ExpenseService {
                 .orElse(category);
     }
 
-    // The rate from the expense's currency to the reporting currency, typed in
-    // as "1 {currency} = x {base}"; a blank one removes it. An expense in the
-    // reporting currency has none, and a new currency needs a new rate.
     private static void exchangeRate(Expense expense, String value, boolean currencyChanged, String base) {
         BigDecimal rate = ExchangeRate.parse(value);
         if (rate != null) {

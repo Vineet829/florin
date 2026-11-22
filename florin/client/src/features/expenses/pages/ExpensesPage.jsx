@@ -67,21 +67,17 @@ const NO_EXPENSES = [];
 const NO_CATEGORIES = [];
 
 const ExpensesPage = () => {
-  useTitle("Expenses — Florin");
+  useTitle("Expenses - Florin");
   const [list, update] = useListState(readExpenseList, expenseListSearch);
   const [downloadCsv, exporting] = useFileDownload(useGetExpensesCsvMutation);
   const search = useCallback((q) => update({ q, page: 1 }), [update]);
-  // The calendar's periods are days of the business's calendar.
   const today = useBusinessToday();
   const query = useGetExpensesQuery(expenseQuery(list, today), {
     refetchOnMountOrArgChange: 60,
   });
-  // The currencies the business bills in, for the currency menu.
   const currencies = useGetDocumentSummaryQuery(undefined, {
     refetchOnMountOrArgChange: 60,
   }).data?.currencies;
-  // What the result line says comes from the last answer and the filters
-  // it answered.
   const answered = useLastAnswer(query.currentData, list);
   const categories =
     useGetExpenseCategoriesQuery().data?.categories || NO_CATEGORIES;
@@ -95,7 +91,6 @@ const ExpensesPage = () => {
     setPage: (page) => update({ page: page + 1 }),
     setSize: (size) => update({ size, page: 1 }),
   });
-  // A page past the end, after a delete or from an old link, shows the last.
   const pages = query.currentData?.numberOfPages;
   useEffect(() => {
     if (pages && list.page > pages) update({ page: pages });
@@ -104,15 +99,7 @@ const ExpensesPage = () => {
   const { business, reason } = useBusiness();
   const editRefusal = reason("EDIT_RECORDS");
   const deleteRefusal = reason("DELETE_RECORDS");
-  // `editing` is the expense being edited, or "new" for the add dialog.
   const [editing, setEditing] = useState(null);
-  // A link to record an expense, such as the overview's, opens the add
-  // dialog once with `new=1`, which then leaves the address in place, so a
-  // reload or the back button doesn't open it again. It waits for the
-  // business, since a role that can't add expenses gets the list instead,
-  // and for the settings the form starts from, so the dialog opens on its
-  // first field. The link that led here is gone, so once the dialog closes,
-  // focus moves to New expense.
   const [params, setParams] = useSearchParams();
   const adding = params.get("new") === "1";
   const formReady = Boolean(useGetSettingsQuery().data?.settings);
@@ -153,19 +140,16 @@ const ExpensesPage = () => {
       toast.success(result.message || "Expense deleted.");
       setRemoving(null);
     } catch (error) {
-      toast.error(errorMessage(error, "The expense could not be deleted."));
+      toast.error(errorMessage(error, "The expense couldn't be deleted."));
     }
   };
   const filtered = isFiltered(list);
-  // Clear filters is gone once they are cleared, so focus moves to the
-  // search box, as soon as the tools are shown.
   const tools = useRef(null);
   const [refocus, setRefocus] = useState(false);
   const clearFilters = () => {
     update({ q: "", category: "", period: "", currency: "", page: 1 });
     setRefocus(true);
   };
-  // A new business has nothing to search or filter yet.
   const showTools = Boolean(query.data) && (count > 0 || filtered);
   useEffect(() => {
     const box = refocus && tools.current?.querySelector('input[type="search"]');
@@ -173,7 +157,6 @@ const ExpensesPage = () => {
     box.focus();
     setRefocus(false);
   }, [refocus, showTools]);
-  // A category from an old link stays chosen after its last expense is gone.
   const categoryOptions =
     list.category && !categories.includes(list.category)
       ? [...categories, list.category]
@@ -189,14 +172,13 @@ const ExpensesPage = () => {
       label: "Vendor",
       type: "main",
       render: (row) =>
-        row.vendor || <span className="font-normal text-spot-faint">—</span>,
+        row.vendor || <span className="font-normal text-spot-faint">-</span>,
     },
     { label: "Category", render: (row) => row.category },
     { label: "Date paid", render: (row) => dateLabel(row.date) },
     {
       label: "Tax",
       type: "amount",
-      // Tax claimed back is not part of the cost.
       render: (row) =>
         Number(row.taxAmount) > 0 ? (
           <span className="inline-flex flex-col items-end gap-0.5 stacked:items-start">
@@ -206,7 +188,7 @@ const ExpensesPage = () => {
             )}
           </span>
         ) : (
-          <span className="text-spot-faint">—</span>
+          <span className="text-spot-faint">-</span>
         ),
     },
     {
@@ -245,8 +227,6 @@ const ExpensesPage = () => {
       ),
     },
   ];
-  // Viewers see the expenses, but not the ways to change them; members don't
-  // see the way to delete them.
   const shown = columns.filter(
     (column) =>
       !(editRefusal && ["Edit", "Delete"].includes(column.label)) &&
@@ -290,7 +270,7 @@ const ExpensesPage = () => {
     />
   ) : (
     <EmptyState
-      title="Know what your work costs."
+      title="No expenses yet."
       text="Record what you spend, with the tax you paid on it."
       icon={FiCreditCard}
     />

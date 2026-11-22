@@ -48,7 +48,6 @@ public record DocumentSearch(
             String sortDirection,
             int page,
             int size) {
-        // One of the overview's periods takes the place of dates.
         boolean periodic = period != null && !period.isBlank();
         if (periodic && (issuedFrom != null || issuedTo != null)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Choose a period or dates, not both");
@@ -73,13 +72,10 @@ public record DocumentSearch(
                 Math.min(Math.max(size, 1), MAX_PAGE_SIZE));
     }
 
-    // Every document of a business, the newest first.
     public static DocumentSearch all() {
         return of(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 1, 1);
     }
 
-    // The same search with its period, if it has one, as the dates that
-    // period covers today: the dates the documents are then read between.
     DocumentSearch on(LocalDate today) {
         if (period == null) {
             return this;

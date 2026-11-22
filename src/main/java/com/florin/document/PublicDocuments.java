@@ -24,12 +24,6 @@ import java.util.stream.Stream;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-// A document as its client sees it, whichever link they came by: what it
-// says, its PDF, and what they may do with it, answering a quotation or
-// reporting a payment. Callers find the document from their link and hold
-// the transaction. The document is locked as it is first read for an answer
-// or a report: by the caller, or, for a share-link report, by
-// PaymentClaimService.report.
 @Service
 public class PublicDocuments {
 
@@ -63,8 +57,6 @@ public class PublicDocuments {
                 null);
     }
 
-    // A client answers a quotation once, while it is still valid. Giving the
-    // same answer again changes nothing.
     PublicDocumentResponse accept(Document document) {
         if (document.getDocumentType() != DocumentType.QUOTATION) {
             throw new ApiException(HttpStatus.CONFLICT, "Only a quotation can be accepted");
@@ -107,7 +99,6 @@ public class PublicDocuments {
         return view(document);
     }
 
-    // A client's report of a payment, for the business to confirm.
     PublicDocumentResponse reportPayment(Document document, ReportPaymentRequest request) {
         paymentClaims.report(document, request);
         return view(document);
@@ -127,8 +118,6 @@ public class PublicDocuments {
         return LocalDate.now(clock.withZone(zone)).atStartOfDay(zone).toInstant();
     }
 
-    // The business as the document went out with it, or as it is now until the
-    // document keeps its own copy.
     static PublicParty sellerParty(Document document, Business business) {
         SellerSnapshot kept = Objects.requireNonNullElseGet(document.getSeller(), () -> SellerSnapshot.of(business));
         return new PublicParty(

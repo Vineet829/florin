@@ -25,7 +25,6 @@ public class RecurringSchedule extends BaseEntity {
     @JoinColumn(name = "business_pkid", nullable = false, updatable = false)
     private Business business;
 
-    // The member who made it, forgotten if their account is deleted.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_pkid", updatable = false)
     private User createdBy;
@@ -56,8 +55,6 @@ public class RecurringSchedule extends BaseEntity {
     @Column(name = "start_offset", nullable = false)
     private int startOffset;
 
-    // Each invoice is issued as it is made, or left as a draft to review;
-    // only an issued one is emailed on its own.
     @Column(name = "issue_automatically", nullable = false)
     private boolean issueAutomatically = true;
 
@@ -67,10 +64,6 @@ public class RecurringSchedule extends BaseEntity {
     @Column(name = "paused", nullable = false)
     private boolean paused;
 
-    // The date of the run after the given number of runs, counted from its
-    // start date, less the runs made before that date was set; none once the
-    // most runs allowed are made, or when the run would fall after its end
-    // date.
     public LocalDate runAfter(int runs) {
         if (maxRuns != null && runs >= maxRuns) {
             return null;

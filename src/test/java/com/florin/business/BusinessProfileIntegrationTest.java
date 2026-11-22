@@ -14,7 +14,6 @@ import com.florin.user.User;
 import com.jayway.jsonpath.JsonPath;
 import java.util.List;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -52,7 +51,6 @@ class BusinessProfileIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an account starts with a business named after its owner, which it owns")
     void personalBusiness() throws Exception {
         User user = createUser();
 
@@ -64,18 +62,17 @@ class BusinessProfileIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the business details are saved, blank ones cleared, and shown to clients as documents show them")
-    void updates() throws Exception {
+    void savesAndShowsDetails() throws Exception {
         User user = createUser();
         send(patch("/api/v1/business"), user, """
-                        {"name": " Ada Analytics ", "legalName": "Ada Analytics Private Limited",
+                        {"name": " Apte Analytics ", "legalName": "Apte Analytics Private Limited",
                          "phoneNumber": "+91 20 5555 0100", "address": "12 MG Road", "city": "Pune",
                          "state": "Maharashtra", "postalCode": "411001", "country": "India",
                          "taxId": "27AAPFU0939F1ZV"}
                         """)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Your business details were saved"))
-                .andExpect(jsonPath("$.business.name").value("Ada Analytics"))
+                .andExpect(jsonPath("$.business.name").value("Apte Analytics"))
                 .andExpect(jsonPath("$.business.state").value("Maharashtra"));
         send(patch("/api/v1/business"), user, """
                         {"phoneNumber": " "}
@@ -85,17 +82,16 @@ class BusinessProfileIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.business.city").value("Pune"));
 
         String view = publicView(user);
-        assertThat(JsonPath.<String>read(view, "$.business.name")).isEqualTo("Ada Analytics");
+        assertThat(JsonPath.<String>read(view, "$.business.name")).isEqualTo("Apte Analytics");
         assertThat(JsonPath.<List<String>>read(view, "$.business.lines")).containsExactly(
-                "Ada Analytics Private Limited",
+                "Apte Analytics Private Limited",
                 user.getEmail(),
                 "12 MG Road, Pune, Maharashtra 411001, India",
                 "Tax ID 27AAPFU0939F1ZV");
     }
 
     @Test
-    @DisplayName("a business needs a name and a valid email address")
-    void validation() throws Exception {
+    void requiresNameAndValidEmail() throws Exception {
         User user = createUser();
         send(patch("/api/v1/business"), user, "{\"name\": \"  \"}")
                 .andExpect(status().isBadRequest())
@@ -106,8 +102,7 @@ class BusinessProfileIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("signing up makes a business, and deleting the account deletes it")
-    void lifecycle() throws Exception {
+    void businessFollowsAccount() throws Exception {
         String handle = "signup-" + UUID.randomUUID().toString().substring(0, 8);
         mockMvc.perform(post("/api/v1/auth/register")
                         .with(request -> {
@@ -116,13 +111,13 @@ class BusinessProfileIntegrationTest extends IntegrationTest {
                         })
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"email": "%s@example.test", "username": "%s", "firstName": "Ada",
-                                 "lastName": "Lovelace", "password": "Str0ng!pw", "passwordConfirm": "Str0ng!pw"}
+                                {"email": "%s@example.test", "username": "%s", "firstName": "Neha",
+                                 "lastName": "Apte", "password": "Str0ng!pw", "passwordConfirm": "Str0ng!pw"}
                                 """.formatted(handle, handle)))
                 .andExpect(status().isOk());
         User user = userRepository.findByEmailIgnoreCase(handle + "@example.test").orElseThrow();
         Business business = businessOf(user);
-        assertThat(business.getName()).isEqualTo("Ada Lovelace");
+        assertThat(business.getName()).isEqualTo("Neha Apte");
 
         mockMvc.perform(delete("/api/v1/user/profile")
                         .header(HttpHeaders.AUTHORIZATION, bearer(user))
@@ -134,7 +129,6 @@ class BusinessProfileIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an account in no business is told to start one")
     void noBusiness() throws Exception {
         User user = new User();
         String handle = "alone-" + UUID.randomUUID().toString().substring(0, 8);

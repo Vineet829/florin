@@ -5,9 +5,6 @@ import PaymentsLedger from "./PaymentsLedger";
 import { saveFile } from "../useDocumentPdf";
 import { dateInput } from "../../../components/workspace/Workspace";
 
-// The ledger changes payments and gets their receipts through these hooks,
-// and saves a receipt with saveFile, so it needs no store or server; the
-// browser's modal and the receipt email are left out.
 const idle = () => [vi.fn(), { isLoading: false }];
 vi.mock("../documentsApiSlice", () => ({
   useDeletePaymentMutation: () => idle(),
@@ -24,7 +21,7 @@ vi.mock("./EmailReceiptDialog", () => ({ default: () => null }));
 
 window.IS_REACT_ACT_ENVIRONMENT = true;
 
-it("moves a payment to no later than today", () => {
+it("caps payment date at today", () => {
   const container = document.createElement("div");
   const root = createRoot(container);
   act(() => {
@@ -57,8 +54,6 @@ it("moves a payment to no later than today", () => {
   act(() => root.unmount());
 });
 
-// Two payments, the later-dated one recorded first, so each receipt's number
-// isn't its place in the list, which runs by date.
 const invoice = {
   _id: "invoice",
   documentNumber: "INV-0001",
@@ -84,7 +79,7 @@ const invoice = {
   ],
 };
 
-it("names a downloaded receipt by its number, as the receipt itself is", async () => {
+it("names receipt file by number", async () => {
   const container = document.createElement("div");
   const root = createRoot(container);
   act(() => {

@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -36,10 +35,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// What is coming up on the overview: the invoices running schedules will make
-// over the next 90 days, dated as each schedule counts its next run, and the
-// quotations waiting for an answer or that expired without one. Clients answer
-// from a network of their own each time, so no limit is shared.
 class OverviewComingUpIntegrationTest extends IntegrationTest {
 
     private static final AtomicInteger NETWORKS = new AtomicInteger();
@@ -57,7 +52,6 @@ class OverviewComingUpIntegrationTest extends IntegrationTest {
 
     private record Made(String id, String number) {}
 
-    // A business with two clients.
     @BeforeEach
     void business() throws Exception {
         owner = createUser();
@@ -66,7 +60,6 @@ class OverviewComingUpIntegrationTest extends IntegrationTest {
         birch = client("Birch Studio");
     }
 
-    // Puts the business in the time zone, and dates what follows from its today.
     private void inZone(ZoneId zone) throws Exception {
         send(put("/api/v1/settings"), """
                 {"defaultCurrency": "USD", "paymentTermsDays": 15, "defaultTaxRate": 0,
@@ -94,8 +87,6 @@ class OverviewComingUpIntegrationTest extends IntegrationTest {
                 "$.createdCustomer._id");
     }
 
-    // A document dated 40 days ago, due or valid until the given day, or with
-    // no such day; a draft is only planned for it.
     private Made create(String type, String client, String currency, String amount, LocalDate due, boolean draft)
             throws Exception {
         String made = body(send(post("/api/v1/document/create"), """
@@ -127,7 +118,6 @@ class OverviewComingUpIntegrationTest extends IntegrationTest {
                 .andExpect(status().isOk());
     }
 
-    // The client opens the document's link and does something there.
     private ResultActions fromLink(Made document, String action) throws Exception {
         String url = JsonPath.read(body(send(post("/api/v1/document/{id}/share", document.id()), "")), "$.url");
         String network = "10.71." + NETWORKS.incrementAndGet() + ".1";
@@ -140,8 +130,6 @@ class OverviewComingUpIntegrationTest extends IntegrationTest {
                 .content(""));
     }
 
-    // A schedule making the invoice again from the given day, with any more
-    // fields given.
     private String repeat(Made invoice, String frequency, LocalDate start, String more) throws Exception {
         return JsonPath.read(
                 body(send(post("/api/v1/recurring"), """
@@ -161,12 +149,8 @@ class OverviewComingUpIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("running schedules make invoices over the next 90 days on the days they count their next runs;"
-            + " the five soonest are listed, and all are counted")
-    void recurring(ZoneId zone) throws Exception {
+    void listsUpcomingRecurringRuns(ZoneId zone) throws Exception {
         inZone(zone);
-        // Weekly from today, three times at most: today's invoice is made, then
-        // the schedule moves to start in three days, with two left to make.
         Made moved = invoice(acme, "USD", "1000");
         String movedId = repeat(moved, "WEEKLY", today, ", \"maxRuns\": 3");
         recurring.makeDue(Instant.now());
@@ -176,25 +160,19 @@ class OverviewComingUpIntegrationTest extends IntegrationTest {
                 .andExpect(status().isOk());
         Made weekly = invoice(birch, "USD", "100");
         String weeklyId = repeat(weekly, "WEEKLY", today.plusDays(1), "");
-        // Twice, from the day the moved schedule makes its last invoice.
         repeat(invoice(acme, "USD", "200"), "MONTHLY", today.plusDays(10), ", \"maxRuns\": 2");
         repeat(invoice(acme, "USD", "300"), "QUARTERLY", today.plusDays(20), "");
         Made ending = invoice(birch, "USD", "400");
         String endingId = repeat(
                 ending, "MONTHLY", today.plusDays(5), ", \"endDate\": \"%s\"".formatted(today.plusDays(40)));
-        // On the last of the 90 days, and the day after them.
         repeat(invoice(acme, "USD", "500"), "MONTHLY", today.plusDays(89), "");
         repeat(invoice(acme, "USD", "600"), "MONTHLY", today.plusDays(90), "");
-        // Never counted: a paused schedule, a finished one, and one making
-        // invoices in euros.
         String paused = repeat(invoice(acme, "USD", "700"), "MONTHLY", today.plusDays(2), "");
         send(post("/api/v1/recurring/{id}/pause", paused), "").andExpect(status().isOk());
         String finished = repeat(invoice(acme, "USD", "800"), "MONTHLY", today.plusDays(3), "");
         jdbcTemplate.update("update recurring_schedules set next_run = null where id = ?", UUID.fromString(finished));
         repeat(invoice(birch, "EUR", "900"), "MONTHLY", today.plusDays(4), "");
 
-        // Weekly: 13 invoices; moved: 2; twice: 2; quarterly: 1; ending: 2;
-        // the last of the 90 days: 1; the day after them: none.
         overview()
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.comingUp.recurring.active").value(7))
@@ -237,14 +215,11 @@ class OverviewComingUpIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("runs whose day went by while a schedule was paused are skipped when it resumes, so only the"
-            + " runs still to come count")
     void resumedLate(ZoneId zone) throws Exception {
         inZone(zone);
         Made late = invoice(acme, "USD", "100");
         String lateId = repeat(late, "MONTHLY", today, "");
         send(post("/api/v1/recurring/{id}/pause", lateId), "").andExpect(status().isOk());
-        // Forty days go by while it is paused, then it is resumed.
         jdbcTemplate.update(
                 "update recurring_schedules set start_date = ?, next_run = ? where id = ?",
                 today.minusDays(40),
@@ -254,9 +229,6 @@ class OverviewComingUpIntegrationTest extends IntegrationTest {
         Made other = invoice(birch, "USD", "200");
         repeat(other, "MONTHLY", today.plusDays(1), "");
 
-        // The two runs that went by are skipped; the late schedule carries on
-        // from its next date, and three of its runs are within the 90 days, as
-        // are three of the other's.
         LocalDate resumed = today.minusDays(40).plusMonths(2);
         overview()
                 .andExpect(jsonPath("$.comingUp.recurring.active").value(2))
@@ -274,7 +246,6 @@ class OverviewComingUpIntegrationTest extends IntegrationTest {
                         "$.comingUp.recurring.nextRuns[*].documentNumber",
                         contains(other.number(), late.number(), other.number(), late.number(), other.number())));
 
-        // The daily run has nothing to make for the days that went by.
         recurring.makeDue(Instant.now());
         overview()
                 .andExpect(jsonPath("$.comingUp.recurring.next90Days.invoices").value(6))
@@ -285,7 +256,6 @@ class OverviewComingUpIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("a schedule moved to a later date after an invoice counts its runs from that date, and none before")
     void movedAfterRun(ZoneId zone) throws Exception {
         inZone(zone);
         Made moved = invoice(acme, "USD", "300");
@@ -309,14 +279,10 @@ class OverviewComingUpIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("a schedule moved to the end of a month after some invoices runs on each month's end, counting from"
-            + " that date, without drifting")
     void monthEnds(ZoneId zone) throws Exception {
         inZone(zone);
         Made ends = invoice(acme, "USD", "100");
         String id = repeat(ends, "MONTHLY", today, "");
-        // The latest 31st on or before today, which the schedule was moved to
-        // after two invoices, and the invoices made on its month ends since.
         LocalDate month = today.withDayOfMonth(1);
         while (month.lengthOfMonth() < 31 || month.withDayOfMonth(31).isAfter(today)) {
             month = month.minusMonths(1);
@@ -344,12 +310,10 @@ class OverviewComingUpIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a schedule copying a draft lists no number, and one copying an invoice with no client no client")
     void draftAndNoClient() throws Exception {
         Made draft = create("Invoice", acme, "USD", "150", today.plusDays(40), true);
         String draftId = repeat(draft, "WEEKLY", today.plusDays(2), "");
         Made unnamed = invoice(birch, "USD", "250");
-        // Saved before a client was named or linked, as the oldest documents were.
         jdbcTemplate.update(
                 "update documents set customer_pkid = null, customer_name = null where id = ?",
                 UUID.fromString(unnamed.id()));
@@ -371,9 +335,7 @@ class OverviewComingUpIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("unanswered quotations await an answer until their last day has gone by, then have expired; the"
-            + " three that expire soonest are listed")
-    void quotations(ZoneId zone) throws Exception {
+    void listsAwaitingQuotations(ZoneId zone) throws Exception {
         inZone(zone);
         Made lastDay = quotation(acme, "USD", "100", today);
         Made tomorrow = quotation(birch, "USD", "200", today.plusDays(1));
@@ -382,8 +344,6 @@ class OverviewComingUpIntegrationTest extends IntegrationTest {
         Made open = quotation(birch, "USD", "500", null);
         quotation(acme, "USD", "600", today.minusDays(1));
         quotation(birch, "USD", "700", today.minusDays(40));
-        // Never counted: quotations accepted, declined, void, still a draft or
-        // in euros, and an invoice.
         fromLink(quotation(acme, "USD", "800", today.plusDays(2)), "accept").andExpect(status().isOk());
         fromLink(quotation(acme, "USD", "900", today.plusDays(3)), "decline").andExpect(status().isOk());
         voided(quotation(acme, "USD", "1000", today.plusDays(4)));
@@ -415,8 +375,6 @@ class OverviewComingUpIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.comingUp.quotations.awaiting.amount").value(1200.0))
                 .andExpect(jsonPath("$.comingUp.quotations.expired.count").value(0));
 
-        // Once the two soonest are answered, the one valid for as long as it
-        // takes is listed, last.
         fromLink(lastDay, "accept").andExpect(status().isOk());
         fromLink(tomorrow, "decline").andExpect(status().isOk());
         overview()
@@ -431,8 +389,7 @@ class OverviewComingUpIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a business with nothing coming up shows nothing")
-    void nothing() throws Exception {
+    void emptyWhenNothingComingUp() throws Exception {
         overview()
                 .andExpect(content().string(containsString("\"comingUp\":{\"recurring\":{\"active\":0,"
                         + "\"next90Days\":{\"invoices\":0,\"amount\":0.00},\"nextRuns\":[]},"
@@ -442,19 +399,12 @@ class OverviewComingUpIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("the three quotations that expired without an answer most recently are listed, latest first, each"
-            + " with its last valid day")
-    void expired(ZoneId zone) throws Exception {
+    void listsExpiredQuotations(ZoneId zone) throws Exception {
         inZone(zone);
-        // Two whose last day was yesterday, made in turn, one a week ago, and
-        // one a month ago.
         Made yesterday = quotation(acme, "USD", "100", today.minusDays(1));
         Made alsoYesterday = quotation(birch, "USD", "200", today.minusDays(1));
         Made week = quotation(acme, "USD", "300", today.minusDays(7));
         quotation(birch, "USD", "400", today.minusDays(30));
-        // Never listed: quotations still waiting, one accepted before its last
-        // day went by, one void, one still a draft, one in euros, and
-        // invoices, which bill in each currency.
         invoice(acme, "USD", "1350");
         invoice(birch, "EUR", "1250");
         quotation(acme, "USD", "500", today);
@@ -487,7 +437,6 @@ class OverviewComingUpIntegrationTest extends IntegrationTest {
                                 today.minusDays(1).toString(),
                                 today.minusDays(1).toString(),
                                 today.minusDays(7).toString())))
-                // Each row has these fields and no others.
                 .andExpect(content().string(containsString(("\"expired\":{\"count\":4,\"amount\":1000.00,"
                                 + "\"items\":[{\"documentId\":\"%s\",\"documentNumber\":\"%s\",\"client\":\"Acme\","
                                 + "\"amount\":100.00,\"validUntil\":\"%s\"},")

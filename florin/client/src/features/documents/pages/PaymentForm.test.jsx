@@ -4,8 +4,6 @@ import { act } from "react-dom/test-utils";
 import PaymentForm from "./PaymentForm";
 import { dateInput } from "../../../components/workspace/Workspace";
 
-// The form records through this hook, and reads the business it works in
-// from the other, so it needs no store or server.
 vi.mock("../documentsApiSlice", () => ({
   useCreatePaymentMutation: () => [vi.fn(), { isLoading: false }],
 }));
@@ -21,7 +19,6 @@ afterEach(() => {
   active.business = undefined;
 });
 
-// The date field as the form starts it, and the latest day it takes.
 const datePaid = () => {
   const container = document.createElement("div");
   const root = createRoot(container);
@@ -37,13 +34,11 @@ const datePaid = () => {
   return { value, max };
 };
 
-it("dates a payment today, and no later", () => {
+it("caps payment date at today", () => {
   expect(datePaid()).toEqual({ value: dateInput(), max: dateInput() });
 });
 
-// At 5 in the morning of Oct 8 in Kolkata it is still Oct 7 in Los Angeles,
-// where the business is.
-it("dates a payment by the business's calendar, not the viewer's", () => {
+it("uses the business calendar", () => {
   const zone = process.env.TZ;
   process.env.TZ = "Asia/Kolkata";
   try {

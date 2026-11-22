@@ -17,9 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-// Money paid back to a client, on an issued invoice or receipt that a credit
-// note left overpaid. A refund never pays back more than is due back, and
-// the document is locked while one changes, like a payment.
 @Service
 public class RefundService {
 
@@ -88,7 +85,6 @@ public class RefundService {
         activity.record(document, DocumentEventType.REFUND_DELETED, detail(document, refund), actor);
     }
 
-    // A payment can't drop below what was already paid back.
     static void requireCovered(Document document, BigDecimal paid) {
         if (paid.compareTo(document.getTotalRefunded()) < 0) {
             throw new ApiException(
@@ -97,8 +93,6 @@ public class RefundService {
         }
     }
 
-    // A receipt pays back only what its credit notes took off, so a note it
-    // refunded stays until the refunds go.
     static void requireCreditRefunded(Document credited, BigDecimal creditedAfter) {
         if (credited.getDocumentType() == DocumentType.RECEIPT
                 && credited.getTotalRefunded().compareTo(creditedAfter) > 0) {
@@ -153,8 +147,6 @@ public class RefundService {
         return DocumentService.wholeDigits(amount).setScale(2);
     }
 
-    // The day money was paid back, today where the business is unless one is
-    // given, and never a day still to come everywhere.
     private LocalDate date(String value, Document document) {
         if (value == null || value.isBlank()) {
             return LocalDate.now(clock.withZone(
@@ -183,7 +175,6 @@ public class RefundService {
         }
     }
 
-    // "USD 40.00 · Bank Transfer".
     private static String detail(Document document, Refund refund) {
         return DocumentActivity.amount(document, refund.getAmount()) + " · " + refund.getPaymentMethod().getValue();
     }

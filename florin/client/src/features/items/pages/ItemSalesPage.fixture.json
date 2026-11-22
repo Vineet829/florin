@@ -107,25 +107,25 @@
     "clients": [
       {
         "clientId": "00000000-0000-0000-0000-00000000c107",
-        "client": "Quill & Co. Publishing",
+        "client": "Deshmukh & Associates",
         "quantity": 12,
         "amount": 7800.0
       },
       {
         "clientId": "00000000-0000-0000-0000-00000000c109",
-        "client": "Kestrel Outdoor",
+        "client": "Casa Fernandes Homestay",
         "quantity": 8,
         "amount": 5200.0
       },
       {
-        "clientId": "00000000-0000-0000-0000-00000000c101",
-        "client": "Atlas Robotics",
+        "clientId": "00000000-0000-0000-0000-00000000c110",
+        "client": "Mehta Bakers",
         "quantity": 4,
         "amount": 2600.0
       },
       {
-        "clientId": "00000000-0000-0000-0000-00000000c110",
-        "client": "Oak Street Bakery",
+        "clientId": "00000000-0000-0000-0000-00000000c101",
+        "client": "Pai Electricals",
         "quantity": 4,
         "amount": 2600.0
       }
@@ -136,7 +136,7 @@
         "documentNumber": "REC-0304",
         "documentType": "Receipt",
         "issueDate": "2026-10-02",
-        "client": "Quill & Co. Publishing",
+        "client": "Deshmukh & Associates",
         "quantity": 8,
         "amount": 5200.0
       },
@@ -145,7 +145,7 @@
         "documentNumber": "INV-1035",
         "documentType": "Invoice",
         "issueDate": "2026-10-01",
-        "client": "Oak Street Bakery",
+        "client": "Mehta Bakers",
         "quantity": 4,
         "amount": 2600.0
       },
@@ -154,7 +154,7 @@
         "documentNumber": "INV-1034",
         "documentType": "Invoice",
         "issueDate": "2026-09-28",
-        "client": "Atlas Robotics",
+        "client": "Pai Electricals",
         "quantity": 4,
         "amount": 2600.0
       },
@@ -163,7 +163,7 @@
         "documentNumber": "REC-0303",
         "documentType": "Receipt",
         "issueDate": "2026-09-15",
-        "client": "Kestrel Outdoor",
+        "client": "Casa Fernandes Homestay",
         "quantity": 4,
         "amount": 2600.0
       },
@@ -172,7 +172,7 @@
         "documentNumber": "INV-1022",
         "documentType": "Invoice",
         "issueDate": "2026-08-18",
-        "client": "Quill & Co. Publishing",
+        "client": "Deshmukh & Associates",
         "quantity": 4,
         "amount": 2600.0
       },
@@ -181,7 +181,7 @@
         "documentNumber": "INV-1017",
         "documentType": "Invoice",
         "issueDate": "2026-07-20",
-        "client": "Kestrel Outdoor",
+        "client": "Casa Fernandes Homestay",
         "quantity": 4,
         "amount": 2600.0
       }

@@ -17,8 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
-// Documents and payments as CSV files, with dates on the owner's calendar
-// and statuses in the words the app uses.
 @Service
 public class DocumentExport {
 
@@ -40,11 +38,6 @@ public class DocumentExport {
         this.clock = clock;
     }
 
-    // Every document the list's filters match, in the list's order, as they
-    // all stood when the file was begun. A quotation is an offer, a draft
-    // isn't billed yet, a void document no longer is and a credit note is
-    // money taken off another document, so nothing is paid or owed on them.
-    // A credit note names what it credits.
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public CsvFile documents(BusinessAccess access, DocumentSearch search) {
         ZoneId zone = zoneOf(access.businessPkid());
@@ -98,11 +91,6 @@ public class DocumentExport {
                 unbilled ? null : document.getTotalRefunded());
     }
 
-    // The money the payments page counts, newest first: every payment on an
-    // issued invoice, every issued receipt at its total on the day it is
-    // dated, and every refund on an issued document as a negative amount, so
-    // that the file adds up to what the page received. A receipt has no
-    // method, payer, note or tax withheld of its own.
     @Transactional(readOnly = true)
     public CsvFile payments(BusinessAccess access) {
         return CsvFile.of(

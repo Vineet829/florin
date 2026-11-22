@@ -19,7 +19,7 @@ const NotFound = () => {
         Page not found<span>.</span>
       </h1>
       <p className="mt-3 text-[14.5px] leading-[1.6] text-spot-sub">
-        The page you’re looking for doesn’t exist or may have moved.
+        The page you're looking for doesn't exist or may have moved.
       </p>
       <div className="mt-7 flex flex-wrap gap-2.5 [&>*]:flex-1">
         <Link to="/" className={primaryButton}>

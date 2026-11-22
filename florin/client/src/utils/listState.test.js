@@ -8,7 +8,7 @@ import {
 
 const FIELDS = {
   createdAt: { first: "desc", asc: "Oldest first", desc: "Newest first" },
-  name: { first: "asc", asc: "Name A–Z", desc: "Name Z–A" },
+  name: { first: "asc", asc: "Name A-Z", desc: "Name Z-A" },
 };
 const read = (search) =>
   readSortAndPage(new URLSearchParams(search), FIELDS, "createdAt");
@@ -20,8 +20,8 @@ const write = (state) =>
     "createdAt",
   ).toString();
 
-describe("sort and page in the URL", () => {
-  it("starts with the default sort, ten to a page", () => {
+describe("sort and page URL state", () => {
+  it("starts with the defaults", () => {
     expect(read("")).toEqual({
       sort: "createdAt",
       dir: "desc",
@@ -30,17 +30,17 @@ describe("sort and page in the URL", () => {
     });
   });
 
-  it("falls back to the defaults for unknown or malformed values", () => {
+  it("defaults for invalid values", () => {
     expect(read("sort=password&dir=up&page=-2&size=7")).toEqual(read(""));
     expect(read("sort=toString").sort).toBe("createdAt");
     expect(read("page=1.5").page).toBe(1);
   });
 
-  it("sorts a field in its natural direction when the URL names none", () => {
+  it("uses the natural direction", () => {
     expect(read("sort=name")).toMatchObject({ sort: "name", dir: "asc" });
   });
 
-  it("writes only what differs from the defaults", () => {
+  it("writes only changed values", () => {
     expect(write(read(""))).toBe("");
     expect(write(read("sort=createdAt&dir=asc&page=2&size=50"))).toBe(
       "sort=createdAt&dir=asc&page=2&size=50",
@@ -49,7 +49,7 @@ describe("sort and page in the URL", () => {
 });
 
 describe("sorting", () => {
-  it("starts a new column in its natural direction, then reverses it", () => {
+  it("toggles a column's direction", () => {
     expect(nextSort(FIELDS, read(""), "name")).toEqual({
       sort: "name",
       dir: "asc",
@@ -60,12 +60,12 @@ describe("sorting", () => {
     });
   });
 
-  it("offers both directions of every field, the natural one first", () => {
+  it("lists both directions per field", () => {
     expect(sortOptions(FIELDS)).toEqual([
       { value: "createdAt:desc", label: "Newest first" },
       { value: "createdAt:asc", label: "Oldest first" },
-      { value: "name:asc", label: "Name A–Z" },
-      { value: "name:desc", label: "Name Z–A" },
+      { value: "name:asc", label: "Name A-Z" },
+      { value: "name:desc", label: "Name Z-A" },
     ]);
   });
 });

@@ -6,9 +6,6 @@ import jakarta.persistence.Embeddable;
 import lombok.Getter;
 import lombok.Setter;
 
-// The business as a document went out: its name, address, contact details,
-// logo and tax ID. Changing the business's details later never changes a
-// document already made.
 @Embeddable
 @Getter
 @Setter

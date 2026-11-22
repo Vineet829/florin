@@ -9,9 +9,6 @@ const fileForm = (file) => {
 
 export const customersApiSlice = baseApiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    // One page of clients, with how many documents each has and what it
-    // still owes, so a document or payment change refreshes it too; see
-    // clientQuery for the search and sort.
     getAllUserCustomers: builder.query({
       query: (params = {}) => `/customer/all?${new URLSearchParams(params)}`,
       providesTags: ["Customer", "Document"],
@@ -28,20 +25,14 @@ export const customersApiSlice = baseApiSlice.injectEndpoints({
       query: (custId) => `/customer/${custId}`,
       providesTags: ["Customer"],
     }),
-    // Every client billed in a period, in a currency or the default one,
-    // with what they paid and still owe, a page at a time, and the totals.
-    // See customerSalesQuery.
     getCustomerSales: builder.query({
       query: (params = {}) => `/customer/sales?${new URLSearchParams(params)}`,
       providesTags: ["Customer", "Document"],
     }),
-    // What a client was billed, has paid and still owes, per currency.
     getCustomerSummary: builder.query({
       query: (custId) => `/customer/${custId}/summary`,
       providesTags: ["Customer", "Document"],
     }),
-    // The same file goes to both: the server reads it for the preview and
-    // again when adding, so the preview shows exactly what is added.
     previewClientImport: builder.mutation({
       query: (file) => ({
         url: "/customer/import/preview",
@@ -69,8 +60,6 @@ export const customersApiSlice = baseApiSlice.injectEndpoints({
       query: (custId) => `/customer/${custId}/statement/email`,
       keepUnusedDataFor: 0,
     }),
-    // The client's portal link: its status, including the link itself when
-    // the server kept it sealed.
     getPortalStatus: builder.query({
       query: (custId) => `/customer/${custId}/portal`,
       providesTags: ["Customer"],

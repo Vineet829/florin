@@ -39,9 +39,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
-// Every figure is summed per currency, or in the reporting currency at each
-// document's exchange rate. Billed and received cover the period; what is
-// still owed, and how overdue it is, is as of today.
 @Service
 public class ReportService {
 
@@ -53,7 +50,7 @@ public class ReportService {
     private static final List<String> AGEING_KEYS =
             List.of("notDue", "days1to30", "days31to60", "days61to90", "over90");
     private static final List<String> AGEING_LABELS =
-            List.of("Not due yet", "1–30 days", "31–60 days", "61–90 days", "Over 90 days");
+            List.of("Not due yet", "1-30 days", "31-60 days", "61-90 days", "Over 90 days");
 
     private record Rows(
             Map<String, List<ReportQueries.Billed>> billed,
@@ -77,9 +74,6 @@ public class ReportService {
         return build(access.businessPkid(), periodKey, viewKey, TOP_CLIENTS);
     }
 
-    // One section of the report for every currency, with every client ranked
-    // rather than the top few. The amounts are plain numbers, and a month's
-    // row gives the days of it the period covers.
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public CsvFile csv(BusinessAccess access, String periodKey, String viewKey, String section) {
         if (!SECTIONS.contains(section)) {
@@ -89,8 +83,6 @@ public class ReportService {
         String period = report.from() + "-to-" + report.to();
         List<CurrencyReport> currencies = report.currencies();
         return switch (section) {
-            // What was billed, tax and all, and received, by month. The file is
-            // named for those, as profit and loss counts income before tax.
             case "income" -> CsvFile.of(
                     "florin-billed-and-received-" + period + ".csv",
                     List.of("Currency", "Month", "From", "To", "Billed", "Received"),
@@ -176,7 +168,6 @@ public class ReportService {
                         : List.of());
     }
 
-    // Each document in its own currency, or everything in the reporting one.
     static ReportQueries.View view(String key, BusinessSettings settings) {
         if (key == null || key.isBlank() || key.equals(CURRENCY_VIEW)) {
             return ReportQueries.View.OWN;
@@ -187,7 +178,6 @@ public class ReportService {
         throw new ApiException(HttpStatus.BAD_REQUEST, "Show the report by currency or in your reporting currency");
     }
 
-    // The business's own currency first, then the others alphabetically.
     static List<String> inOrder(Collection<String> found, String first) {
         TreeSet<String> others = new TreeSet<>(found);
         List<String> ordered = new ArrayList<>();
@@ -213,7 +203,6 @@ public class ReportService {
         for (ReportQueries.Paid payment : payments) {
             receivedByMonth.merge(YearMonth.from(payment.datePaid()), payment.amount(), BigDecimal::add);
         }
-        // Money paid back comes off what was received, in the month it went.
         for (ReportQueries.Refunded refund : rows.refunded().getOrDefault(currency, List.of())) {
             receivedByMonth.merge(YearMonth.from(refund.dateRefunded()), refund.amount().negate(), BigDecimal::add);
         }
@@ -244,8 +233,6 @@ public class ReportService {
                 methods(payments));
     }
 
-    // An invoice is overdue from the day after its due date, by the business's
-    // calendar; one without a due date is never overdue.
     private static List<AgeingTotals> ageing(List<ReportQueries.Unpaid> invoices, ZoneId zone, LocalDate today) {
         long[] counts = new long[AGEING_KEYS.size()];
         BigDecimal[] amounts = new BigDecimal[AGEING_KEYS.size()];
@@ -277,8 +264,6 @@ public class ReportService {
                 .toList();
     }
 
-    // A client's figures as the top clients list them; the sales by customer
-    // view lists every client the same way.
     static ClientTotals clientTotals(ReportQueries.Client client) {
         return new ClientTotals(
                 client.customerId(),
@@ -289,15 +274,10 @@ public class ReportService {
                 outstanding(client));
     }
 
-    // What a client still owes on the period's invoices, whenever their
-    // credit notes are dated: tax they withheld counts as settled, though it
-    // isn't money paid.
     private static BigDecimal outstanding(ReportQueries.Client client) {
         return client.owed();
     }
 
-    // The years before this one, back to the first invoice, receipt or
-    // payment, for the period picker.
     private List<Integer> years(Long businessPkid, LocalDate today) {
         OptionalInt first = Stream.of(
                         queries.firstDocument(businessPkid).map(LocalDate::getYear),

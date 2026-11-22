@@ -13,7 +13,6 @@ import { panelNote } from "../../../components/workspace/pastel";
 import { WARNING_EVENTS, eventLabel, whenLabel } from "../auditEvents";
 import { useGetActivityQuery } from "../securityApiSlice";
 
-// The account's own sign-ins and security changes, newest first.
 const RecentActivity = ({ demo }) => {
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
@@ -39,7 +38,7 @@ const RecentActivity = ({ demo }) => {
       description={
         demo
           ? "What you did in this visit to the shared demo account."
-          : "Sign-ins and changes to your account’s security, newest first."
+          : "Sign-ins and changes to your account's security, newest first."
       }
     >
       {query.isLoading ? (

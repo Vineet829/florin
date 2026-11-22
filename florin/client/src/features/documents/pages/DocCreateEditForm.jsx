@@ -97,17 +97,12 @@ const blankItem = (taxRate) => ({
   discount: "",
   taxRate,
 });
-// A line field's label. The lines sit one under another, so the line's
-// number is only read out, to tell same-named fields apart.
 const lineLabel = (text, index) => (
   <>
     {text}
     <span className="sr-only"> {index + 1}</span>
   </>
 );
-// A new document starts from the business settings, and from a client when
-// it was started from their page; a draft keeps its own values. Either is
-// saved as a draft, or saved and issued.
 const DocumentFields = ({
   doc,
   settings,
@@ -125,24 +120,17 @@ const DocumentFields = ({
   const [currency, setCurrency] = useState(
     doc?.currency || settings?.defaultCurrency || currencies[0].code,
   );
-  // The rate to the reporting currency, kept only while it was typed
-  // against the one the business reports in now.
   const base = settings?.baseCurrency || settings?.defaultCurrency;
   const [exchangeRate, setExchangeRate] = useState(
     doc?.exchangeRate && doc.exchangeBase === base ? doc.exchangeRate : "",
   );
   const foreign = currency !== base;
   const [issueDate, setIssueDate] = useState(doc?.issueDate || "");
-  // Today by the business's calendar: the server dates a document left
-  // undated on it, and refuses one dated after it.
   const businessToday = useBusinessToday();
   const today = dateInput(businessToday);
-  // A credit note keeps its invoice's client and currency; its lines, date,
-  // notes and reason change, up to what is left to credit.
   const creditNote = doc?.documentType === "Credit Note";
   const credited = doc?.creditedDocument;
   const [creditReason, setCreditReason] = useState(doc?.creditReason || "");
-  // A new document is due the payment terms after today.
   const [dueDate, setDueDate] = useState(
     dateInput(
       doc?.dueDate ||
@@ -153,14 +141,10 @@ const DocumentFields = ({
         ),
     ),
   );
-  // A due date comes no earlier than the issue date, today until one is
-  // chosen. A draft saved due earlier keeps it while neither date changes,
-  // as the server allows.
   const earliestDue =
     doc?.dueDate === dueDate && (doc?.issueDate || "") === issueDate
       ? undefined
       : issueDate || today;
-  // The rate new lines start at, which every line can be set to at once.
   const [everyRate, setEveryRate] = useState(
     doc?.rates ?? String(settings?.defaultTaxRate ?? "0"),
   );
@@ -177,8 +161,6 @@ const DocumentFields = ({
     doc?.showPaymentDetails ?? true,
   );
   const taxLabel = settings?.taxLabel || "Tax";
-  // India GST mode: where the supply goes, as the server works it out, and
-  // how it is taxed. A credit note keeps its invoice's supply.
   const business = useGetBusinessQuery().data?.business;
   const gstStates =
     useGetGstStatesQuery(undefined, {
@@ -235,7 +217,6 @@ const DocumentFields = ({
   const unitsListId = useId();
   const suggestions = useGetTaxRatesQuery().data;
   const lineId = useId();
-  // The line to focus after it is added; it goes at the bottom.
   const [focusLine, setFocusLine] = useState(null);
   const [addingClient, setAddingClient] = useState(false);
   const [clientQuery, setClientQuery] = useState("");
@@ -251,9 +232,6 @@ const DocumentFields = ({
     catalogItems.find(
       (entry) => entry.name.toLowerCase() === name.trim().toLowerCase(),
     );
-  // A GST document's lines each carry the HSN or SAC code its returns are
-  // filed by, suggested from the codes the business's items use; a credit
-  // note keeps its invoice's.
   const hsnLines = Boolean(supply);
   const hsnListId = useId();
   const hsnCodes = Object.entries(
@@ -262,9 +240,6 @@ const DocumentFields = ({
       return codes;
     }, {}),
   );
-  // Picking a saved item fills in its price, a quantity of one, its unit
-  // and HSN/SAC code where the line has none yet, and its tax rate unless
-  // the line's rate was changed from the one new lines start at.
   const chooseName = (index, name) =>
     setItems((current) =>
       current.map((item, i) => {
@@ -299,7 +274,7 @@ const DocumentFields = ({
       }).unwrap();
       toast.success(`${item.itemName.trim()} was saved to your items.`);
     } catch (error) {
-      toast.error(errorMessage(error, "The item could not be saved."));
+      toast.error(errorMessage(error, "The item couldn't be saved."));
     }
   };
   const status =
@@ -384,7 +359,7 @@ const DocumentFields = ({
                       min={credited.issueDate || undefined}
                       max={today}
                       onChange={(event) => setIssueDate(event.target.value)}
-                      hint={`Leave it empty to date it the day it’s issued. It can’t be before ${credited.documentNumber} or later than today.`}
+                      hint={`Leave it empty to date it the day it's issued. It can't be before ${credited.documentNumber} or later than today.`}
                       disabled={busy}
                     />
                   </div>
@@ -393,7 +368,7 @@ const DocumentFields = ({
             ) : (
               <Panel
                 title="Document details"
-                description="Choose the document and who it’s for."
+                description="Choose the document and who it's for."
               >
                 <div className="grid grid-cols-2 gap-8 max-[700px]:grid-cols-1 max-[700px]:gap-6">
                   <div className="flex min-w-0 flex-col gap-5">
@@ -416,10 +391,10 @@ const DocumentFields = ({
                           </strong>
                           <p className={detailLine}>{customer.email}</p>
                           <p className={detailLine}>
-                            Account no. {customer.accountNo || "—"}
+                            Account no. {customer.accountNo || "-"}
                           </p>
                           <p className={detailLine}>
-                            VAT / TIN: {customer.vatTinNo || "—"}
+                            VAT / TIN: {customer.vatTinNo || "-"}
                           </p>
                           {customer.gstin && (
                             <p className={detailLine}>
@@ -479,10 +454,10 @@ const DocumentFields = ({
                           <p className={panelNote} role="status">
                             {clientMatches.length === 0
                               ? customers.length
-                                ? `No client matches “${clientQuery.trim()}”.`
+                                ? `No client matches "${clientQuery.trim()}".`
                                 : "You have no clients yet."
                               : clientMatches.length > 6
-                                ? `${clientMatches.length - 6} more — keep typing to narrow them down.`
+                                ? `${clientMatches.length - 6} more. Keep typing to narrow the list.`
                                 : ""}
                           </p>
                           <button
@@ -506,13 +481,11 @@ const DocumentFields = ({
                       onChange={(event) => setIssueDate(event.target.value)}
                       hint={
                         doc?.issueDate
-                          ? "The day the document is dated. It can’t be later than today."
-                          : "Leave it empty to date it the day it’s issued. It can’t be later than today."
+                          ? "The day the document is dated. It can't be later than today."
+                          : "Leave it empty to date it the day it's issued. It can't be later than today."
                       }
                       disabled={busy}
                     />
-                    {/* A receipt is paid as it is made, so it has no due
-                        date; a quotation is valid until a day instead. */}
                     {documentType !== "Receipt" && (
                       <Field
                         label={
@@ -791,7 +764,7 @@ const DocumentFields = ({
                   >
                     {currencies.map((item) => (
                       <option key={item.code} value={item.code}>
-                        {item.code} — {item.currency}
+                        {item.code} - {item.currency}
                       </option>
                     ))}
                   </Field>
@@ -807,10 +780,10 @@ const DocumentFields = ({
                     className="col-start-2 max-[700px]:col-start-auto"
                     hint={
                       gstMode
-                        ? "Needed to issue an invoice in GST mode. It is fixed once issued."
+                        ? "Needed to issue an invoice in GST mode. It's fixed once issued."
                         : doc?.exchangeRate && doc.exchangeBase !== base
                           ? `Optional. The rate saved was to ${doc.exchangeBase}, which you no longer report in.`
-                          : `Optional. Reports can then show this document in ${base}. It is fixed once issued.`
+                          : `Optional. Reports can then show this document in ${base}. It's fixed once issued.`
                     }
                     disabled={busy}
                   />
@@ -826,9 +799,9 @@ const DocumentFields = ({
                         placeChoice
                           ? "Chosen by you."
                           : customer?.gstin
-                            ? "Worked out from the client’s GSTIN."
+                            ? "Worked out from the client's GSTIN."
                             : customer?.stateCode
-                              ? "Worked out from the client’s state."
+                              ? "Worked out from the client's state."
                               : "Your own state, as the client has none."
                       }
                       disabled={busy}
@@ -840,7 +813,7 @@ const DocumentFields = ({
                       </option>
                       {gstStates.map((state) => (
                         <option key={state.code} value={state.code}>
-                          {state.code} – {state.name}
+                          {state.code} - {state.name}
                         </option>
                       ))}
                     </Field>
@@ -861,7 +834,7 @@ const DocumentFields = ({
                             [
                               "IGST",
                               "With IGST paid",
-                              "IGST at each line’s rate.",
+                              "IGST at each line's rate.",
                             ],
                           ].map(([value, label, note]) => (
                             <label
@@ -902,7 +875,7 @@ const DocumentFields = ({
                           <span>
                             Reverse charge
                             <span className="block text-[13px] text-spot-muted">
-                              The recipient pays the GST, so it isn’t billed.
+                              The recipient pays the GST, so it isn't billed.
                             </span>
                           </span>
                         </label>
@@ -949,7 +922,7 @@ const DocumentFields = ({
                   <span>
                     Show how to pay
                     <span className="block text-[13px] text-spot-muted">
-                      Your details from Settings → Getting paid, while the
+                      Your details from Settings &gt; Getting paid, while the
                       invoice is unpaid.
                     </span>
                   </span>
@@ -993,7 +966,7 @@ const DocumentFields = ({
                   role={overCredit ? "alert" : undefined}
                 >
                   {overCredit
-                    ? `That is more than the ${money(credited.creditable, currency)} left to credit on ${credited.documentNumber}.`
+                    ? `That's more than the ${money(credited.creditable, currency)} left to credit on ${credited.documentNumber}.`
                     : `Up to ${money(credited.creditable, currency)} can still be credited.`}
                 </p>
               )}
@@ -1014,7 +987,7 @@ const DocumentFields = ({
                 disabled={busy || overCredit}
               >
                 <FiCheck aria-hidden="true" />
-                {busy ? "Saving…" : "Save and issue"}
+                {busy ? "Saving..." : "Save and issue"}
               </button>
             </div>
           </aside>
@@ -1033,7 +1006,7 @@ const DocCreateEditForm = () => {
   const [params] = useSearchParams();
   const clientId = id ? null : params.get("client");
   const navigate = useNavigate();
-  useTitle(`${id ? "Edit document" : "Create document"} — Florin`);
+  useTitle(`${id ? "Edit document" : "Create document"} - Florin`);
   const editRefusal = useBusiness().reason("EDIT_RECORDS");
   const query = useGetSingleDocQuery(id, { skip: !id });
   const clients = useGetWorkspaceCustomersQuery();
@@ -1042,7 +1015,6 @@ const DocCreateEditForm = () => {
   const [update, { isLoading: updating }] = useUpdateDocMutation();
   const [issueDoc, { isLoading: issuing }] = useIssueDocMutation();
   const doc = query.data?.document;
-  // A draft saved and issued is changed first, then issued as saved.
   const save = async (payload, { issue }) => {
     try {
       let message;
@@ -1067,7 +1039,7 @@ const DocCreateEditForm = () => {
             : "/documents",
       );
     } catch (error) {
-      toast.error(errorMessage(error, "The document could not be saved."));
+      toast.error(errorMessage(error, "The document couldn't be saved."));
     }
   };
   return (
@@ -1081,7 +1053,7 @@ const DocCreateEditForm = () => {
               ? "Edit credit note"
               : "Edit document"
         }
-        description="The details of your work, presented with care."
+        description="Lines, tax and terms for this document."
       />
       {editRefusal ? (
         <EmptyState
@@ -1104,8 +1076,8 @@ const DocCreateEditForm = () => {
           title="This document is void."
           text={
             doc.documentType === "Credit Note"
-              ? "A void credit note can’t be changed. Make a new one from the document it credits."
-              : "A void document can’t be changed. Duplicate it to start again."
+              ? "A void credit note can't be changed. Make a new one from the document it credits."
+              : "A void document can't be changed. Duplicate it to start again."
           }
           icon={FiSlash}
           action={

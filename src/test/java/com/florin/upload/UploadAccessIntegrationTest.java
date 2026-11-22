@@ -9,7 +9,6 @@ import com.florin.IntegrationTest;
 import com.florin.business.Business;
 import com.florin.business.BusinessRole;
 import com.florin.user.User;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -28,7 +27,6 @@ class UploadAccessIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("only the owner and admins upload a logo, as only they change the business's details")
     void ownersAndAdmins() throws Exception {
         User owner = createUser();
         Business business = businessOf(owner);
@@ -43,8 +41,7 @@ class UploadAccessIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("one person uploads at most twenty logos an hour")
-    void twentyAnHour() throws Exception {
+    void limitsUploadsPerHour() throws Exception {
         User owner = createUser();
         String authorization = bearer(owner);
 

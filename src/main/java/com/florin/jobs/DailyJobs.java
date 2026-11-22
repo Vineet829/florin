@@ -17,10 +17,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-// The work done once a day: new recurring invoices first, then reminders,
-// overdue alerts, then token, sign-up, rate-limit and logo cleanup. A step that fails is
-// logged and the others still run. Each step is timed for the metrics, as a
-// success or a failure. The time and zone are properties.
 @Component
 public class DailyJobs {
 
@@ -57,10 +53,6 @@ public class DailyJobs {
         this.clock = clock;
     }
 
-    // One instance runs the jobs each day. Its lock is kept for at least five
-    // minutes, so an instance whose clock is a little behind doesn't run them
-    // again once the first has finished. A run that dies holding the lock
-    // frees it after two hours, and what it didn't do waits for the next day.
     @Scheduled(cron = "${app.jobs.cron:0 0 7 * * *}", zone = "${app.jobs.zone:UTC}")
     @SchedulerLock(name = "daily-jobs", lockAtMostFor = "PT2H", lockAtLeastFor = "PT5M")
     public void run() {

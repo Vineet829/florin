@@ -14,10 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-// Tells owners, once per invoice, when an unpaid invoice becomes overdue by
-// their own calendar. Each invoice is alerted in a transaction of its own,
-// and locked only while it is, so one that fails is logged and the rest
-// still go, and no business waits on another's.
 @Service
 public class OverdueAlerts {
 
@@ -54,8 +50,6 @@ public class OverdueAlerts {
         return raised;
     }
 
-    // False when it no longer needs one, as when another run alerted it
-    // after the list was made, or it isn't overdue yet where its business is.
     private boolean alert(Long pkid, Instant now) {
         Document invoice = documentRepository
                 .findUnalertedOverdueForUpdate(pkid, DocumentType.INVOICE, DocumentStatus.PAID, now)

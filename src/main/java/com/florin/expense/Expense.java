@@ -25,12 +25,10 @@ public class Expense extends BaseEntity {
     @JoinColumn(name = "business_pkid", nullable = false, updatable = false)
     private Business business;
 
-    // The member who recorded it, forgotten if their account is deleted.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "recorded_by_pkid", updatable = false)
     private User recordedBy;
 
-    // The day it was paid.
     @Column(name = "expense_date", nullable = false)
     private LocalDate expenseDate;
 
@@ -40,22 +38,18 @@ public class Expense extends BaseEntity {
     @Column(name = "category", nullable = false, length = 60)
     private String category;
 
-    // What it cost before tax.
     @Column(name = "amount", nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
 
     @Column(name = "tax_amount", nullable = false, precision = 19, scale = 2)
     private BigDecimal taxAmount = BigDecimal.ZERO.setScale(2);
 
-    // Tax the business claims back, such as GST input tax credit, is not
-    // part of what the expense cost it.
     @Column(name = "tax_reclaimable", nullable = false)
     private boolean taxReclaimable;
 
     @Column(name = "currency", nullable = false, length = 3)
     private String currency;
 
-    // "1 {currency} = exchangeRate {exchangeBase}", when it was typed in.
     @Column(name = "exchange_rate", precision = 20, scale = 10)
     private BigDecimal exchangeRate;
 
@@ -71,7 +65,6 @@ public class Expense extends BaseEntity {
     @Column(name = "notes", columnDefinition = "text")
     private String notes;
 
-    // What was paid, tax included.
     public BigDecimal total() {
         return amount.add(taxAmount);
     }

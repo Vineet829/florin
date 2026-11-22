@@ -46,14 +46,9 @@ const LoginPage = () => {
   const dispatch = useDispatch();
   const location = useLocation();
 
-  // An invitation opened before logging in waits for the account it was
-  // sent to, even across signing up and verifying the email.
   const from =
     returnPath(location.state?.from) || pendingInvitePath() || "/dashboard";
 
-  // A sign-in with Google that didn't work comes back here with the reason.
-  // It shows once, even though StrictMode runs effects twice in development,
-  // and leaves the address so a reload doesn't show it again.
   const [searchParams, setSearchParams] = useSearchParams();
   const oauthError = searchParams.get("oauth_error");
   const oauthErrorShown = useRef(false);
@@ -73,8 +68,6 @@ const LoginPage = () => {
   }, [oauthError, setSearchParams]);
 
   const [showPassword, setShowPassword] = useState(false);
-  // With two-factor sign-in on, a correct password earns a challenge that a
-  // code completes.
   const [challenge, setChallenge] = useState(null);
   const [loginUser, { isLoading }] = useLoginUserMutation();
   const [loginGuest, { isLoading: guestLoading }] = useLoginUserMutation();
@@ -94,12 +87,11 @@ const LoginPage = () => {
     }
   };
 
-  // Both steps share the page, so the visual stays as it is between them.
   const visual = (
     <AuthVisual
-      headline={["Your invoices,", "simplified."]}
-      subtext="Create invoices, email PDFs, and track payments&nbsp;— all in one place."
-      loaderLabel="Setting up your workspace"
+      headline={["Sign in", "to Florin."]}
+      subtext="Invoices, payments and reports for your business."
+      loaderLabel="Signing in"
     />
   );
 
@@ -246,7 +238,7 @@ const LoginPage = () => {
                     style={delay(0.42)}
                     disabled={busy}
                   >
-                    {isSubmitting || isLoading ? "Logging in…" : "Log in"}
+                    {isSubmitting || isLoading ? "Logging in..." : "Log in"}
                   </button>
 
                   <div className={auth.alt}>
@@ -259,8 +251,6 @@ const LoginPage = () => {
                       <div className={auth.dividerLine} />
                     </div>
 
-                    {/* Sign-in providers share Guest's row, in equal columns,
-                        tightened on narrow screens so labels stay on one line. */}
                     <div
                       className={`grid auto-cols-fr grid-flow-col gap-2.5 ${rise}`}
                       style={delay(0.66)}
@@ -273,7 +263,7 @@ const LoginPage = () => {
                         disabled={busy}
                       >
                         <GuestIcon />
-                        {guestLoading ? "Opening demo…" : "Guest"}
+                        {guestLoading ? "Opening demo..." : "Guest"}
                       </button>
                     </div>
                   </div>

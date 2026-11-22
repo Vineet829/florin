@@ -1,13 +1,6 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
-  <!-- Themes laid over the Classic layout every PDF has: each restyles the
-       classes the layouts share, after Classic's own rules. -->
-
-  <!-- Modern: the heading on a tinted band, painted once on its table so no
-       seam shows between its cells, with the title in violet and a size
-       smaller so the longest titles fit beside the band's padding; tables
-       have violet headings over a violet rule. -->
   <style th:fragment="modern">
     .head { margin-bottom: 20px; background: #efeaf9; }
     .head td { padding: 18px 16px; }
@@ -23,7 +16,6 @@
     .received .label, .received .method { color: #ddd6f3; }
   </style>
 
-  <!-- Compact: smaller type and tighter spacing, to fit more on a page. -->
   <style th:fragment="compact">
     @page { margin: 12mm 12mm 14mm 12mm; }
     body { font-size: 8.5pt; line-height: 1.35; }

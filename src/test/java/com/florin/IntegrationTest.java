@@ -44,8 +44,6 @@ public abstract class IntegrationTest {
 
     protected static final String DEMO_EMAIL = "demo@florin.test";
 
-    // The password withAccountPassword gives an account, which steps that
-    // can't be undone, such as deleting it, ask for again.
     protected static final String ACCOUNT_PASSWORD = "Acc0unt!pass";
     protected static final String CONFIRMATION = "{\"password\": \"" + ACCOUNT_PASSWORD + "\"}";
 
@@ -59,8 +57,6 @@ public abstract class IntegrationTest {
         }
     }
 
-    // Google sign-in, pointed at a stand-in, set up the same for every test
-    // so they all share one context.
     @DynamicPropertySource
     static void signInProviders(DynamicPropertyRegistry registry) {
         OAuthStub stub = OAuthStub.get();
@@ -134,7 +130,6 @@ public abstract class IntegrationTest {
         return userRepository.save(user);
     }
 
-    // Every account starts with a business of its own, as a sign-up does.
     private User withBusiness(User user) {
         businessService.createPersonal(user);
         return user;
@@ -144,19 +139,16 @@ public abstract class IntegrationTest {
         return businessService.ownedBy(user.getPkid());
     }
 
-    // A header for a new session of the user's.
     protected String bearer(User user) {
         return "Bearer " + jwtService.issueAccessToken(user, sessionService.start(user).session().getId());
     }
 
-    // A header for a new session of the user's, working in the given business.
     protected String bearer(User user, Business business) {
         UUID session = sessionService.start(user).session().getId();
         activeBusinesses.use(user, session, business.getId());
         return "Bearer " + jwtService.issueAccessToken(user, session);
     }
 
-    // Someone with a business of their own who also works in this one.
     protected User createMember(Business business, BusinessRole role) {
         User user = createUser();
         BusinessMember member = new BusinessMember();

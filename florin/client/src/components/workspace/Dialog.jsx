@@ -7,10 +7,6 @@ const WIDTHS = {
   medium: "w-[min(580px,calc(100vw_-_32px))]",
 };
 
-// A modal in the browser's top layer, so no panel can paint over it. It
-// focuses the first [data-autofocus] element and returns focus on close.
-// Esc closes it unless `busy`; a click on the backdrop closes it only when
-// `dismissible`, so a stray click never throws away a form's draft.
 export const Dialog = ({
   open,
   title,

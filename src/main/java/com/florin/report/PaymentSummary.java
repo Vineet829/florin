@@ -15,10 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
-// What the payments list adds up to over a period, in one currency chosen as
-// the overview chooses it: the same rows, read by the list's own queries, so
-// that the total is always the list's received total for the same days, and
-// over one of the overview's periods its Received.
 @Service
 public class PaymentSummary {
 
@@ -43,10 +39,6 @@ public class PaymentSummary {
         this.clock = clock;
     }
 
-    // Every method is listed, largest first, and the five clients who paid
-    // most, each by name when two came to the same; clients named alike stay
-    // in the order they were added. The period before is compared, as on the
-    // overview, only when the currency's records cover all of it.
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public PaymentSummaryResponse summary(BusinessAccess access, String periodKey, String requested) {
         Long businessPkid = access.businessPkid();

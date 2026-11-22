@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.math.BigDecimal;
 import java.util.List;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class ProfitReportTest {
@@ -16,7 +15,6 @@ class ProfitReportTest {
     }
 
     @Test
-    @DisplayName("categories go by cost, then by name whatever its case, then by spelling, in whatever order they come")
     void largestFirst() {
         List<Row> rows = List.of(row("travel", "50"), row("Office", "70"), row("Travel", "50.00"), row("ads", "50"));
 

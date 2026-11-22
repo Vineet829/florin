@@ -21,7 +21,6 @@ import useBusinessToday from "../../business/useBusinessToday";
 
 const DAY = 86400000;
 
-// A day as the date field holds it, some days later.
 const daysAfter = (day, days) =>
   dateInput(new Date(`${day}T12:00:00`).getTime() + days * DAY);
 
@@ -35,14 +34,10 @@ const IssueForm = ({
   onClose,
   onIssued,
 }) => {
-  // Today by the business's calendar: the server refuses a document dated
-  // after it.
   const today = dateInput(useBusinessToday());
   const [issueDate, setIssueDate] = useState(document.issueDate || today);
   const invoice = document.documentType === "Invoice";
   const quotation = document.documentType === "Quotation";
-  // An invoice is due as the payment terms say unless the draft has its own
-  // due date; a quotation stays valid as long as the draft says.
   const [dueDate, setDueDate] = useState(
     document.dueDate
       ? dateInput(document.dueDate)
@@ -50,9 +45,6 @@ const IssueForm = ({
         ? daysAfter(document.issueDate || today, terms)
         : "",
   );
-  // A document in another currency than the reporting one can be issued
-  // with a rate to it, which is then fixed; in GST mode only a quotation
-  // goes out without one. A credit note keeps its invoice's rate.
   const foreign =
     Boolean(document.currency) &&
     document.currency !== base &&
@@ -77,14 +69,14 @@ const IssueForm = ({
       toast.success(result.message || "The document was issued.");
       onIssued({ email: canEmail && email });
     } catch (error) {
-      toast.error(errorMessage(error, "The document could not be issued."));
+      toast.error(errorMessage(error, "The document couldn't be issued."));
     }
   };
   return (
     <form className="mt-5 flex flex-col gap-5" onSubmit={submit}>
       <p className="text-[14px] leading-[1.6] text-spot-body">
         It takes the next {document.documentType.toLowerCase()} number, and
-        keeps the client’s details and your business’s as they are today.
+        keeps the client's details and your business's as they are today.
       </p>
       <div className="grid grid-cols-2 gap-4 max-[560px]:grid-cols-1">
         <Field
@@ -121,7 +113,7 @@ const IssueForm = ({
             disabled={issuing}
             hint={
               rateNeeded
-                ? "Needed to issue it in GST mode. It is fixed once issued."
+                ? "Needed to issue it in GST mode. It's fixed once issued."
                 : `Optional. Reports can then show it in ${base}.`
             }
           />
@@ -139,7 +131,7 @@ const IssueForm = ({
           Email it to the client next
           <span className="mt-0.5 block text-[13px] text-spot-muted">
             {canEmail
-              ? "You can check the message before it is sent."
+              ? "You can check the message before it's sent."
               : emailNote}
           </span>
         </span>
@@ -156,7 +148,7 @@ const IssueForm = ({
         <button type="submit" className={primaryButton} disabled={issuing}>
           <FiCheck aria-hidden="true" />
           {issuing
-            ? "Issuing…"
+            ? "Issuing..."
             : `Issue ${document.documentType.toLowerCase()}`}
         </button>
       </div>
@@ -164,8 +156,6 @@ const IssueForm = ({
   );
 };
 
-// Issues a draft, dated and due as chosen here, and can go straight on to
-// emailing it. The business's payment terms suggest the due date.
 const IssueDialog = ({
   document,
   open,
@@ -187,7 +177,7 @@ const IssueDialog = ({
         <div className={`${errorBanner} mt-5`} role="alert">
           <div className="flex-1">
             <strong className={errorTitle}>
-              We couldn’t load your payment terms.
+              We couldn't load your payment terms.
             </strong>
             <span className={errorDetail}>{errorMessage(settings.error)}</span>
           </div>
@@ -212,7 +202,7 @@ const IssueDialog = ({
         />
       ) : (
         <p className="mt-4 text-[13.5px] text-spot-muted" role="status">
-          Loading…
+          Loading...
         </p>
       )}
     </Dialog>

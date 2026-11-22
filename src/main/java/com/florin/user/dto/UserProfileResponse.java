@@ -18,8 +18,6 @@ public record UserProfileResponse(
         Instant createdAt,
         Instant updatedAt) {
 
-    // `sharedBusinesses` are the businesses it owns that others work in, which
-    // keep the account from being deleted until they are handed over.
     public static UserProfileResponse from(User user, boolean demo, List<String> sharedBusinesses) {
         return new UserProfileResponse(
                 user.getEmail(),

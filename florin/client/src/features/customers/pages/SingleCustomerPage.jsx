@@ -60,13 +60,11 @@ import {
 
 const NO_DOCUMENTS = [];
 
-// The client's documents keep their sort and page in the URL.
 const readDocuments = (params) =>
   readSortAndPage(params, SORT_FIELDS, "createdAt");
 const writeDocuments = (state) =>
   writeSortAndPage(new URLSearchParams(), state, SORT_FIELDS, "createdAt");
 
-// The overview's card colours; overdue is only coloured when something is.
 const TOTALS = [
   {
     key: "billed",
@@ -74,8 +72,6 @@ const TOTALS = [
     tone: "bg-card-blue text-card-blue-ink",
     note: "Invoices and receipts",
   },
-  // Payments and receipts, as the overview, payments and reports call
-  // money in "Received".
   {
     key: "paid",
     label: "Received",
@@ -101,7 +97,6 @@ const TOTALS = [
 
 const DEMO_EMAIL_NOTE = "Emailing is turned off for the shared demo account.";
 
-// Named like the server's copy: the account number, or the name, and today.
 const statementFileName = (customer) =>
   `Statement-${(customer.accountNo || customer.name || "client").replace(/[^A-Za-z0-9-]+/g, "-")}-${dateInput()}.pdf`;
 
@@ -116,7 +111,7 @@ const StatementActions = ({ customer, demo, refusal }) => {
       const url = await getStatement(customer._id).unwrap();
       saveFile(url, statementFileName(customer));
     } catch (error) {
-      toast.error(errorMessage(error, "The statement could not be prepared."));
+      toast.error(errorMessage(error, "The statement couldn't be prepared."));
     } finally {
       setDownloading(false);
     }
@@ -131,7 +126,7 @@ const StatementActions = ({ customer, demo, refusal }) => {
         aria-busy={downloading}
       >
         <FiDownload aria-hidden="true" />
-        {downloading ? "Preparing…" : "Download statement"}
+        {downloading ? "Preparing..." : "Download statement"}
       </button>
       <button
         type="button"
@@ -274,7 +269,7 @@ const ClientDocuments = ({ customerId }) => {
     >
       {query.isLoading ? (
         <p className={panelNote} role="status">
-          Loading documents…
+          Loading documents...
         </p>
       ) : query.isError ? (
         <ErrorState error={query.error} retry={query.refetch} />
@@ -313,7 +308,7 @@ const SingleCustomerPage = () => {
   const editRefusal = useBusiness().reason("EDIT_RECORDS");
   const customer = query.data?.customer;
   const totals = summary.data?.totals || [];
-  useTitle(`${customer?.name || "Client details"} — Florin`);
+  useTitle(`${customer?.name || "Client details"} - Florin`);
   return (
     <WorkspacePage section="Clients">
       <PageHeader
@@ -397,7 +392,7 @@ const SingleCustomerPage = () => {
                 <ErrorState error={summary.error} retry={summary.refetch} />
               ) : summary.isLoading ? (
                 <p className={panelNote} role="status">
-                  Loading totals…
+                  Loading totals...
                 </p>
               ) : totals.length ? (
                 <AccountTotals totals={totals} />

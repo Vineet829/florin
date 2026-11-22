@@ -20,7 +20,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -92,8 +91,7 @@ class OverdueAlertsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an unpaid invoice past its due date raises one alert; paid and future ones none")
-    void onceEach() throws Exception {
+    void alertsOncePerOverdueInvoice() throws Exception {
         User owner = createUser();
         invoice(owner, today.minusDays(1));
         String paid = invoice(owner, today.minusDays(2));
@@ -110,14 +108,11 @@ class OverdueAlertsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an invoice whose alert fails is left for the next run, and the other businesses' still go")
-    void oneFailsTheRestGo() throws Exception {
+    void failedAlertRetriedNextRun() throws Exception {
         User broken = createUser();
         invoice(broken, today.minusDays(1));
         User fine = createUser();
         invoice(fine, today.minusDays(1));
-        // A time zone the server can't read, as from a business saved before
-        // zones were checked.
         jdbcTemplate.update(
                 "update business_settings set time_zone = 'Mars/Olympus_Mons' where business_pkid = ?",
                 businessOf(broken).getPkid());
@@ -129,7 +124,6 @@ class OverdueAlertsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an overdue invoice alerts again only once a later due date has passed too")
     void newDueDate() throws Exception {
         User owner = createUser();
         String id = invoice(owner, today.minusDays(1));
@@ -147,14 +141,10 @@ class OverdueAlertsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("two runs at once raise an invoice's alert once")
     void twoRunsAtOnce() throws Exception {
         User owner = createUser();
         String id = invoice(owner, today.minusDays(1));
         Instant now = Instant.now();
-        // Both runs start while a transaction of the test's own holds the
-        // invoice locked, so both look for overdue invoices before either has
-        // alerted it.
         CountDownLatch held = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
         ExecutorService pool = Executors.newFixedThreadPool(3);

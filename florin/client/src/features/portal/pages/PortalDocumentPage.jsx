@@ -15,7 +15,6 @@ import { panelNote, textLink } from "../../../components/workspace/pastel";
 import PublicDocument from "../../public/components/PublicDocument";
 import { Notice, frame } from "../../public/components/PublicPage";
 
-// One document from a client's portal, as its share link would show it.
 const PortalDocumentPage = () => {
   const { token } = useParams();
   const [params] = useSearchParams();
@@ -30,7 +29,7 @@ const PortalDocumentPage = () => {
   useTitle(
     doc
       ? `${doc.documentType} ${doc.documentNumber} from ${doc.business.name}`
-      : "Your document — Florin",
+      : "Your document - Florin",
   );
   const download = async () => {
     try {
@@ -39,7 +38,7 @@ const PortalDocumentPage = () => {
         `${number.replace(/[^A-Za-z0-9._-]/g, "-")}.pdf`,
       );
     } catch (error) {
-      toast.error(errorMessage(error, "The PDF could not be prepared."));
+      toast.error(errorMessage(error, "The PDF couldn't be prepared."));
     }
   };
   return (
@@ -54,20 +53,20 @@ const PortalDocumentPage = () => {
       </div>
       {query.isLoading ? (
         <p className={panelNote} role="status">
-          Opening the document…
+          Opening the document...
         </p>
       ) : query.isError ? (
         query.error?.status === 404 ? (
           <Notice
-            title="We couldn’t find this document"
+            title="We couldn't find this document"
             text={errorMessage(
               query.error,
-              "It isn’t among your documents. Go back to see them all.",
+              "It isn't among your documents. Go back to see them all.",
             )}
           />
         ) : (
           <Notice
-            title="We couldn’t open this document"
+            title="We couldn't open this document"
             text={errorMessage(query.error)}
             retry={query.refetch}
           />

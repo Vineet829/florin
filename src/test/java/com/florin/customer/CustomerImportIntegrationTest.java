@@ -20,7 +20,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -64,13 +63,13 @@ class CustomerImportIntegrationTest extends IntegrationTest {
 
     private byte[] file() {
         return ("﻿EMAIL,Name,Phone,City,Notes\r\n"
-                        + "harbor-%1$s@clients.test,Harbor & Pine,+1 555 0100,Portland,ignored\r\n"
+                        + "kale-%1$s@clients.test,Kale & Deshpande,+91 20 1462 3307,Pune,ignored\r\n"
                         + "not-an-email,Bad Email,+1,,\r\n"
                         + ",No Email,+1,,\r\n"
                         + "EXISTING-%1$s@clients.test,Dup Existing,+1,,\r\n"
-                        + "harbor-%1$s@clients.test,Harbor Again,+1,,\r\n"
+                        + "kale-%1$s@clients.test,Kale Again,+1,,\r\n"
                         + "\r\n"
-                        + "oak-%1$s@clients.test,\"Oak Street, Ltd\",'+44 20 7946 0958,London,\r\n"
+                        + "mehta-%1$s@clients.test,\"Mehta Bakers, Ltd\",'+91 20 1438 6610,Pune,\r\n"
                         + "nophone-%1$s@clients.test,No Phone,,,\r\n")
                 .formatted(tag)
                 .getBytes(StandardCharsets.UTF_8);
@@ -81,31 +80,29 @@ class CustomerImportIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the preview marks what stops each row, by its row in the sheet, and saves nothing")
-    void preview() throws Exception {
+    void previewMarksRowProblems() throws Exception {
         send("import/preview", owner, file())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(7))
                 .andExpect(jsonPath("$.ready").value(2))
                 .andExpect(jsonPath("$.rows[0].row").value(2))
-                .andExpect(jsonPath("$.rows[0].name").value("Harbor & Pine"))
-                .andExpect(jsonPath("$.rows[0].phoneNumber").value("+1 555 0100"))
-                .andExpect(jsonPath("$.rows[0].city").value("Portland"))
+                .andExpect(jsonPath("$.rows[0].name").value("Kale & Deshpande"))
+                .andExpect(jsonPath("$.rows[0].phoneNumber").value("+91 20 1462 3307"))
+                .andExpect(jsonPath("$.rows[0].city").value("Pune"))
                 .andExpect(jsonPath("$.rows[0].problems").isEmpty())
                 .andExpect(jsonPath("$.rows[1].problems[0]").value("Enter a valid email address"))
                 .andExpect(jsonPath("$.rows[2].problems[0]").value("The email is missing"))
                 .andExpect(jsonPath("$.rows[3].problems[0]").value("You already have a client with this email"))
                 .andExpect(jsonPath("$.rows[4].problems[0]").value("This email is already on row 2"))
                 .andExpect(jsonPath("$.rows[5].row").value(8))
-                .andExpect(jsonPath("$.rows[5].name").value("Oak Street, Ltd"))
-                .andExpect(jsonPath("$.rows[5].phoneNumber").value("+44 20 7946 0958"))
+                .andExpect(jsonPath("$.rows[5].name").value("Mehta Bakers, Ltd"))
+                .andExpect(jsonPath("$.rows[5].phoneNumber").value("+91 20 1438 6610"))
                 .andExpect(jsonPath("$.rows[5].problems").isEmpty())
                 .andExpect(jsonPath("$.rows[6].problems[0]").value("The phone number is missing"));
         clients(owner).andExpect(jsonPath("$.totalCustomers").value(1));
     }
 
     @Test
-    @DisplayName("the import adds the ready rows and skips the rest, and never adds a client twice")
     void importsReadyRows() throws Exception {
         send("import", owner, file())
                 .andExpect(status().isOk())
@@ -121,7 +118,6 @@ class CustomerImportIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a clients file exported from the app imports as it is")
     void roundTrip() throws Exception {
         send("import", owner, file()).andExpect(status().isOk());
         mockMvc.perform(post("/api/v1/customer/create")
@@ -140,18 +136,16 @@ class CustomerImportIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.message").value("4 clients added"));
         clients(other)
                 .andExpect(jsonPath("$.totalCustomers").value(4))
-                .andExpect(jsonPath("$.myCustomers[?(@.name == 'Oak Street, Ltd')].phoneNumber")
-                        .value("+44 20 7946 0958"))
+                .andExpect(jsonPath("$.myCustomers[?(@.name == 'Mehta Bakers, Ltd')].phoneNumber")
+                        .value("+91 20 1438 6610"))
                 .andExpect(jsonPath("$.myCustomers[?(@.email == 'acme-%s@clients.test')].name", tag)
                         .value("'+Acme"));
     }
 
     @Test
-    @DisplayName("semicolon files are read; unreadable, empty, headless and oversized files are refused")
-    void files() throws Exception {
+    void handlesFileFormats() throws Exception {
         send("import/preview", owner, "Name;Email;Phone\nAcme;acme-%s@x.test;+1\n".formatted(tag).getBytes())
                 .andExpect(jsonPath("$.ready").value(1));
-        // A heading may hold the other separator, quoted or not.
         send("import/preview", owner, "Name;Email;Phone;Tel, Fax, Mobile, Pager\nAcme;acme-%s@x.test;+1;\n"
                         .formatted(tag)
                         .getBytes())
@@ -184,7 +178,6 @@ class CustomerImportIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an import sent while another is adding clients waits for it, then skips the clients it added")
     void importsTakeTurns() throws Exception {
         Business business = businessOf(owner);
         BusinessAccess access = new BusinessAccess(business.getPkid(), business.getId(), BusinessRole.OWNER, owner);
@@ -197,7 +190,6 @@ class CustomerImportIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.message").value("1 client added, 2 skipped"));
     }
 
-    // A file with a client for each email.
     private static byte[] csvOf(String... emails) {
         StringBuilder text = new StringBuilder("Name,Email,Phone\r\n");
         for (String email : emails) {
@@ -206,8 +198,6 @@ class CustomerImportIntegrationTest extends IntegrationTest {
         return text.toString().getBytes(StandardCharsets.UTF_8);
     }
 
-    // Sends the request while a transaction of the test's own imports `held`
-    // and stays open, and lets that import commit once something waits for it.
     private ResultActions whileImporting(BusinessAccess access, byte[] held, Callable<ResultActions> request)
             throws Exception {
         CountDownLatch imported = new CountDownLatch(1);
@@ -242,7 +232,6 @@ class CustomerImportIntegrationTest extends IntegrationTest {
         }
     }
 
-    // How many connections to the test's database wait for a lock.
     private int waitingForLocks() {
         return jdbc.queryForObject(
                 "select count(*) from pg_stat_activity"

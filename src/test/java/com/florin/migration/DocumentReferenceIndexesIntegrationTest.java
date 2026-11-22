@@ -3,7 +3,6 @@ package com.florin.migration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.florin.IntegrationTest;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -14,8 +13,7 @@ class DocumentReferenceIndexesIntegrationTest extends IntegrationTest {
     private JdbcTemplate jdbcTemplate;
 
     @Test
-    @DisplayName("notifications and recurring runs are indexed by the document they point at")
-    void indexed() {
+    void indexesDocumentReferences() {
         assertThat(jdbcTemplate.queryForList(
                         "select tablename from pg_indexes where indexdef like '%(document_pkid)' order by tablename",
                         String.class))

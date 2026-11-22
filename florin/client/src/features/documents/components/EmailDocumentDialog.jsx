@@ -68,7 +68,7 @@ const EmailForm = ({ draft, sending, onSend, onClose }) => {
         maxLength={5000}
         value={form.message}
         onChange={update("message")}
-        hint={`The PDF is attached, and replies come to your email address.${linked ? " {link} becomes the document’s link when you send." : ""}`}
+        hint={`The PDF is attached, and replies come to your email address.${linked ? " {link} becomes the document's link when you send." : ""}`}
       />
       <div className="mt-3 flex flex-wrap justify-end gap-2.5">
         <button
@@ -81,16 +81,13 @@ const EmailForm = ({ draft, sending, onSend, onClose }) => {
         </button>
         <button type="submit" className={primaryButton} disabled={sending}>
           <FiSend aria-hidden="true" />
-          {sending ? "Sending…" : "Send email"}
+          {sending ? "Sending..." : "Send email"}
         </button>
       </div>
     </form>
   );
 };
 
-// Emails a PDF. The server suggests the recipient, subject and message in
-// `draft`, and notes anything sending will do; each can be changed before
-// sending.
 export const EmailDialog = ({
   title,
   open,
@@ -109,12 +106,12 @@ export const EmailDialog = ({
   >
     {draft.isFetching || draft.isUninitialized ? (
       <p className="mt-4 text-[13.5px] text-spot-muted" role="status">
-        Preparing the email…
+        Preparing the email...
       </p>
     ) : draft.isError ? (
       <div className={`${errorBanner} mt-5`} role="alert">
         <div className="flex-1">
-          <strong className={errorTitle}>We couldn’t prepare the email.</strong>
+          <strong className={errorTitle}>We couldn't prepare the email.</strong>
           <span className={errorDetail}>{errorMessage(draft.error)}</span>
         </div>
         <button type="button" className={retryButton} onClick={draft.refetch}>
@@ -142,7 +139,7 @@ const EmailDocumentDialog = ({ documentId, open, onClose }) => {
       toast.success(result.message || "Document sent successfully.");
       onClose();
     } catch (error) {
-      toast.error(errorMessage(error, "The document could not be emailed."));
+      toast.error(errorMessage(error, "The document couldn't be emailed."));
     }
   };
   return (

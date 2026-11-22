@@ -15,7 +15,6 @@ if (import.meta.env.PROD) {
   disableReactDevTools();
 }
 
-// A reload keeps no access token: the session's cookie gives a new one.
 restoreSession(store, () =>
   store.dispatch(
     authApiSlice.endpoints.refreshSession.initiate(undefined, { track: false }),

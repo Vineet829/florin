@@ -24,7 +24,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -36,10 +35,6 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-// A schedule is made with its invoice locked, as deleting a draft locks it,
-// so a delete that arrives while a schedule is made for the draft waits, then
-// finds the schedule and keeps the draft instead of deleting both. The test
-// makes the schedule in a transaction of its own while the delete arrives.
 class RecurringRaceIntegrationTest extends IntegrationTest {
 
     @Autowired
@@ -87,9 +82,6 @@ class RecurringRaceIntegrationTest extends IntegrationTest {
                 "$.newDocument._id");
     }
 
-    // Makes a monthly schedule for the document in a transaction that stays
-    // open while the request arrives, and commits it once the request waits.
-    // Gives the request's response.
     private MockHttpServletResponse whileScheduling(String document, Callable<ResultActions> request) throws Exception {
         RecurringRequest monthly = new RecurringRequest(
                 document, "monthly", LocalDate.now(ZoneOffset.UTC).plusDays(1), null, null, null, null);
@@ -133,7 +125,6 @@ class RecurringRaceIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a delete that waits while a schedule is made for the draft is refused, and both stay")
     void deleteWhileScheduling() throws Exception {
         String draft = draft();
 

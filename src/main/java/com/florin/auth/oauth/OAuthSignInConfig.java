@@ -7,10 +7,6 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.oauth2.client.OAuth2LoginConfigurer;
 
-// Sign-in with a provider: it starts at /api/v1/auth/oauth2/authorization/
-// {provider} and comes back to the callback ConfiguredProviders names. The
-// request on its way is a cookie, PKCE guards the code, and the provider's
-// tokens are dropped once the person is known.
 @Configuration
 public class OAuthSignInConfig {
 
@@ -23,7 +19,6 @@ public class OAuthSignInConfig {
             OAuthSuccessHandler successHandler,
             OAuthFailureHandler failureHandler,
             AppProperties properties) {
-        // The app's own sign-in page, so Spring makes none of its own.
         return login -> login.loginPage(properties.site().clientUrl() + "/login")
                 .clientRegistrationRepository(providers)
                 .authorizedClientRepository(new DiscardedAuthorizedClients())

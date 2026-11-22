@@ -8,8 +8,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-// Accepting an invitation belongs to the account, not to a business: it adds
-// the account to one.
 @RestController
 public class InvitationAcceptController {
 

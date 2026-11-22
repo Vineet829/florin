@@ -17,7 +17,6 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -26,9 +25,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// Profit and loss in each currency, before tax: issued invoices and receipts
-// less credit notes, by the day each is dated, against expenses by the day
-// each was paid, with the tax on them unless it can be claimed back.
 class ProfitReportIntegrationTest extends IntegrationTest {
 
     @Autowired
@@ -96,8 +92,6 @@ class ProfitReportIntegrationTest extends IntegrationTest {
                         .getContentAsString(),
                 "$.createdCustomer._id");
 
-        // Income: 1,000 before its tax this month, less a credit note of 200,
-        // and a receipt of 500 last month.
         String invoice = document("Invoice", "USD", "1000", "18", today, false);
         String note = JsonPath.read(
                 send(session, post("/api/v1/document/{id}/credit-note", invoice), "")
@@ -113,14 +107,12 @@ class ProfitReportIntegrationTest extends IntegrationTest {
         document("Receipt", "USD", "500", "0", lastMonth, false);
         document("Invoice", "EUR", "400", "0", today, false);
         document("Invoice", "USD", "3000", "0", fourMonthsAgo, false);
-        // Not income: a draft, a void invoice and a quotation.
         document("Invoice", "USD", "700", "0", today, true);
         String voided = document("Invoice", "USD", "300", "0", today, false);
         send(session, post("/api/v1/document/{id}/void", voided), "{\"reason\": \"Issued twice\"}")
                 .andExpect(status().isOk());
         document("Quotation", "USD", "900", "0", today, false);
 
-        // Expenses: tax counts only when it can't be claimed back.
         expense(session, today, "Office", "USD", "500", "90", false);
         expense(session, today, "Software", "USD", "100", "18", true);
         expense(session, lastMonth, "Office", "USD", "50", "0", false);
@@ -130,8 +122,7 @@ class ProfitReportIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("each month with income before tax less credit notes, or with expenses, and what each category cost")
-    void months() throws Exception {
+    void profitPerMonthAndCategory() throws Exception {
         report("3m")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.period").value("3m"))
@@ -164,8 +155,7 @@ class ProfitReportIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a longer period takes in older months, a loss is a negative profit, and periods come from a list")
-    void periods() throws Exception {
+    void longerPeriodsAndLosses() throws Exception {
         report("12m")
                 .andExpect(jsonPath("$.currencies[0].months.length()").value(3))
                 .andExpect(jsonPath("$.currencies[0].months[0].month").value(YearMonth.from(fourMonthsAgo).toString()))
@@ -187,16 +177,13 @@ class ProfitReportIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("categories that cost the same go by name, whatever its case")
-    void ties() throws Exception {
+    void tiesSortedByName() throws Exception {
         session = business();
         expense(session, today, "delta", "USD", "300", "0", false);
         expense(session, today, "Fees", "USD", "50", "0", false);
         expense(session, today, "ads", "USD", "50", "0", false);
         expense(session, today, "Books", "USD", "50", "0", false);
         expense(session, today, "cloud", "USD", "50", "0", false);
-        // Each 50 once tax that can't be claimed back is added and tax that
-        // can is left out.
         expense(session, today, "Equipment", "USD", "40", "10", false);
         expense(session, today, "Dues", "USD", "50", "5", true);
 
@@ -210,12 +197,9 @@ class ProfitReportIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a category in two spellings is one row, spelled as first used, as the expenses list finds it")
     void twoSpellings() throws Exception {
         User owner = createUser();
         session = bearer(owner);
-        // Two members can save a new category at the same moment, each in
-        // their own spelling; otherwise a new expense takes the one in use.
         for (String spelling : List.of("Travel", "travel", "travel")) {
             jdbcTemplate.update("""
                     insert into expenses (business_pkid, expense_date, category, amount, currency)

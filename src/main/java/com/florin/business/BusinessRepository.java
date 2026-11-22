@@ -14,7 +14,6 @@ public interface BusinessRepository extends JpaRepository<Business, Long> {
     @Query("select b from Business b where b.id = :externalId")
     Optional<Business> findByExternalId(@Param("externalId") UUID externalId);
 
-    // The businesses an account owns that others work in too.
     @Query("""
             select owner.business.name from BusinessMember owner
             where owner.user.pkid = :userPkid and owner.role = com.florin.business.BusinessRole.OWNER
@@ -24,7 +23,6 @@ public interface BusinessRepository extends JpaRepository<Business, Long> {
             """)
     List<String> findSharedNamesOwnedBy(@Param("userPkid") Long userPkid);
 
-    // Locked, so changes to one business take turns.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select b from Business b where b.pkid = :pkid")
     Optional<Business> findForUpdate(@Param("pkid") Long pkid);

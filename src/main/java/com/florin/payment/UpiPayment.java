@@ -4,11 +4,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 
-// A request to pay by UPI, as the link a UPI app opens or a QR code holds:
-// upi://pay?pa=…&pn=…&am=…&cu=INR&tn=… Values are percent-encoded as RFC 3986
-// says, with an @ left as it is and a space as %20, the form UPI apps read
-// most widely. An amount over what UPI apps send at once is left out, for the
-// payer to enter.
 public record UpiPayment(String vpa, String payee, BigDecimal amount, String note) {
 
     static final BigDecimal MOST_AT_ONCE = new BigDecimal("100000.00");

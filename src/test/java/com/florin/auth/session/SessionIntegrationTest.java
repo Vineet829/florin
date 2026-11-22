@@ -12,7 +12,6 @@ import com.jayway.jsonpath.JsonPath;
 import jakarta.servlet.http.Cookie;
 import java.time.Instant;
 import java.util.List;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -73,7 +72,6 @@ class SessionIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("signing in starts a session with the browser it came from, and a refresh swaps its token")
     void signInAndRefresh() throws Exception {
         User user = withPassword();
         SignedIn first = signIn(user);
@@ -91,7 +89,6 @@ class SessionIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a second tab refreshing with the same token a moment later still gets in, and keeps the new cookie")
     void concurrentRefresh() throws Exception {
         User user = withPassword();
         SignedIn first = signIn(user);
@@ -108,17 +105,14 @@ class SessionIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a token handed out a moment ago isn't swapped again, so a tab still sending the one before gets in")
     void noSecondSwapWithinGrace() throws Exception {
         User user = withPassword();
         SignedIn first = signIn(user);
         SignedIn rotated = read(refresh(first.refresh()).andExpect(status().isOk()).andReturn().getResponse());
 
-        // A tab that already has the new cookie refreshes a moment later.
         refresh(rotated.refresh())
                 .andExpect(status().isOk())
                 .andExpect(header().doesNotExist(HttpHeaders.SET_COOKIE));
-        // A tab that sent the first cookie before either answer came back.
         MockHttpServletResponse late = refresh(first.refresh())
                 .andExpect(status().isOk())
                 .andExpect(header().doesNotExist(HttpHeaders.SET_COOKIE))
@@ -130,7 +124,6 @@ class SessionIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("once that moment has passed, the token is swapped again")
     void swapsAgainAfterGrace() throws Exception {
         User user = withPassword();
         SignedIn first = signIn(user);
@@ -146,7 +139,6 @@ class SessionIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an old token coming back after that signs out every session of the account")
     void reusedToken() throws Exception {
         User user = withPassword();
         SignedIn first = signIn(user);
@@ -168,7 +160,6 @@ class SessionIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("on the shared demo account, an old token coming back signs out only its own session")
     void reusedTokenOnTheDemo() throws Exception {
         User demo = demoUser();
         demo.setPassword(passwordEncoder.encode(PASSWORD));
@@ -187,7 +178,6 @@ class SessionIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("signing out ends the session at once, even for an access token that hasn't run out")
     void signOut() throws Exception {
         User user = withPassword();
         SignedIn session = signIn(user);
@@ -200,13 +190,11 @@ class SessionIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("signing out with the cookie a refresh has just replaced still ends the session")
     void signOutWithReplacedCookie() throws Exception {
         User user = withPassword();
         SignedIn first = signIn(user);
         SignedIn rotated = read(refresh(first.refresh()).andExpect(status().isOk()).andReturn().getResponse());
 
-        // The tab signing out sent its cookie before the refresh's answer came back.
         mockMvc.perform(post("/api/v1/auth/logout").cookie(new Cookie("jwt", first.refresh())))
                 .andExpect(status().isOk());
 
@@ -216,7 +204,6 @@ class SessionIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a GET can't sign anyone out, so a link or an image on another site can't either")
     void signOutTakesPost() throws Exception {
         User user = withPassword();
         SignedIn session = signIn(user);
@@ -228,7 +215,6 @@ class SessionIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the refresh cookie is Lax, so a form another site posts to sign someone out doesn't carry it")
     void refreshCookieStaysOnSite() throws Exception {
         User user = withPassword();
 
@@ -244,8 +230,7 @@ class SessionIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a session that ran out can't be refreshed")
-    void expired() throws Exception {
+    void expiredSessionCannotRefresh() throws Exception {
         User user = withPassword();
         SignedIn session = signIn(user);
         jdbcTemplate.update(

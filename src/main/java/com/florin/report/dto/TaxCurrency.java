@@ -3,8 +3,6 @@ package com.florin.report.dto;
 import java.math.BigDecimal;
 import java.util.List;
 
-// One currency's tax in the period, in all and per rate, and per month and
-// rate. `gst` says whether any of it was charged in India GST mode.
 public record TaxCurrency(
         String currency,
         boolean gst,

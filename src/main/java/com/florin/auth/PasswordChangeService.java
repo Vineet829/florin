@@ -20,9 +20,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// Changes a signed-in account's password. Every other device is signed out;
-// this one stays signed in with an access token newer than the change. The
-// owner gets an email, in case it wasn't them.
 @Service
 public class PasswordChangeService {
 
@@ -60,7 +57,6 @@ public class PasswordChangeService {
         this.clock = clock;
     }
 
-    // Returns an access token for this session that the change doesn't end.
     @Transactional
     public String change(User principal, UUID currentSession, ChangePasswordRequest request) {
         User user = userRepository.findById(principal.getPkid())

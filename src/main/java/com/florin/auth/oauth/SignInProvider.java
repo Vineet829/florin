@@ -3,8 +3,6 @@ package com.florin.auth.oauth;
 import java.util.Arrays;
 import java.util.Optional;
 
-// The accounts people can sign in with besides a password. The id is the one
-// in the sign-in and callback URLs.
 public enum SignInProvider {
     GOOGLE("google", "Google");
 

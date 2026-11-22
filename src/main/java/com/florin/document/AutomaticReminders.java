@@ -15,10 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-// Sends the automatic payment reminders due on a given day. Each reminder is
-// sent on its own, so one that fails is logged and the rest still go out.
-// Its invoice is locked and checked again, and the reminder recorded, before
-// it goes, so two runs at once never both send it.
 @Service
 public class AutomaticReminders {
 
@@ -72,8 +68,6 @@ public class AutomaticReminders {
         return sent;
     }
 
-    // False when the invoice no longer needs the reminder, as when another
-    // run sent it after the list was made.
     private boolean remind(Due reminder) {
         Document invoice = documentRepository.findForUpdateByPkid(reminder.documentPkid()).orElse(null);
         if (invoice == null

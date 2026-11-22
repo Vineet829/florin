@@ -3,8 +3,6 @@ package com.florin.business;
 import java.util.EnumSet;
 import java.util.Set;
 
-// Owners may do everything; admins everything but hand over or delete the
-// business; members work on its records; viewers only look and download.
 public enum BusinessRole {
     OWNER(EnumSet.allOf(Permission.class)),
     ADMIN(EnumSet.complementOf(EnumSet.of(Permission.OWN_BUSINESS))),

@@ -7,7 +7,6 @@ import com.florin.user.User;
 import java.time.Instant;
 import java.util.UUID;
 
-// An invitation still waiting for an answer, as the team page lists it.
 public record InvitationResponse(
         @JsonProperty("_id") UUID id,
         String email,

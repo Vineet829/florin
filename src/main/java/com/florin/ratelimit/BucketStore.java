@@ -5,8 +5,6 @@ import io.github.bucket4j.TimeMeter;
 import java.time.Clock;
 import java.time.Instant;
 
-// Where the buckets behind each rate limit live: in this instance's memory, or
-// in the database so every instance shares them.
 interface BucketStore {
 
     Bucket bucket(RateLimit limit, String key);
@@ -15,7 +13,6 @@ interface BucketStore {
 
     int removeExpired();
 
-    // Buckets refill by the app's clock, so tests can move time on.
     static TimeMeter timeMeter(Clock clock) {
         return new TimeMeter() {
             @Override

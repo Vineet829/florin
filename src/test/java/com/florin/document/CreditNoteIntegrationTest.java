@@ -20,16 +20,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// A credit note takes an amount off an issued invoice or receipt: it is made
-// as a draft from it, keeps its client and currency, can't take off more than
-// is left, and counts in balances, reports, statements, PDFs and exports.
 class CreditNoteIntegrationTest extends IntegrationTest {
 
     private final LocalDate today = LocalDate.now(ZoneOffset.UTC);
@@ -79,7 +75,6 @@ class CreditNoteIntegrationTest extends IntegrationTest {
         return send(post("/api/v1/document/{id}/credit-note", id), "");
     }
 
-    // A draft credit note for the given amount before tax.
     private String draftFor(String invoice, String amount) throws Exception {
         String note = JsonPath.read(
                 body(creditNote(invoice).andExpect(status().isCreated())), "$.newDocument._id");
@@ -107,7 +102,6 @@ class CreditNoteIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a credit note starts as a draft of the whole invoice, keeps its client and currency, and is numbered on issue")
     void creditsAnInvoice() throws Exception {
         String invoice = invoice("1000");
         String note = JsonPath.read(
@@ -176,8 +170,7 @@ class CreditNoteIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("credit notes take off no more than is left, settle the invoice when they take it all, and void back")
-    void cap() throws Exception {
+    void creditsCappedAtBalance() throws Exception {
         String invoice = invoice("1000");
         String first = draftFor(invoice, "600");
         issue(first, "{}").andExpect(status().isOk());
@@ -222,7 +215,6 @@ class CreditNoteIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("two credit notes issued at once for one invoice take turns, so only one fits")
     void issuedAtOnce() throws Exception {
         String invoice = invoice("1000");
         List<String> notes = List.of(draftFor(invoice, "600"), draftFor(invoice, "600"));
@@ -249,8 +241,7 @@ class CreditNoteIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("balances, reports, the overview, statements, PDFs, the share page and the CSV count what was credited")
-    void everywhere() throws Exception {
+    void creditsCountedEverywhere() throws Exception {
         String invoice = invoice("1000");
         pay(invoice, "200").andExpect(status().isCreated());
         String note = draftFor(invoice, "300");

@@ -13,7 +13,6 @@ import com.florin.IntegrationTest;
 import com.florin.user.User;
 import com.jayway.jsonpath.JsonPath;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -45,7 +44,6 @@ class BusinessSwitchIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a new business becomes the session's, and its records stay apart from the first one's")
     void startsAndSwitches() throws Exception {
         User user = createUser();
         String session = bearer(user);
@@ -79,7 +77,6 @@ class BusinessSwitchIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("each business says the time zone its days are counted in, UTC until it chooses one")
     void timeZones() throws Exception {
         User user = createUser();
         String session = bearer(user);
@@ -106,7 +103,6 @@ class BusinessSwitchIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("each session keeps its own business, and a new one starts in the last one used")
     void perSession() throws Exception {
         User user = createUser();
         String first = businessOf(user).getId().toString();
@@ -126,7 +122,6 @@ class BusinessSwitchIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a tab still showing another business is told which one the session is in now")
     void staleTab() throws Exception {
         User user = createUser();
         String session = bearer(user);
@@ -148,8 +143,7 @@ class BusinessSwitchIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("nobody can switch to a business they aren't in, and the demo account can't start one")
-    void refusals() throws Exception {
+    void refusesInvalidSwitches() throws Exception {
         User user = createUser();
         String stranger = businessOf(createUser()).getId().toString();
 
@@ -166,8 +160,7 @@ class BusinessSwitchIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an account owns at most ten businesses")
-    void cap() throws Exception {
+    void ownsAtMostTenBusinesses() throws Exception {
         User user = createUser();
         String session = bearer(user);
         for (int business = 2; business <= 10; business++) {

@@ -18,8 +18,6 @@ public enum RecurringFrequency {
         return label;
     }
 
-    // The date of a run, counted from the first one so that month ends don't
-    // drift: a schedule from Jan 31 runs on Feb 28, then Mar 31.
     LocalDate run(LocalDate start, int runs) {
         return switch (this) {
             case WEEKLY -> start.plusWeeks(runs);

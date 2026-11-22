@@ -23,7 +23,6 @@ import java.util.Base64;
 import java.util.HexFormat;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -93,8 +92,7 @@ class ShareLinkIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a share link shows the document to anyone holding it, and only a hash of it is stored")
-    void view() throws Exception {
+    void linkShowsDocumentStoresHash() throws Exception {
         String id = document("Invoice");
         mockMvc.perform(post("/api/v1/document/{id}/payment", id)
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
@@ -135,7 +133,6 @@ class ShareLinkIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a new link replaces the old one, and a revoked or unknown link is gone")
     void replaceAndRevoke() throws Exception {
         String id = document("Invoice");
         String first = share(id);
@@ -157,7 +154,6 @@ class ShareLinkIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a link is kept sealed so it can be shown again, and one that can't be opened can only be replaced")
     void shownAgain() throws Exception {
         String id = document("Invoice");
         String token = share(id);
@@ -187,8 +183,7 @@ class ShareLinkIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a client can accept a quotation through its link, once, and nothing else")
-    void accept() throws Exception {
+    void acceptsQuotationOnce() throws Exception {
         String quotation = document("Quotation");
         String token = share(quotation);
 
@@ -212,8 +207,7 @@ class ShareLinkIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("only a document's owner can share it")
-    void ownership() throws Exception {
+    void onlyOwnerCanShare() throws Exception {
         String id = document("Invoice");
 
         mockMvc.perform(post("/api/v1/document/{id}/share", id).header(HttpHeaders.AUTHORIZATION, bearer(createUser())))

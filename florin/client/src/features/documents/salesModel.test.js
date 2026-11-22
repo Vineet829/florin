@@ -10,13 +10,13 @@ import {
 const read = (search) => readSales(new URLSearchParams(search));
 const OCT_4 = new Date(2026, 9, 4, 12);
 
-describe("the sales view in the URL", () => {
-  it("opens at every date, on the first page of ten", () => {
+describe("sales URL state", () => {
+  it("starts with the defaults", () => {
     expect(read("")).toEqual({ period: "", currency: "", page: 1, size: 10 });
     expect(salesSearch(read("")).toString()).toBe("");
   });
 
-  it("reads and writes the period, the currency and the page, in that order", () => {
+  it("round-trips URL parameters", () => {
     const list = read("size=25&currency=EUR&page=3&period=this-year");
     expect(list).toEqual({
       period: "this-year",
@@ -29,7 +29,7 @@ describe("the sales view in the URL", () => {
     );
   });
 
-  it("takes every period the Documents list has, and the overview's links send", () => {
+  it("accepts every list period", () => {
     for (const period of [
       "30d",
       "90d",
@@ -47,8 +47,8 @@ describe("the sales view in the URL", () => {
   });
 });
 
-describe("what the view asks for", () => {
-  it("asks for the summary by the period's name, and the currency when chosen", () => {
+describe("server queries", () => {
+  it("builds the summary query", () => {
     expect(salesQuery(read("period=this-year"))).toEqual({
       period: "this-year",
     });
@@ -59,7 +59,7 @@ describe("what the view asks for", () => {
     expect(salesQuery(read(""))).toEqual({});
   });
 
-  it("lists what was billed in the period and the total's currency, newest first", () => {
+  it("builds the documents query", () => {
     expect(billedQuery(read("period=90d"), "USD", OCT_4)).toEqual({
       page: 1,
       size: 10,
@@ -69,8 +69,6 @@ describe("what the view asks for", () => {
       period: "90d",
       currency: "USD",
     });
-    // The Documents list sends the calendar's periods as days, this year's
-    // up to today.
     expect(billedQuery(read("period=this-year&page=2"), "EUR", OCT_4)).toEqual({
       page: 2,
       size: 10,
@@ -90,7 +88,7 @@ describe("what the view asks for", () => {
     });
   });
 
-  it("names each type of document billed", () => {
+  it("names each document type", () => {
     expect(TYPE_NAMES).toEqual({
       Invoice: "Invoices",
       Receipt: "Receipts",

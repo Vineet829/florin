@@ -7,7 +7,6 @@ import com.florin.user.User;
 import java.time.Instant;
 import java.util.UUID;
 
-// Someone in the team, as the team page lists them. `you` marks the viewer.
 public record MemberResponse(
         @JsonProperty("_id") UUID id,
         String firstName,

@@ -20,7 +20,6 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -32,16 +31,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// The weeks what is owed falls due in are days of the business's calendar,
-// not stretches of 168 hours: from Monday 26 October 2026 in Los Angeles,
-// this week ends with Sunday 1 November, when the clocks go back an hour, so
-// it lasts 169 hours.
 class DueWeeksAcrossDaylightSavingIntegrationTest extends IntegrationTest {
 
     private static final ZoneId LOS_ANGELES = ZoneId.of("America/Los_Angeles");
     private static final LocalDate TODAY = LocalDate.of(2026, 10, 26);
 
-    // Noon on that Monday in Los Angeles.
     @TestConfiguration(proxyBeanMethods = false)
     static class Autumn {
 
@@ -83,7 +77,6 @@ class DueWeeksAcrossDaylightSavingIntegrationTest extends IntegrationTest {
         return result.andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
     }
 
-    // An invoice for the amount, due at a moment on the business's clock.
     private String dueAt(String amount, LocalDateTime moment) throws Exception {
         String invoice = JsonPath.read(
                 body(send(post("/api/v1/document/create"), """
@@ -101,15 +94,12 @@ class DueWeeksAcrossDaylightSavingIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a week the clocks go back in runs to the end of its last day")
     void clocksGoBack() throws Exception {
         String first = dueAt("100", TODAY.atTime(0, 30));
         String last = dueAt("200", LocalDate.of(2026, 11, 1).atTime(23, 30));
         String next = dueAt("300", LocalDate.of(2026, 11, 2).atTime(0, 30));
         String late = dueAt("400", TODAY.minusDays(1).atTime(23, 30));
 
-        // This week ends with the last minutes of Sunday 1 November, and the
-        // next begins with the first of Monday.
         send(get("/api/v1/document/all").param("outstanding", "true").param("due", "this-week"), "")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.myDocuments[*]._id", containsInAnyOrder(first, last)))
@@ -121,7 +111,6 @@ class DueWeeksAcrossDaylightSavingIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.myDocuments[*].dueDate", containsInAnyOrder("2026-11-02")))
                 .andExpect(jsonPath("$.totalDocuments").value(1))
                 .andExpect(jsonPath("$.totals[0].balanceDue").value(300.0));
-        // Due in the last minutes of the day before, it is overdue already.
         send(get("/api/v1/document/all").param("overdue", "true"), "")
                 .andExpect(jsonPath("$.myDocuments[*]._id", containsInAnyOrder(late)))
                 .andExpect(jsonPath("$.myDocuments[*].dueDate", containsInAnyOrder("2026-10-25")))

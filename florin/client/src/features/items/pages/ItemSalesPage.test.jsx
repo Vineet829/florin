@@ -3,11 +3,6 @@ import { createRoot } from "react-dom/client";
 import { act } from "react-dom/test-utils";
 import fixture from "./ItemSalesPage.fixture.json";
 
-// Sales by item and an item's own sales page, as the app draws them,
-// through its own store and RTK Query, with only fetch faked. The fixture
-// is the demo account's last 90 days to Oct 4, 2026: every item sold,
-// adding up to the overview's income of 64,194.00, and the sales of its top
-// item. The signed-in shell is left out.
 vi.mock("../../dashboard/components/DashboardShell", () => ({
   default: ({ children }) => children,
 }));
@@ -36,9 +31,6 @@ const json = (body, status = 200) =>
     headers: { "content-type": "application/json" },
   });
 
-// Answers each request by its path; `answers` replaces any of them with a
-// body or a Response, a promise of either, or a function of the request's
-// address giving one.
 const serve = (answers = {}) =>
   vi.stubGlobal(
     "fetch",
@@ -110,8 +102,6 @@ const links = (element) =>
     link.textContent,
     link.getAttribute("href"),
   ]);
-// The styled dropdown with this label: its trigger, which carries the value
-// chosen.
 const select = (page, label) =>
   [...page.querySelectorAll("label")]
     .find((element) => element.textContent.startsWith(label))
@@ -137,9 +127,9 @@ const choose = async (combobox, value) => {
 const C = "00000000-0000-0000-0000-00000000";
 const MOTION = "/items/sales/item?name=Motion+graphics+%28per+15+seconds%29";
 
-it("lists what each item sold in the period, its share of income and the totals, each opening its sales", async () => {
+it("lists item sales with shares", async () => {
   const page = await open("/items/sales?period=90d");
-  expect(document.title).toBe("Sales by item — Florin");
+  expect(document.title).toBe("Sales by item - Florin");
   expect(page.querySelector("h1").textContent).toBe("Items.");
   expect(
     [...page.querySelectorAll('nav[aria-label="Items views"] a')].map((tab) => [
@@ -154,12 +144,10 @@ it("lists what each item sold in the period, its share of income and the totals,
     "/api/v1/item/sales?period=90d&page=1&size=10",
   ]);
   expect(page.textContent).toContain(
-    "What each item sold in Jul 7 – Oct 4, 2026, before tax, less what credit notes took back.",
+    "What each item sold in Jul 7 - Oct 4, 2026, before tax, less what credit notes took back.",
   );
   expect(select(page, "Sold").textContent).toContain("Last 90 days");
   expect(headings(page)).toEqual(["Item", "Sold", "Amount", "Share of income"]);
-  // The overview's top five lead, then the rest, then the lines saved
-  // without a name, and the totals: everything sold is the income.
   expect(table(page)).toEqual([
     ["Motion graphics (per 15 seconds)", "28", "18,200.00", "28%"],
     ["Logo and identity system", "3", "9,280.00", "15%"],
@@ -173,14 +161,11 @@ it("lists what each item sold in the period, its share of income and the totals,
     ["Other lines", "5", "1,454.00", "2%"],
     ["All 10 items", "", "64,194.00", "100%"],
   ]);
-  // The shares add up to the totals' 100%.
   expect(
     table(page)
       .slice(0, -1)
       .reduce((sum, row) => sum + parseInt(row[3], 10), 0),
   ).toBe(100);
-  // Each item opens its own sales for the same period, the lines saved
-  // without a name too; the totals open nothing.
   expect(links(page)).toHaveLength(10);
   expect(links(page)[9]).toEqual([
     "Other lines",
@@ -194,10 +179,10 @@ it("lists what each item sold in the period, its share of income and the totals,
     "Consulting (hourly)",
     "/items/sales/item?name=Consulting+%28hourly%29&period=90d",
   ]);
-  expect(page.querySelector('[role="status"]').textContent).toBe("1–10 of 10");
+  expect(page.querySelector('[role="status"]').textContent).toBe("1-10 of 10");
 });
 
-it("keeps the period, the currency and the page in the address, and the item pages follow them", async () => {
+it("keeps filters in the URL", async () => {
   const page = await open("/items/sales?period=90d", {
     "/item/sales": (url) => ({
       ...fixture.sales,
@@ -207,7 +192,6 @@ it("keeps the period, the currency and the page in the address, and the item pag
       numberOfPages: 2,
     }),
   });
-  // Several currencies: one at a time, the amounts naming theirs.
   expect(table(page)[0][2]).toBe("USD18,200.00");
   expect(await options(select(page, "Currency"))).toEqual(["USD", "EUR"]);
   await choose(select(page, "Currency"), "EUR");
@@ -233,7 +217,7 @@ it("keeps the period, the currency and the page in the address, and the item pag
   );
 });
 
-it("says when nothing was sold in the period", async () => {
+it("empty period message", async () => {
   const page = await open(
     "/items/sales?period=30d",
     {
@@ -253,13 +237,13 @@ it("says when nothing was sold in the period", async () => {
       ),
   );
   expect(page.textContent).toContain(
-    "Items show up here once they are on an invoice or receipt you issue, with what each brought in.",
+    "Items show up here once they're on an invoice or receipt you issue, with what each brought in.",
   );
   expect(page.querySelector("table")).toBeNull();
   expect(select(page, "Sold")).toBeTruthy();
 });
 
-it("holds the table's place while it loads, and says when it can't be loaded", async () => {
+it("shows loading and error states", async () => {
   let answer;
   const page = await open(
     "/items/sales?period=90d",
@@ -271,7 +255,7 @@ it("holds the table's place while it loads, and says when it can't be loaded", a
     () => Promise.resolve(),
   );
   expect(page.querySelector('[role="status"]').textContent).toBe(
-    "Loading workspace data…",
+    "Loading workspace data...",
   );
   await act(async () => answer(json({ message: "Try later." }, 500)));
   await act(() =>
@@ -280,15 +264,15 @@ it("holds the table's place while it loads, and says when it can't be loaded", a
     ),
   );
   expect(page.querySelector('[role="alert"]').textContent).toContain(
-    "We couldn’t load this page.Try later.",
+    "We couldn't load this page.Try later.",
   );
   expect(page.querySelector("table")).toBeNull();
 });
 
-it("shows what an item brought in over the period, who bought it and each line, each line opening its document", async () => {
+it("shows one item's sales", async () => {
   const page = await open(`${MOTION}&period=90d`);
   expect(document.title).toBe(
-    "Motion graphics (per 15 seconds) sales — Florin",
+    "Motion graphics (per 15 seconds) sales - Florin",
   );
   expect(page.querySelector("h1").textContent).toBe("Item sales.");
   expect(asked("/item/sales/detail")).toEqual([
@@ -299,25 +283,23 @@ it("shows what an item brought in over the period, who bought it and each line, 
     "Motion graphics (per 15 seconds)",
   );
   expect(figures.textContent).toContain(
-    "Sold Jul 7 – Oct 4, 2026, before tax.",
+    "Sold Jul 7 - Oct 4, 2026, before tax.",
   );
   expect(figures.textContent).toContain(
     "Brought in18,200.0028 sold, 28% of income, on 6 documents",
   );
-  // Who bought it, largest first, each opening the client.
   const buyers = figures.querySelector("table");
   expect(headings(buyers)).toEqual(["Client", "Sold", "Amount"]);
   expect(table(buyers)).toEqual([
-    ["Quill & Co. Publishing", "12", "7,800.00"],
-    ["Kestrel Outdoor", "8", "5,200.00"],
-    ["Atlas Robotics", "4", "2,600.00"],
-    ["Oak Street Bakery", "4", "2,600.00"],
+    ["Deshmukh & Associates", "12", "7,800.00"],
+    ["Casa Fernandes Homestay", "8", "5,200.00"],
+    ["Mehta Bakers", "4", "2,600.00"],
+    ["Pai Electricals", "4", "2,600.00"],
   ]);
   expect(links(buyers)[0]).toEqual([
-    "Quill & Co. Publishing",
+    "Deshmukh & Associates",
     `/single-customer/${C}c107`,
   ]);
-  // Its lines, newest first, each opening its document.
   expect(linesPanel.querySelector("h2").textContent).toBe("Lines");
   expect(linesPanel.textContent).toContain(
     "Each line it was sold on, newest first.",
@@ -335,29 +317,36 @@ it("shows what an item brought in over the period, who bought it and each line, 
       "REC-0304",
       "Receipt",
       "Oct 2, 2026",
-      "Quill & Co. Publishing",
+      "Deshmukh & Associates",
       "8",
       "5,200.00",
     ],
+    ["INV-1035", "Invoice", "Oct 1, 2026", "Mehta Bakers", "4", "2,600.00"],
+    ["INV-1034", "Invoice", "Sep 28, 2026", "Pai Electricals", "4", "2,600.00"],
     [
-      "INV-1035",
-      "Invoice",
-      "Oct 1, 2026",
-      "Oak Street Bakery",
+      "REC-0303",
+      "Receipt",
+      "Sep 15, 2026",
+      "Casa Fernandes Homestay",
       "4",
       "2,600.00",
     ],
-    ["INV-1034", "Invoice", "Sep 28, 2026", "Atlas Robotics", "4", "2,600.00"],
-    ["REC-0303", "Receipt", "Sep 15, 2026", "Kestrel Outdoor", "4", "2,600.00"],
     [
       "INV-1022",
       "Invoice",
       "Aug 18, 2026",
-      "Quill & Co. Publishing",
+      "Deshmukh & Associates",
       "4",
       "2,600.00",
     ],
-    ["INV-1017", "Invoice", "Jul 20, 2026", "Kestrel Outdoor", "4", "2,600.00"],
+    [
+      "INV-1017",
+      "Invoice",
+      "Jul 20, 2026",
+      "Casa Fernandes Homestay",
+      "4",
+      "2,600.00",
+    ],
   ]);
   expect(links(linesPanel)[0]).toEqual([
     "REC-0304",
@@ -365,7 +354,7 @@ it("shows what an item brought in over the period, who bought it and each line, 
   ]);
 });
 
-it("says how many lines it leaves out", async () => {
+it("counts hidden lines", async () => {
   const page = await open(`${MOTION}&period=12m`, {
     "/item/sales/detail": { ...fixture.detail, linesTotal: 63 },
   });
@@ -374,7 +363,7 @@ it("says how many lines it leaves out", async () => {
   );
 });
 
-it("keeps the item, the period and the currency in the address", async () => {
+it("keeps item filters in URL", async () => {
   const page = await open(`${MOTION}&period=90d`, {
     "/item/sales/detail": (url) => ({
       ...fixture.detail,
@@ -399,7 +388,7 @@ it("keeps the item, the period and the currency in the address", async () => {
   );
 });
 
-it("says when the item sold nothing in the period", async () => {
+it("item empty period message", async () => {
   const page = await open(
     `${MOTION}&period=30d`,
     {
@@ -426,7 +415,7 @@ it("says when the item sold nothing in the period", async () => {
   expect(page.querySelector("table")).toBeNull();
 });
 
-it("says when the item's sales can't be loaded, with a way to try again", async () => {
+it("item load error with retry", async () => {
   let fails = true;
   const page = await open(
     `${MOTION}&period=90d`,
@@ -440,7 +429,7 @@ it("says when the item's sales can't be loaded, with a way to try again", async 
       ),
   );
   const alert = page.querySelector('[role="alert"]');
-  expect(alert.textContent).toContain("We couldn’t load this page.");
+  expect(alert.textContent).toContain("We couldn't load this page.");
   fails = false;
   await click(
     [...alert.querySelectorAll("button")].find(
@@ -451,7 +440,7 @@ it("says when the item's sales can't be loaded, with a way to try again", async 
   expect(page.textContent).toContain("Brought in18,200.00");
 });
 
-it("lists the lines saved without an item name as other lines", async () => {
+it("groups unnamed lines as other", async () => {
   const page = await open("/items/sales/item?name=Other+lines&period=30d", {
     "/item/sales/detail": {
       ...fixture.detail,
@@ -463,7 +452,7 @@ it("lists the lines saved without an item name as other lines", async () => {
       clients: [
         {
           clientId: `${C}c107`,
-          client: "Quill & Co. Publishing",
+          client: "Deshmukh & Associates",
           quantity: 5,
           amount: 1454,
         },
@@ -478,14 +467,14 @@ it("lists the lines saved without an item name as other lines", async () => {
   const figures = page.querySelector("section");
   expect(figures.querySelector("h2").textContent).toBe("Other lines");
   expect(figures.textContent).toContain(
-    "Sold Jul 7 – Oct 4, 2026, before tax, on lines saved without an item name.",
+    "Sold Jul 7 - Oct 4, 2026, before tax, on lines saved without an item name.",
   );
   expect(figures.textContent).toContain(
     "Brought in1,454.005 sold, 2% of income, on 3 documents",
   );
 });
 
-it("holds the item's place while its sales load", async () => {
+it("shows item placeholder while loading", async () => {
   let answer;
   const page = await open(
     `${MOTION}&period=90d`,
@@ -497,7 +486,7 @@ it("holds the item's place while its sales load", async () => {
     () => Promise.resolve(),
   );
   expect(page.querySelector('[role="status"]').textContent).toBe(
-    "Loading workspace data…",
+    "Loading workspace data...",
   );
   expect(page.querySelector("section")).toBeNull();
   expect(page.textContent).not.toContain("Brought in");
@@ -507,7 +496,7 @@ it("holds the item's place while its sales load", async () => {
   expect(page.textContent).toContain("Brought in18,200.00");
 });
 
-it("asks for nothing without an item, and points to Sales by item", async () => {
+it("points to Sales by item", async () => {
   const page = await open("/items/sales/item?period=90d", {}, (element) =>
     vi.waitFor(() =>
       expect(element.textContent).toContain("No item was chosen."),

@@ -24,17 +24,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-// A stand-in for Google, so sign-in runs end to end in tests without it. It
-// signs ID tokens with a key of its own, published as a JWK set, for
-// whoever the next sign-in is set to be, and keeps what each token request
-// sent, to check the code and PKCE. One per test run, on a free port.
 public final class OAuthStub {
 
     public static final String GOOGLE_CLIENT_ID = "google-test-client";
     public static final String GOOGLE_CLIENT_SECRET = "google-test-secret";
 
-    // `hostedDomain` is the hd claim: the Google Workspace domain someone is
-    // at, or null for anyone else.
     public record GoogleUser(
             String sub, String email, boolean emailVerified, String givenName, String familyName, String hostedDomain) {
 
@@ -78,8 +72,6 @@ public final class OAuthStub {
         return url() + "/google";
     }
 
-    // Who the next Google sign-in is, with the nonce its authorization
-    // request carried.
     public void nextGoogle(GoogleUser user, String nonce) {
         this.nextGoogle = user;
         this.nextNonce = nonce;

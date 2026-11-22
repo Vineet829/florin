@@ -32,18 +32,13 @@ import {
 } from "../../../components/workspace/pastel";
 import { Select } from "../../../components/workspace/Select";
 
-// What the overview draws from. An answer without these, as an older server
-// sends, can't be shown.
 const OVERVIEW_FIELDS = ["period", "totals", "owedNow", "trend"];
 
-// The period's buttons sit in a frame as tall as a shortcut key, with the
-// keys' text size, so the two rows of buttons share their edges and their
-// baseline.
 const periodPill =
   "inline-flex min-h-8 items-center justify-center whitespace-nowrap rounded-[11px] px-3.5 text-[13.5px] transition-colors coarse:min-h-11 max-[700px]:flex-1 max-[700px]:px-2";
 
 const DashboardPage = () => {
-  useTitle("Business overview — Florin");
+  useTitle("Business overview - Florin");
   const [params, setParams] = useSearchParams();
   const period = findPeriod(params.get("period")).key;
   const overviewQuery = useGetOverviewQuery(
@@ -55,33 +50,27 @@ const DashboardPage = () => {
     answer && OVERVIEW_FIELDS.every((key) => answer[key]) ? answer : undefined;
   const refreshing = overviewQuery.isFetching;
   const hasError = overviewQuery.isError || (Boolean(answer) && !snapshot);
-  // Until the chosen period's or currency's figures arrive, or when they
-  // couldn't be loaded, the last ones stay on screen, dimmed.
   const stale = Boolean(snapshot) && !overviewQuery.currentData;
   const shownPeriod = snapshot && findPeriod(snapshot.period.key);
   const failure = !snapshot
     ? [
-        "We couldn’t load your overview.",
+        "We couldn't load your overview.",
         "Please try again to see your latest figures.",
       ]
     : stale && shownPeriod.key !== period
       ? [
-          `We couldn’t load ${findPeriod(period).called}.`,
+          `We couldn't load ${findPeriod(period).called}.`,
           `Showing ${shownPeriod.called}.`,
         ]
       : stale
         ? [
-            `We couldn’t load the figures in ${params.get("currency") || snapshot.currencies[0]}.`,
+            `We couldn't load the figures in ${params.get("currency") || snapshot.currencies[0]}.`,
             `Showing ${snapshot.currency}.`,
           ]
         : [
-            "Some workspace data couldn’t be refreshed.",
+            "Some workspace data couldn't be refreshed.",
             "Your last loaded figures are still shown. Try refreshing.",
           ];
-  // Money is shown for one period and one currency at a time. The address
-  // keeps what was chosen; the default period, and the first currency,
-  // stay out of it. The currency switch appears only when there is more
-  // than one.
   const search = (changes) => {
     const chosen = { period, currency: params.get("currency"), ...changes };
     const next = new URLSearchParams();
@@ -95,7 +84,6 @@ const DashboardPage = () => {
     setParams(search({ currency }), { replace: true });
 
   const refresh = () => overviewQuery.refetch();
-  // The lists under the cash flow, in their order.
   const lists = [
     snapshot?.topClients && (
       <TopClientsPanel
@@ -128,8 +116,6 @@ const DashboardPage = () => {
             <h1 className={pageTitle}>
               Business overview<span>.</span>
             </h1>
-            {/* The words follow the figures shown, which can still be the
-                last period's while the chosen one loads. */}
             <p className={pageSubtitle}>
               {snapshot
                 ? periodSubtitle(snapshot.period, snapshot.totals.hasPrevious)
@@ -209,8 +195,6 @@ const DashboardPage = () => {
                 <AttentionPanel snapshot={snapshot} />
               </div>
               <CashFlowPanel snapshot={snapshot} />
-              {/* A list an older server's answer has no figures for is left
-                  out, and the rest share its row. */}
               {lists.length > 0 && (
                 <div className={listRow(lists.length)}>{lists}</div>
               )}

@@ -2,9 +2,6 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createRoot } from "react-dom/client";
 import { act } from "react-dom/test-utils";
 
-// The page as the app draws it, through its own store and RTK Query, with
-// only fetch faked. The catalog is the demo account's, as the server sends
-// it; the signed-in shell is left out.
 vi.mock("../../dashboard/components/DashboardShell", () => ({
   default: ({ children }) => children,
 }));
@@ -40,7 +37,6 @@ const item = (id, name, unitPrice, unit = null) => ({
   taxRate: null,
   hsnSac: null,
 });
-// Twelve items, so the list has a second page.
 const catalog = [
   item(1, "Motion graphics (per 15 seconds)", 650),
   item(2, "Logo and identity system", 3200),
@@ -68,8 +64,6 @@ const owner = {
   ],
 };
 
-// Answers each request by its path; `items` is the catalog, or gives it for
-// each request for it, and `totalItems` how many there are in all.
 const serve = (items = catalog, totalItems) =>
   vi.stubGlobal(
     "fetch",
@@ -145,7 +139,7 @@ const press = (input, key) =>
     input.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
   });
 
-it("lists every item, with nothing above the list, while no search is set", async () => {
+it("lists all items without search", async () => {
   const page = await open("/items");
   expect(names(page)).toHaveLength(10);
   expect(searchBox(page).value).toBe("");
@@ -154,7 +148,7 @@ it("lists every item, with nothing above the list, while no search is set", asyn
   expect(address).toBe("");
 });
 
-it("spaces the item columns evenly while the list is a table", async () => {
+it("spaces table columns evenly", async () => {
   const page = await open("/items");
   const table = page.querySelector("table");
   expect(table.className).toContain("tabled:justify-between");
@@ -163,7 +157,7 @@ it("spaces the item columns evenly while the list is a table", async () => {
   );
 });
 
-it("opens at the item the address names, says how many it finds, and clears it", async () => {
+it("applies and clears URL search", async () => {
   const page = await open("/items?q=Motion+graphics+%28per+15+seconds%29");
   expect(names(page)).toEqual(["Motion graphics (per 15 seconds)"]);
   expect(searchBox(page).value).toBe("Motion graphics (per 15 seconds)");
@@ -174,11 +168,10 @@ it("opens at the item the address names, says how many it finds, and clears it",
   expect(names(page)).toHaveLength(10);
   expect(line(page)).toBeUndefined();
   expect(searchBox(page).value).toBe("");
-  // Clear search is gone, so focus moves to the search box.
   expect(document.activeElement).toBe(searchBox(page));
 });
 
-it("keeps what is typed in the address, and finds items by their unit too", async () => {
+it("keeps search in URL", async () => {
   const page = await open("/items");
   await type(searchBox(page), " hour ");
   await press(searchBox(page), "Enter");
@@ -186,7 +179,6 @@ it("keeps what is typed in the address, and finds items by their unit too", asyn
   expect(names(page)).toEqual(["Consulting (hourly)", "Copywriting"]);
   expect(line(page)).toBe("2 items");
 
-  // A pause in typing searches too.
   await type(searchBox(page), "LOGO");
   expect(address).toBe("?q=hour");
   await act(() => new Promise((resolve) => setTimeout(resolve, 350)));
@@ -194,7 +186,7 @@ it("keeps what is typed in the address, and finds items by their unit too", asyn
   expect(names(page)).toEqual(["Logo and identity system"]);
 });
 
-it("shows a search from the first page", async () => {
+it("search resets to page one", async () => {
   const page = await open("/items");
   await act(async () => page.querySelector('[aria-label="Next page"]').click());
   expect(names(page)).toEqual(["Packaging design", "Print production"]);
@@ -208,7 +200,7 @@ it("shows a search from the first page", async () => {
   expect(names(page)[0]).toBe("Motion graphics (per 15 seconds)");
 });
 
-it("says when no item matches, with a way back to every item", async () => {
+it("no match message with reset", async () => {
   const page = await open("/items?q=Other+lines");
   expect(page.querySelector("table")).toBeNull();
   expect(page.textContent).toContain("No items match.");
@@ -219,15 +211,13 @@ it("says when no item matches, with a way back to every item", async () => {
   expect(document.activeElement).toBe(searchBox(page));
 });
 
-it("offers no search while there are no items", async () => {
+it("no search without items", async () => {
   const page = await open("/items", []);
-  expect(page.textContent).toContain("Price it once, reuse it everywhere.");
+  expect(page.textContent).toContain("No items yet.");
   expect(searchBox(page)).toBeNull();
 });
 
-it("leaves focus where it is when the search box is gone, and doesn't move it there later", async () => {
-  // A business with no items, searched from an old link: clearing the search
-  // leaves no search box. Items added later bring it back, without focus.
+it("keeps focus when search hides", async () => {
   let answered = 0;
   const page = await open("/items?q=hosting", () =>
     answered++ ? catalog : [],
@@ -236,7 +226,7 @@ it("leaves focus where it is when the search box is gone, and doesn't move it th
   await act(async () => button(page, "Clear search").click());
   expect(address).toBe("");
   expect(searchBox(page)).toBeNull();
-  expect(page.textContent).toContain("Price it once, reuse it everywhere.");
+  expect(page.textContent).toContain("No items yet.");
   expect(document.activeElement).toBe(document.body);
 
   const { store } = await import("../../../app/store");
@@ -251,7 +241,7 @@ it("leaves focus where it is when the search box is gone, and doesn't move it th
   expect(document.activeElement).toBe(document.body);
 });
 
-it("sits beside Sales by item", async () => {
+it("shows the items tab row", async () => {
   const page = await open("/items");
   expect(
     [...page.querySelectorAll('nav[aria-label="Items views"] a')].map((tab) => [
@@ -265,23 +255,21 @@ it("sits beside Sales by item", async () => {
   ]);
 });
 
-// The note under the list, if there is one.
 const cutNote = (page) =>
   [...page.querySelectorAll("p")].find((note) =>
     note.textContent.startsWith("Showing the first"),
   )?.textContent;
 
-it("says how many items there are in all when the list holds only the first of them", async () => {
+it("shows total for partial lists", async () => {
   const page = await open("/items", catalog, 1234);
   expect(cutNote(page)).toBe("Showing the first 12 of 1,234 items.");
-  // A search looks through the items the list holds, and says so too.
   await type(searchBox(page), "zzz");
   await press(searchBox(page), "Enter");
   expect(page.textContent).toContain("No items match.");
   expect(cutNote(page)).toBe("Showing the first 12 of 1,234 items.");
 });
 
-it("says nothing more while the list holds every item", async () => {
+it("no total for full lists", async () => {
   const page = await open("/items");
   expect(cutNote(page)).toBeUndefined();
 });

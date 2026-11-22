@@ -175,7 +175,7 @@
         "kind": "overdue",
         "documentId": "00000000-0000-0000-0000-000000001026",
         "documentNumber": "INV-1026",
-        "client": "Sable Fitness",
+        "client": "Gadre Mess",
         "clientId": "00000000-0000-0000-0000-00000000c105",
         "amount": 3391.67,
         "date": "2026-08-11",
@@ -185,7 +185,7 @@
         "kind": "overdue",
         "documentId": "00000000-0000-0000-0000-000000001030",
         "documentNumber": "INV-1030",
-        "client": "Quill & Co. Publishing",
+        "client": "Deshmukh & Associates",
         "clientId": "00000000-0000-0000-0000-00000000c107",
         "amount": 1969.11,
         "date": "2026-09-13",
@@ -195,7 +195,7 @@
         "kind": "overdue",
         "documentId": "00000000-0000-0000-0000-000000001031",
         "documentNumber": "INV-1031",
-        "client": "Verdant Farms",
+        "client": "Nisarg Organic Farms",
         "clientId": null,
         "amount": 965.25,
         "date": "2026-09-24",
@@ -205,7 +205,7 @@
         "kind": "dueSoon",
         "documentId": "00000000-0000-0000-0000-000000001032",
         "documentNumber": "INV-1032",
-        "client": "Bluefin Analytics",
+        "client": "Shinde Constructions",
         "clientId": "00000000-0000-0000-0000-00000000c103",
         "amount": 2664.09,
         "date": "2026-10-06",
@@ -222,35 +222,35 @@
   "topClients": [
     {
       "clientId": "00000000-0000-0000-0000-00000000c107",
-      "client": "Quill & Co. Publishing",
+      "client": "Deshmukh & Associates",
       "billed": 13459.88,
       "owed": 1969.11,
       "documents": 2
     },
     {
       "clientId": "00000000-0000-0000-0000-00000000c109",
-      "client": "Kestrel Outdoor",
+      "client": "Casa Fernandes Homestay",
       "billed": 10317.45,
       "owed": 0.0,
       "documents": 2
     },
     {
       "clientId": null,
-      "client": "Verdant Farms",
+      "client": "Nisarg Organic Farms",
       "billed": 8590.73,
       "owed": 5311.77,
       "documents": 2
     },
     {
       "clientId": "00000000-0000-0000-0000-00000000c110",
-      "client": "Oak Street Bakery",
+      "client": "Mehta Bakers",
       "billed": 8363.36,
       "owed": 3217.5,
       "documents": 3
     },
     {
       "clientId": "00000000-0000-0000-0000-00000000c101",
-      "client": "Atlas Robotics",
+      "client": "Pai Electricals",
       "billed": 5298.15,
       "owed": 2550.4,
       "documents": 2
@@ -298,7 +298,7 @@
           "scheduleId": "00000000-0000-0000-0000-0000000005c1",
           "templateId": "00000000-0000-0000-0000-000000001012",
           "documentNumber": "INV-1012",
-          "client": "Harbor & Pine Architects",
+          "client": "Kale & Deshpande Architects",
           "amount": 450.0,
           "date": "2026-10-12"
         },
@@ -306,7 +306,7 @@
           "scheduleId": "00000000-0000-0000-0000-0000000005c2",
           "templateId": "00000000-0000-0000-0000-000000001020",
           "documentNumber": "INV-1020",
-          "client": "Bluefin Analytics",
+          "client": "Shinde Constructions",
           "amount": 2500.0,
           "date": "2026-10-20"
         },
@@ -314,7 +314,7 @@
           "scheduleId": "00000000-0000-0000-0000-0000000005c3",
           "templateId": "00000000-0000-0000-0000-000000001027",
           "documentNumber": "INV-1027",
-          "client": "Oak Street Bakery",
+          "client": "Mehta Bakers",
           "amount": 1800.0,
           "date": "2026-11-03"
         },
@@ -322,7 +322,7 @@
           "scheduleId": "00000000-0000-0000-0000-0000000005c1",
           "templateId": "00000000-0000-0000-0000-000000001012",
           "documentNumber": "INV-1012",
-          "client": "Harbor & Pine Architects",
+          "client": "Kale & Deshpande Architects",
           "amount": 450.0,
           "date": "2026-11-12"
         },
@@ -330,7 +330,7 @@
           "scheduleId": "00000000-0000-0000-0000-0000000005c2",
           "templateId": "00000000-0000-0000-0000-000000001020",
           "documentNumber": "INV-1020",
-          "client": "Bluefin Analytics",
+          "client": "Shinde Constructions",
           "amount": 2500.0,
           "date": "2026-11-20"
         }
@@ -344,7 +344,7 @@
           {
             "documentId": "00000000-0000-0000-0000-000000000206",
             "documentNumber": "QUO-0206",
-            "client": "Kestrel Outdoor",
+            "client": "Casa Fernandes Homestay",
             "amount": 1201.2,
             "validUntil": "2026-10-09",
             "days": 5
@@ -358,21 +358,21 @@
           {
             "documentId": "00000000-0000-0000-0000-000000000205",
             "documentNumber": "QUO-0205",
-            "client": "Atlas Robotics",
+            "client": "Pai Electricals",
             "amount": 5362.5,
             "validUntil": "2026-08-24"
           },
           {
             "documentId": "00000000-0000-0000-0000-000000000204",
             "documentNumber": "QUO-0204",
-            "client": "Lumen Health",
+            "client": "Bhide Nursing Home",
             "amount": 8558.55,
             "validUntil": "2026-07-02"
           },
           {
             "documentId": "00000000-0000-0000-0000-000000000203",
             "documentNumber": "QUO-0203",
-            "client": "Tidewater Logistics",
+            "client": "Jadhav Roadlines",
             "amount": 321.75,
             "validUntil": "2026-05-15"
           }

@@ -12,8 +12,6 @@ const pad = (number) => String(number).padStart(2, "0");
 const isoDay = (date) =>
   `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 
-// One period after a day, as YYYY-MM-DD: the natural date for the next
-// invoice. A month end stays a month end, so Jan 31 is followed by Feb 28.
 export const afterOnePeriod = (day, frequency) => {
   const [year, month, date] = day.split("-").map(Number);
   if (frequency === "WEEKLY") {

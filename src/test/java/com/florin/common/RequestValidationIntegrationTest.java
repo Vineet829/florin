@@ -9,7 +9,6 @@ import com.florin.IntegrationTest;
 import com.florin.user.User;
 import com.jayway.jsonpath.JsonPath;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -37,7 +36,6 @@ class RequestValidationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("client fields longer than their columns, or malformed emails, are refused")
     void customerFields() throws Exception {
         User owner = createUser();
 
@@ -54,7 +52,6 @@ class RequestValidationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("document lines can't have negative prices or quantities, and currencies are short codes")
     void documentFields() throws Exception {
         User owner = createUser();
         String customerId = customerId(owner);
@@ -77,7 +74,6 @@ class RequestValidationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("profile and business fields longer than their columns are refused")
     void profileFields() throws Exception {
         send(patch("/api/v1/user/profile"), createUser(), """
                         {"firstName": "%s"}
@@ -92,7 +88,6 @@ class RequestValidationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a document needs at least one line, and every line needs a name")
     void documentLines() throws Exception {
         User owner = createUser();
         String customerId = customerId(owner);

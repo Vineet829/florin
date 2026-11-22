@@ -36,7 +36,6 @@ const KEYS = [
   "instructions",
 ];
 
-// The kinds of bank code the server knows, by the names clients know them.
 const CODE_TYPES = [
   ["IFSC", "IFSC"],
   ["SWIFT", "SWIFT / BIC"],
@@ -53,7 +52,6 @@ const formValues = (details) =>
 const PaymentFields = ({ details }) => {
   const [values, setValues] = useState(() => formValues(details));
   const [save, { isLoading: saving }] = useUpdatePaymentDetailsMutation();
-  // The shared demo business's payment details show on every visitor's documents.
   const demo = useGetUserProfileQuery().data?.userProfile?.demo;
   const roleRefusal = useBusiness().reason("MANAGE_BUSINESS");
   const refusal = demo
@@ -71,13 +69,11 @@ const PaymentFields = ({ details }) => {
     event.preventDefault();
     try {
       const result = await save(values).unwrap();
-      // The server writes codes and IDs one standard way, such as an IFSC
-      // in capitals; show them as saved.
       setValues(formValues(result.paymentDetails));
       toast.success(result.message || "Your payment details were saved.");
     } catch (error) {
       toast.error(
-        errorMessage(error, "Your payment details could not be saved."),
+        errorMessage(error, "Your payment details couldn't be saved."),
       );
     }
   };
@@ -166,7 +162,7 @@ const PaymentFields = ({ details }) => {
               title={refusal}
             >
               <FiCheck aria-hidden="true" />
-              {saving ? "Saving…" : "Save changes"}
+              {saving ? "Saving..." : "Save changes"}
             </button>
           </div>
         </div>
@@ -186,7 +182,7 @@ const PaymentFields = ({ details }) => {
 };
 
 const PaymentDetailsPage = () => {
-  useTitle("Getting paid — Florin");
+  useTitle("Getting paid - Florin");
   const query = useGetPaymentDetailsQuery();
   return (
     <WorkspacePage section="Settings">

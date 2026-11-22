@@ -6,22 +6,17 @@ import com.florin.IntegrationTest;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-// A receipt is paid as it is made and a credit note takes its invoice's terms,
-// so neither has a due date, but ones from before that rule kept the one they
-// were given, and showed it. From V61 they don't; invoices keep theirs.
 class ReceiptDueDateMigrationIntegrationTest extends IntegrationTest {
 
     @Autowired
     private PostgreSQLContainer<?> postgres;
 
     @Test
-    @DisplayName("an old receipt or credit note loses its due date; an invoice keeps its own")
     void receiptsLoseDueDates() {
         try (MigrationDatabase database = MigrationDatabase.create(postgres)) {
             database.migrateTo("1");
@@ -39,8 +34,6 @@ class ReceiptDueDateMigrationIntegrationTest extends IntegrationTest {
             long invoice = document(jdbc, owner, "Invoice", "INV-0001");
 
             database.migrateTo("59");
-            // Credit notes came after V1, so this one, a draft given a due date,
-            // is written before the V60/V61 cleanup.
             long creditNote = jdbc.queryForObject("""
                     insert into documents (id, business_pkid, document_type, document_number, credited_pkid, due_date)
                     select ?, business_pkid, 'Credit Note', 'CN-0001', pkid, due_date from documents where pkid = ?

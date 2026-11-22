@@ -1,7 +1,5 @@
 package com.florin.auth.session;
 
-// A short name for the browser and system a session signed in from, read
-// from its user agent. Some browsers name others too, so the order matters.
 public final class DeviceName {
 
     private DeviceName() {}

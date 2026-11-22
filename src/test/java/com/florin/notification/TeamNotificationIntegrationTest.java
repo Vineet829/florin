@@ -17,15 +17,12 @@ import com.jayway.jsonpath.JsonPath;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 
-// News about a document in a business with a team: who hears of it, and how
-// much waits unread in each business.
 class TeamNotificationIntegrationTest extends IntegrationTest {
 
     @Autowired
@@ -44,8 +41,6 @@ class TeamNotificationIntegrationTest extends IntegrationTest {
         return result.andReturn().getResponse().getContentAsString();
     }
 
-    // A quotation made in the session's business and shared by link. The
-    // link's token is returned.
     private String sharedQuotation(String session) throws Exception {
         String customer = body(mockMvc.perform(post("/api/v1/customer/create")
                 .header(HttpHeaders.AUTHORIZATION, session)
@@ -77,8 +72,7 @@ class TeamNotificationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("news of a document reaches the owner, the admins and its author, each with a copy of their own")
-    void recipients() throws Exception {
+    void notifiesOwnerAdminsAndAuthor() throws Exception {
         User admin = createMember(business, BusinessRole.ADMIN);
         User author = createMember(business, BusinessRole.MEMBER);
         User colleague = createMember(business, BusinessRole.MEMBER);
@@ -104,7 +98,6 @@ class TeamNotificationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an author who has left the business hears no more of their documents")
     void formerAuthor() throws Exception {
         User author = createMember(business, BusinessRole.MEMBER);
         String token = sharedQuotation(bearer(author, business));
@@ -121,7 +114,6 @@ class TeamNotificationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the list of businesses says how many notifications wait unread in each")
     void unreadPerBusiness() throws Exception {
         User member = createMember(business, BusinessRole.MEMBER);
         clientViews(sharedQuotation(bearer(member, business)));

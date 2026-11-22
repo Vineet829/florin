@@ -3,7 +3,6 @@ package com.florin.business.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
 
-// Fields left out stay as they are; a blank one is cleared, except the name.
 public record UpdateBusinessRequest(
         @Size(max = 255, message = "Business names can be at most 255 characters") String name,
         @Size(max = 255, message = "Legal names can be at most 255 characters") String legalName,

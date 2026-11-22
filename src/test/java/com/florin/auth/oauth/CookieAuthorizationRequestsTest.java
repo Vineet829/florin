@@ -13,15 +13,12 @@ import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 
-// The sign-in on its way to a provider comes back from its cookie exactly as
-// it went out, and nothing else passes for it.
 class CookieAuthorizationRequestsTest {
 
     private static final Instant NOW = Instant.parse("2026-10-01T10:00:00Z");
@@ -58,7 +55,6 @@ class CookieAuthorizationRequestsTest {
                 .build();
     }
 
-    // A callback with the cookie, carrying the state the request went out with.
     private static MockHttpServletRequest withCookie(String value) {
         return withCookie(value, "state-1");
     }
@@ -72,8 +68,6 @@ class CookieAuthorizationRequestsTest {
         return request;
     }
 
-    // The token with one character in the middle of its signature changed,
-    // so its claims still read and only checking the signature refuses it.
     static String tampered(String token) {
         int signature = token.lastIndexOf('.') + 1;
         int at = signature + (token.length() - signature) / 2;
@@ -87,7 +81,6 @@ class CookieAuthorizationRequestsTest {
     }
 
     @Test
-    @DisplayName("every part of the request comes back to a callback with its state, from a cookie for sign-in URLs")
     void roundTrips() {
         CookieAuthorizationRequests requests = requestsAt(NOW);
         MockHttpServletResponse response = new MockHttpServletResponse();
@@ -111,8 +104,7 @@ class CookieAuthorizationRequestsTest {
     }
 
     @Test
-    @DisplayName("an altered, expired or other kind of token is no request, and removing one clears the cookie")
-    void refusesOthers() {
+    void refusesInvalidTokens() {
         String cookie = saved(requestsAt(NOW));
         JwtService jwt = jwtAt(NOW);
         User user = new User();
@@ -134,7 +126,6 @@ class CookieAuthorizationRequestsTest {
     }
 
     @Test
-    @DisplayName("a callback with another state, or none, finds no request and leaves the cookie alone")
     void otherState() {
         String cookie = saved(requestsAt(NOW));
         CookieAuthorizationRequests requests = requestsAt(NOW);

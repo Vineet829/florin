@@ -12,9 +12,6 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// The tokens in verification and password reset links. Each is kept only as
-// its SHA-256 hash, like refresh tokens and recovery codes, so a copy of the
-// database can't verify or reset an account.
 @Service
 public class VerificationTokenService {
 
@@ -35,8 +32,6 @@ public class VerificationTokenService {
         return issue(user, tokenTtl);
     }
 
-    // A token that lasts as long as given, such as a verification link's,
-    // which may wait in an inbox longer than a password reset's.
     @Transactional
     public String issue(User user, Duration ttl) {
         byte[] material = new byte[32];

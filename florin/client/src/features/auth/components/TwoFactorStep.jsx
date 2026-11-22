@@ -6,8 +6,6 @@ import { auth, rise } from "./authForm";
 const delay = (d) => ({ "--d": `${d}s` });
 const TIMED_OUT = "Your sign-in timed out";
 
-// The second step of a two-factor sign-in, in the log-in form's place: a
-// code from the authenticator app, or one of the saved recovery codes.
 const TwoFactorStep = ({ challenge, onBack, onSignedIn }) => {
   const [recovery, setRecovery] = useState(false);
   const [code, setCode] = useState("");
@@ -50,7 +48,6 @@ const TwoFactorStep = ({ challenge, onBack, onSignedIn }) => {
             maxLength={recovery ? 11 : 6}
             placeholder={recovery ? "xxxxx-xxxxx" : "123456"}
             spellCheck={false}
-            // Only this field is on the page once the password is accepted.
             autoFocus
           />
         </div>
@@ -60,7 +57,7 @@ const TwoFactorStep = ({ challenge, onBack, onSignedIn }) => {
           style={delay(0.2)}
           disabled={isLoading || !code.trim()}
         >
-          {isLoading ? "Checking…" : "Verify"}
+          {isLoading ? "Checking..." : "Verify"}
         </button>
         <div
           className={`flex flex-wrap items-center justify-between gap-3 ${rise}`}

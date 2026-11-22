@@ -18,9 +18,6 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// The tax rates and units a business actually uses, to offer when a line is
-// typed: from its items, its lines of the last year and its default rate.
-// No list of rates is built in, since they change.
 @Service
 public class TaxRateSuggestions {
 
@@ -37,8 +34,6 @@ public class TaxRateSuggestions {
         this.clock = clock;
     }
 
-    // Rates most used first, the default rate always among them; units the
-    // same way.
     @Transactional(readOnly = true)
     public TaxRateSuggestionsResponse suggest(BusinessAccess access) {
         Long businessPkid = access.businessPkid();

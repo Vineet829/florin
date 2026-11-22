@@ -58,10 +58,6 @@ export const Party = ({ title, party, logo = false }) => (
   </div>
 );
 
-// A document as its client sees it, read only: its PDF, for an unpaid invoice
-// how to pay it and a way to say it was paid, and for a quotation a way to
-// accept or decline it. The page around it says which link it came by, and
-// passes what each action does there.
 const PublicDocument = ({
   doc,
   onDownload,
@@ -76,11 +72,8 @@ const PublicDocument = ({
   const [declineOpen, setDeclineOpen] = useState(false);
   const [reason, setReason] = useState("");
   const quotation = doc?.documentType === "Quotation";
-  // A credit note takes an amount off another document; nothing is paid on it.
   const creditNote = doc?.documentType === "Credit Note";
-  // Paid beyond what is owed once credits are taken off.
   const refundDue = Number(doc?.refundDue) > 0;
-  // A void document keeps its number but is owed no more.
   const voided = doc?.state === "void";
   const confirmDecline = async (event) => {
     event.preventDefault();
@@ -89,7 +82,7 @@ const PublicDocument = ({
       setDeclineOpen(false);
       toast.success(`Thank you. ${doc.business.name} can now see your answer.`);
     } catch (error) {
-      toast.error(errorMessage(error, "The quotation could not be declined."));
+      toast.error(errorMessage(error, "The quotation couldn't be declined."));
     }
   };
   const confirmAccept = async () => {
@@ -100,7 +93,7 @@ const PublicDocument = ({
         `Thank you. ${doc.business.name} can now see your acceptance.`,
       );
     } catch (error) {
-      toast.error(errorMessage(error, "The quotation could not be accepted."));
+      toast.error(errorMessage(error, "The quotation couldn't be accepted."));
     }
   };
   const columns = [
@@ -123,7 +116,6 @@ const PublicDocument = ({
       ),
     },
     { label: "Discount (%)", render: (item) => item.discount || "0" },
-    // Each line's rate shows when the lines are taxed at more than one.
     ...(doc?.taxes?.length > 1
       ? [{ label: `${doc.taxLabel} %`, render: (item) => item.taxRate }]
       : []),
@@ -169,7 +161,7 @@ const PublicDocument = ({
               aria-busy={downloading}
             >
               <FiDownload aria-hidden="true" />
-              {downloading ? "Preparing…" : "Download PDF"}
+              {downloading ? "Preparing..." : "Download PDF"}
             </button>
             {doc.canDecline && (
               <button
@@ -275,8 +267,7 @@ const PublicDocument = ({
         </div>
         {doc.gst?.placeOfSupply && (
           <p className="mt-6 text-[13.5px] text-spot-body">
-            Place of supply: {doc.gst.placeOfSupply} –{" "}
-            {doc.gst.placeOfSupplyName}
+            Place of supply: {doc.gst.placeOfSupply}-{doc.gst.placeOfSupplyName}
             {doc.gst.reverseCharge && " · Reverse charge: you pay the GST"}
           </p>
         )}
@@ -385,7 +376,7 @@ const PublicDocument = ({
             </button>
             <button type="submit" className={dangerButton} disabled={declining}>
               <FiXCircle aria-hidden="true" />
-              {declining ? "Declining…" : "Decline quotation"}
+              {declining ? "Declining..." : "Decline quotation"}
             </button>
           </div>
         </form>
@@ -417,7 +408,7 @@ const PublicDocument = ({
             disabled={accepting}
           >
             <FiCheckCircle aria-hidden="true" />
-            {accepting ? "Accepting…" : "Accept quotation"}
+            {accepting ? "Accepting..." : "Accept quotation"}
           </button>
         </div>
       </Dialog>

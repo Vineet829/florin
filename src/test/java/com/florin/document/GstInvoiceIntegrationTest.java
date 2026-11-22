@@ -17,7 +17,6 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -25,10 +24,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// India GST mode: a Maharashtra seller charges CGST and SGST within the
-// state, IGST to other states, nothing on an export under its LUT and IGST on
-// one without, and leaves the tax to the recipient under reverse charge. The
-// PDF says so, and an issued document keeps it when the mode is turned off.
 class GstInvoiceIntegrationTest extends IntegrationTest {
 
     private static final String SELLER = "27AAPFU0939F1ZV";
@@ -62,7 +57,7 @@ class GstInvoiceIntegrationTest extends IntegrationTest {
     void setUp() throws Exception {
         session = bearer(createUser());
         send(patch("/api/v1/business"), """
-                {"legalName": "Ada Analytics Private Limited", "taxId": "%s"}
+                {"legalName": "Apte Analytics Private Limited", "taxId": "%s"}
                 """.formatted(SELLER.toLowerCase()))
                 .andExpect(status().isOk());
         settings("GST_INDIA", "").andExpect(status().isOk());
@@ -101,7 +96,6 @@ class GstInvoiceIntegrationTest extends IntegrationTest {
                 .replaceAll("\\s+", " ");
     }
 
-    // The invoice a monthly schedule starting today makes from a template.
     private String repeated(String template) throws Exception {
         send(post("/api/v1/recurring"), """
                 {"documentId": "%s", "frequency": "monthly", "startDate": "%s"}
@@ -114,7 +108,6 @@ class GstInvoiceIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("within the seller's state each rate is halved into CGST and SGST, each rounded, so they match")
     void intraState() throws Exception {
         String invoice = JsonPath.read(
                 body(invoice(client("Mumbai Co", ", \"gstin\": \"%s\"".formatted(MUMBAI_CLIENT)), "")
@@ -136,23 +129,21 @@ class GstInvoiceIntegrationTest extends IntegrationTest {
                 "GSTIN " + SELLER,
                 "State: Maharashtra (27)",
                 "GSTIN " + MUMBAI_CLIENT,
-                "Place of supply: 27 – Maharashtra",
+                "Place of supply: 27-Maharashtra",
                 "Reverse charge No",
                 "CGST 9% INR 90.00",
                 "SGST 9% INR 90.00",
                 "CGST 2.5% INR 2.53",
                 "Rupees One Thousand Two Hundred Eighty Six and Six Paise Only",
-                "For Ada Analytics Private Limited",
+                "For Apte Analytics Private Limited",
                 "Authorised signatory");
 
-        // The share page shows the seller as the PDF does.
         String url = JsonPath.read(body(send(post("/api/v1/document/{id}/share", invoice), "")), "$.url");
         mockMvc.perform(get("/api/v1/public/share/{token}", url.substring(url.lastIndexOf('/') + 1)))
                 .andExpect(jsonPath("$.business.lines", hasItems("GSTIN " + SELLER, "State: Maharashtra (27)")));
     }
 
     @Test
-    @DisplayName("to another state it is IGST, and under reverse charge the recipient pays it outside the total")
     void interStateAndReverseCharge() throws Exception {
         String bengaluru = client("Bengaluru Co", ", \"gstin\": \"%s\"".formatted(BENGALURU_CLIENT));
         invoice(bengaluru, "")
@@ -168,12 +159,11 @@ class GstInvoiceIntegrationTest extends IntegrationTest {
                         .andExpect(jsonPath("$.newDocument.total").value(1101.0))),
                 "$.newDocument._id");
         assertThat(pdfText(reverse)).contains(
-                "Place of supply: 29 – Karnataka",
+                "Place of supply: 29-Karnataka",
                 "Reverse charge Yes",
                 "IGST 18% (payable by the recipient) INR 180.00",
                 "Balance due INR 1,101.00");
 
-        // An unregistered client in the seller's state, sent elsewhere by choice.
         String walkIn = client("Walk In", ", \"stateCode\": \"27\"");
         invoice(walkIn, ", \"placeOfSupply\": \"07\"")
                 .andExpect(jsonPath("$.newDocument.gst.placeOfSupply").value("07"))
@@ -184,8 +174,7 @@ class GstInvoiceIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an export goes under the LUT without tax, or with IGST, valued in rupees at its rate")
-    void exports() throws Exception {
+    void exportsUnderLutOrIgst() throws Exception {
         String abroad = client("Acme Inc", ", \"stateCode\": \"96\"");
         String lut = JsonPath.read(
                 body(send(post("/api/v1/document/create"), """
@@ -232,8 +221,6 @@ class GstInvoiceIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a draft exported under the LUT keeps its lines' rates, is taxed at them when it goes elsewhere, "
-            + "and is issued at 0%")
     void lutDraftKeepsRates() throws Exception {
         String abroad = client("Acme Inc", ", \"stateCode\": \"96\"");
         String draft = JsonPath.read(
@@ -247,7 +234,6 @@ class GstInvoiceIntegrationTest extends IntegrationTest {
         send(get("/api/v1/document/{id}", draft), "")
                 .andExpect(jsonPath("$.document.billingItems[*].taxRate", contains(18, 5)));
 
-        // Sent within the state after all, it is taxed at the rates its lines kept.
         send(patch("/api/v1/document/{id}", draft), "{\"placeOfSupply\": \"27\"}")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.updatedDocument.gst.supplyType").value("INTRA"))
@@ -264,7 +250,6 @@ class GstInvoiceIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("each line can carry an HSN or SAC code, and the PDF sums the tax by code within each rate")
     void hsnCodes() throws Exception {
         String mumbai = client("Mumbai Co", ", \"gstin\": \"%s\"".formatted(MUMBAI_CLIENT));
         String invoice = JsonPath.read(
@@ -285,9 +270,8 @@ class GstInvoiceIntegrationTest extends IntegrationTest {
                 "Design HSN/SAC 998391",
                 "998314 18% INR 10.05 0.91 0.91 0.00 1.82",
                 "998391 18% INR 10.05 0.90 0.90 0.00 1.80",
-                "— 5% INR 20.00 0.50 0.50 0.00 1.00");
+                "- 5% INR 20.00 0.50 0.50 0.00 1.00");
 
-        // A copy keeps each line's code.
         send(post("/api/v1/document/{id}/duplicate", invoice), "")
                 .andExpect(jsonPath("$.newDocument.billingItems[2].hsnSac").value("998314"));
         send(post("/api/v1/document/create"), """
@@ -299,7 +283,6 @@ class GstInvoiceIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("GST mode needs the business's GSTIN, reports in rupees and keeps numbers GST can take")
     void settingsRules() throws Exception {
         send(get("/api/v1/settings"), "")
                 .andExpect(jsonPath("$.settings.taxRegime").value("GST_INDIA"))
@@ -318,11 +301,10 @@ class GstInvoiceIntegrationTest extends IntegrationTest {
         settings("GST_INDIA", "")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message")
-                        .value("Add your business's GSTIN under Settings → Business before turning on GST mode"));
+                        .value("Add your business's GSTIN under Settings > Business before turning on GST mode"));
     }
 
     @Test
-    @DisplayName("an issued document keeps its GST when the mode is turned off, and its credit note copies it")
     void keptAsIssued() throws Exception {
         String mumbai = client("Mumbai Co", ", \"gstin\": \"%s\"".formatted(MUMBAI_CLIENT));
         String invoice = JsonPath.read(body(invoice(mumbai, "")), "$.newDocument._id");
@@ -348,8 +330,7 @@ class GstInvoiceIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a draft issued after its client moves goes where the client is now, unless its place was chosen")
-    void placeFollowsTheClientToIssue() throws Exception {
+    void draftFollowsMovedClient() throws Exception {
         String mumbai = client("Mumbai Co", ", \"gstin\": \"%s\"".formatted(MUMBAI_CLIENT));
         String draft = JsonPath.read(
                 body(invoice(mumbai, ", \"draft\": true")
@@ -359,7 +340,6 @@ class GstInvoiceIntegrationTest extends IntegrationTest {
         String chosen = JsonPath.read(
                 body(invoice(mumbai, ", \"draft\": true, \"placeOfSupply\": \"07\"")), "$.newDocument._id");
 
-        // The client re-registers in Karnataka before the drafts are issued.
         send(patch("/api/v1/customer/{id}", mumbai), "{\"gstin\": \"%s\"}".formatted(BENGALURU_CLIENT))
                 .andExpect(status().isOk());
 
@@ -372,7 +352,7 @@ class GstInvoiceIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.updatedDocument.taxes[1].cgst").value(0.0))
                 .andExpect(jsonPath("$.updatedDocument.total").value(1286.05));
         assertThat(pdfText(draft)).contains(
-                "GSTIN " + BENGALURU_CLIENT, "Place of supply: 29 – Karnataka", "IGST 18% INR 180.00");
+                "GSTIN " + BENGALURU_CLIENT, "Place of supply: 29-Karnataka", "IGST 18% INR 180.00");
         send(post("/api/v1/document/{id}/issue", chosen), "{}")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.updatedDocument.gst.placeOfSupply").value("07"))
@@ -380,7 +360,6 @@ class GstInvoiceIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a repeated invoice goes where its client is now")
     void repeatedInvoiceFollowsTheClient() throws Exception {
         String mumbai = client("Mumbai Co", ", \"gstin\": \"%s\"".formatted(MUMBAI_CLIENT));
         String template = JsonPath.read(body(invoice(mumbai, "")), "$.newDocument._id");
@@ -396,8 +375,7 @@ class GstInvoiceIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a repeated invoice keeps a place of supply that was chosen")
-    void repeatedInvoiceKeepsAChosenPlace() throws Exception {
+    void repeatedInvoiceKeepsChosenPlace() throws Exception {
         String mumbai = client("Mumbai Co", ", \"gstin\": \"%s\"".formatted(MUMBAI_CLIENT));
         String template = JsonPath.read(body(invoice(mumbai, ", \"placeOfSupply\": \"07\"")), "$.newDocument._id");
         send(patch("/api/v1/customer/{id}", mumbai), "{\"gstin\": \"%s\"}".formatted(BENGALURU_CLIENT))
@@ -410,8 +388,7 @@ class GstInvoiceIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a copy goes where its original went, split and charged the same")
-    void copies() throws Exception {
+    void copyKeepsPlaceAndTax() throws Exception {
         String intra = JsonPath.read(
                 body(invoice(client("Mumbai Co", ", \"gstin\": \"%s\"".formatted(MUMBAI_CLIENT)), "")),
                 "$.newDocument._id");
@@ -450,7 +427,6 @@ class GstInvoiceIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a repeated export in dollars is issued at its template's rate to rupees")
     void repeatedExport() throws Exception {
         String template = JsonPath.read(
                 body(usdExport(client("Acme Inc", ", \"stateCode\": \"96\""), "")), "$.newDocument._id");

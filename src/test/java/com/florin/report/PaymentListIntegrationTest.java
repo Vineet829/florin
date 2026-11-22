@@ -24,7 +24,6 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -35,8 +34,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// The payments list: every payment on an issued invoice, every issued receipt
-// and every refund, as the overview counts what was received.
 class PaymentListIntegrationTest extends IntegrationTest {
 
     @Autowired
@@ -55,7 +52,6 @@ class PaymentListIntegrationTest extends IntegrationTest {
         today = LocalDate.now(ZoneOffset.UTC);
     }
 
-    // Puts the business in the time zone, and dates what follows from its today.
     private void inZone(ZoneId zone) throws Exception {
         send(put("/api/v1/settings"), """
                 {"defaultCurrency": "USD", "paymentTermsDays": 15, "defaultTaxRate": 0,
@@ -87,8 +83,6 @@ class PaymentListIntegrationTest extends IntegrationTest {
                 "$.createdCustomer._id");
     }
 
-    // A document for the client dated the given day, for one amount; a draft
-    // is only planned for that day.
     private String create(
             String client, String type, String currency, String amount, LocalDate issued, boolean draft)
             throws Exception {
@@ -114,7 +108,6 @@ class PaymentListIntegrationTest extends IntegrationTest {
         return create(client, type, currency, amount, issued, false);
     }
 
-    // Records a payment and returns its id.
     private String pay(String document, String amount, String withheld, String method, String note, LocalDate date)
             throws Exception {
         send(post("/api/v1/document/{id}/payment", document), """
@@ -124,7 +117,6 @@ class PaymentListIntegrationTest extends IntegrationTest {
         return latest("payments", document);
     }
 
-    // A credit note taking the amount off the document, dated the given day.
     private void credit(String document, String amount, LocalDate issued) throws Exception {
         String note = JsonPath.read(
                 body(send(post("/api/v1/document/{id}/credit-note", document), "")
@@ -138,7 +130,6 @@ class PaymentListIntegrationTest extends IntegrationTest {
                 .andExpect(status().isOk());
     }
 
-    // Records a refund and returns its id.
     private String refund(String document, String amount, String method, String reference, LocalDate date)
             throws Exception {
         send(post("/api/v1/document/{id}/refund", document), """
@@ -148,7 +139,6 @@ class PaymentListIntegrationTest extends IntegrationTest {
         return latest("refunds", document);
     }
 
-    // The id of the payment or refund last recorded on the document.
     private String latest(String table, String document) {
         return jdbcTemplate.queryForObject(
                 "select id from " + table + " where document_pkid = (select pkid from documents where id = ?)"
@@ -169,7 +159,6 @@ class PaymentListIntegrationTest extends IntegrationTest {
         return new BigDecimal(JsonPath.read(body, path).toString());
     }
 
-    // The ids of the rows, in the order listed.
     private List<String> ids(String... params) throws Exception {
         return JsonPath.read(body(payments(params).andExpect(status().isOk())), "$.payments[*].id");
     }
@@ -190,9 +179,6 @@ class PaymentListIntegrationTest extends IntegrationTest {
         }
     }
 
-    // Payments on two invoices, one partly with tax withheld and one paid in
-    // full, credited and paid back; two receipts; a payment in euros. A void
-    // receipt, a draft one and a quotation hold no money.
     private Books books() throws Exception {
         String invoice = issue(acme, "Invoice", "USD", "1000", today.minusDays(40));
         String firstPart = pay(invoice, "400", "0", "Bank Transfer", "First part", today.minusDays(29));
@@ -214,8 +200,7 @@ class PaymentListIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("each payment, receipt and refund is a row, newest first; a refund is money going back")
-    void rows() throws Exception {
+    void listsPaymentsReceiptsRefunds() throws Exception {
         Books books = books();
 
         payments()
@@ -239,7 +224,6 @@ class PaymentListIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.payments[0].method").value("Cheque"))
                 .andExpect(jsonPath("$.payments[0].note").value("Card reversal"))
                 .andExpect(jsonPath("$.payments[0].currency").value("USD"))
-                // A receipt is named by its document, and has no method.
                 .andExpect(jsonPath("$.payments[1].id").value(books.receipt()))
                 .andExpect(jsonPath("$.payments[1].document.id").value(books.receipt()))
                 .andExpect(jsonPath("$.payments[1].document.number").value("REC-0001"))
@@ -248,7 +232,6 @@ class PaymentListIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.payments[1].note").value(nullValue()))
                 .andExpect(jsonPath("$.payments[2].currency").value("EUR"))
                 .andExpect(jsonPath("$.payments[2].method").value("UPI"))
-                // Tax withheld isn't money received.
                 .andExpect(jsonPath("$.payments[3].amount").value(100.0))
                 .andExpect(jsonPath("$.payments[3].method").value("Cash"))
                 .andExpect(jsonPath("$.payments[4].date").value(today.minusDays(29).toString()))
@@ -272,12 +255,8 @@ class PaymentListIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the payments file holds the list's rows, newest first, receipts among them, and adds up to what"
-            + " the list received")
-    void file() throws Exception {
+    void csvMatchesListRows() throws Exception {
         Books books = books();
-        // A payment saved on a receipt, as some older records have it. A
-        // receipt counts at its total, so the list leaves that payment out.
         String columns = String.join(", ", jdbcTemplate.queryForList("""
                 select column_name from information_schema.columns
                 where table_schema = current_schema() and table_name = 'payments'
@@ -307,7 +286,6 @@ class PaymentListIntegrationTest extends IntegrationTest {
                 today.minusDays(30)
                         + ",INV-0002,Invoice,Birch Studio,USD,600.00,Credit Card,Birch Studio,,0.00,Payment",
                 today.minusDays(100) + ",REC-0002,Receipt,Birch Studio,USD,40.00,,,,,Receipt");
-        // Each currency's amounts add up to what the list received in it.
         for (String currency : List.of("USD", "EUR")) {
             BigDecimal total = file.stream()
                     .skip(1)
@@ -321,8 +299,7 @@ class PaymentListIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("search, method, period, dates and currency narrow the rows and their totals")
-    void filters() throws Exception {
+    void filtersNarrowRowsAndTotals() throws Exception {
         Books books = books();
 
         assertThat(ids("q", "birch")).containsExactly(books.refund(), books.birchPayment(), books.oldReceipt());
@@ -360,21 +337,18 @@ class PaymentListIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.totals[1].currency").value("USD"))
                 .andExpect(jsonPath("$.totals[1].payments").value(4))
                 .andExpect(jsonPath("$.totals[1].received").value(440.0))
-                // The method filter still offers every method.
                 .andExpect(jsonPath("$.methods.length()").value(5));
         payments("currency", "GBP")
                 .andExpect(jsonPath("$.total").value(0))
                 .andExpect(jsonPath("$.numberOfPages").value(0))
                 .andExpect(jsonPath("$.payments").isEmpty())
                 .andExpect(jsonPath("$.totals").isEmpty());
-        // A client's email matches too.
         String cobalt = client("Cobalt", "ledger-desk-%s@clients.test".formatted(UUID.randomUUID()));
         String byEmail = pay(issue(cobalt, "Invoice", "USD", "75", today), "75", "0", "Cash", null, today);
         assertThat(ids("q", "ledger-desk")).containsExactly(byEmail);
     }
 
     @Test
-    @DisplayName("rows sort by date, amount or client either way, ties in a fixed order, and come a page at a time")
     void sortAndPages() throws Exception {
         Books books = books();
 
@@ -404,7 +378,6 @@ class PaymentListIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("money on documents made without a currency is totalled in the business's default currency")
     void noCurrency() throws Exception {
         pay(issue(acme, "Invoice", null, "50", today), "50", "0", "Cash", null, today);
         issue(acme, "Receipt", null, "20", today);
@@ -419,7 +392,6 @@ class PaymentListIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("filters and sorts the list can't read are refused, and so is a period with dates")
     void badInput() throws Exception {
         payments("period", "30d", "from", today.minusDays(3).toString())
                 .andExpect(status().isBadRequest())
@@ -441,8 +413,7 @@ class PaymentListIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a viewer may read the list, and another business's money never appears in it")
-    void isolation() throws Exception {
+    void viewerReadsOwnBusinessOnly() throws Exception {
         books();
         User first = owner;
         owner = createUser();
@@ -464,11 +435,9 @@ class PaymentListIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("over each of the overview's periods, the rows add up to what the overview received")
     void addUpToTheOverview(ZoneId zone) throws Exception {
         inZone(zone);
         LocalDate year = today.minusMonths(12).plusDays(1);
-        // Paid on the first day of each period and the day before it.
         String invoice = issue(acme, "Invoice", "USD", "10000", year.minusDays(5));
         pay(invoice, "100", "0", "Cash", null, today);
         pay(invoice, "200", "10", "Cash", null, today.minusDays(29));
@@ -479,13 +448,11 @@ class PaymentListIntegrationTest extends IntegrationTest {
         pay(invoice, "700", "0", "Cash", null, year.minusDays(1));
         issue(acme, "Receipt", "USD", "50", today);
         issue(acme, "Receipt", "USD", "60", today.minusDays(30));
-        // Paid in full a year ago, then credited and paid back in two parts.
         String credited = issue(birch, "Invoice", "USD", "1000", year.minusDays(5));
         pay(credited, "1000", "0", "Cash", null, year.minusDays(1));
         credit(credited, "300", year.minusDays(1));
         refund(credited, "100", "Cash", null, today.minusDays(29));
         refund(credited, "200", "Cash", null, today.minusDays(90));
-        // Money in euros, never counted with dollars.
         pay(issue(acme, "Invoice", "EUR", "900", today), "900", "0", "Cash", null, today);
 
         List<String> periods = List.of("30d", "90d", "12m");
@@ -502,7 +469,6 @@ class PaymentListIntegrationTest extends IntegrationTest {
                     .isEqualByComparingTo(amount(overview, "$.totals.received.current"))
                     .isEqualByComparingTo(received.get(index));
         }
-        // The money bar's last 30 days are this list's.
         send(get("/api/v1/document/summary").param("currency", "USD"), "")
                 .andExpect(jsonPath("$.receivedLast30Days.total").value(250.0))
                 .andExpect(jsonPath("$.receivedLast30Days.payments").value(4));

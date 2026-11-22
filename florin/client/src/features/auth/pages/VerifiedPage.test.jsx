@@ -35,7 +35,7 @@ it.each([
   ["/auth/verify", "Account verified.", "/login"],
   ["/auth/verify?already=1", "Account already verified.", "/login"],
   ["/auth/verify?expired=1", "This link has expired.", "/resend"],
-])("%s says how the link went", (address, title, next) => {
+])("%s shows its result", (address, title, next) => {
   const page = show(address);
   expect(page.querySelector("h1, h2").textContent).toBe(title);
   expect(page.querySelector(`a[href="${next}"]`)).not.toBeNull();

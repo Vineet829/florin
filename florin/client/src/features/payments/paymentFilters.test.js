@@ -13,8 +13,8 @@ import {
 
 const read = (search) => readPaymentList(new URLSearchParams(search));
 
-describe("payments list state in the URL", () => {
-  it("starts with every payment, newest first, ten to a page", () => {
+describe("payments URL state", () => {
+  it("starts with the defaults", () => {
     expect(read("")).toEqual({
       q: "",
       method: "",
@@ -29,11 +29,11 @@ describe("payments list state in the URL", () => {
     expect(isPaymentListFiltered(read("sort=amount&page=2"))).toBe(false);
   });
 
-  it("reads and writes a search, filters, sort and page", () => {
+  it("round-trips URL parameters", () => {
     const search =
-      "q=quill&method=Bank+Transfer&period=90d&currency=USD&sort=amount&dir=asc&page=2&size=25";
+      "q=deshmukh&method=Bank+Transfer&period=90d&currency=USD&sort=amount&dir=asc&page=2&size=25";
     expect(read(search)).toEqual({
-      q: "quill",
+      q: "deshmukh",
       method: "Bank Transfer",
       period: "90d",
       currency: "USD",
@@ -53,7 +53,7 @@ describe("payments list state in the URL", () => {
     }
   });
 
-  it("falls back to the defaults for unknown values and orders the menu doesn't offer", () => {
+  it("defaults for invalid values", () => {
     expect(
       read(
         "method=Barter&period=forever&currency=usd&sort=document&dir=up&page=0",
@@ -66,13 +66,13 @@ describe("payments list state in the URL", () => {
     expect(read("sort=client")).toMatchObject({ sort: "client", dir: "asc" });
   });
 
-  it("offers newest, oldest, highest, lowest and customers A to Z", () => {
+  it("lists the sort options", () => {
     expect(SORT_OPTIONS).toEqual([
       { value: "date:desc", label: "Newest first" },
       { value: "date:asc", label: "Oldest first" },
       { value: "amount:desc", label: "Highest amount" },
       { value: "amount:asc", label: "Lowest amount" },
-      { value: "client:asc", label: "Customer A–Z" },
+      { value: "client:asc", label: "Customer A-Z" },
     ]);
   });
 });
@@ -80,7 +80,7 @@ describe("payments list state in the URL", () => {
 describe("the server query", () => {
   const today = new Date(2026, 9, 4, 12);
 
-  it("sends the overview's periods by name and the others as dates", () => {
+  it("sends periods by name or dates", () => {
     expect(paymentQuery(read("period=30d"), today)).toEqual({
       page: 1,
       size: 10,
@@ -97,7 +97,7 @@ describe("the server query", () => {
     );
   });
 
-  it("passes on the search, a method or receipts, and a currency", () => {
+  it("passes search and filters", () => {
     expect(
       paymentQuery(read("q=inv-10&method=receipt&currency=EUR&sort=client")),
     ).toEqual({
@@ -112,8 +112,8 @@ describe("the server query", () => {
   });
 });
 
-describe("the rows and the method menu", () => {
-  it("names how each payment came in, and how a refund went back", () => {
+describe("rows and method menu", () => {
+  it("names payment and refund methods", () => {
     expect(methodLabel({ kind: "payment", method: "Bank Transfer" })).toBe(
       "Bank Transfer",
     );
@@ -124,7 +124,7 @@ describe("the rows and the method menu", () => {
     expect(methodLabel({ kind: "refund", method: null })).toBe("Refund");
   });
 
-  it("offers the methods the business has used, then receipts", () => {
+  it("lists used methods, then receipts", () => {
     expect(methodOptions(["Bank Transfer", "UPI"])).toEqual([
       { value: "", label: "All methods" },
       { value: "Bank Transfer", label: "Bank Transfer" },
@@ -138,7 +138,7 @@ describe("the rows and the method menu", () => {
   });
 });
 
-describe("the line above a filtered list", () => {
+describe("filter summary line", () => {
   const words = (parts) =>
     parts.map(({ before = "", strong = "", after = "" }) =>
       [before, strong, after].join(""),
@@ -152,9 +152,9 @@ describe("the line above a filtered list", () => {
     ],
   };
 
-  it("says how many payments came in over the days the server took, and how many on receipts", () => {
+  it("counts payments and receipts", () => {
     expect(words(paymentResults(read("period=90d"), ninetyDays))).toEqual([
-      "18 payments from Jul 7 – Oct 4, 2026",
+      "18 payments from Jul 7 - Oct 4, 2026",
       "Received 44,562.29",
       "2 of them on receipts",
     ]);
@@ -170,16 +170,16 @@ describe("the line above a filtered list", () => {
         }),
       ),
     ).toEqual([
-      "7 payments from Sep 5 – Oct 4, 2026",
+      "7 payments from Sep 5 - Oct 4, 2026",
       "Received 22,763.97",
       "1 of them on a receipt",
     ]);
   });
 
-  it("names no days or receipts when there are none to name", () => {
+  it("omits empty days and receipts", () => {
     expect(
       words(
-        paymentResults(read("q=quill"), {
+        paymentResults(read("q=deshmukh"), {
           total: 1,
           from: null,
           to: null,
@@ -189,7 +189,6 @@ describe("the line above a filtered list", () => {
         }),
       ),
     ).toEqual(["1 payment", "Received 262.76"]);
-    // A list of receipts alone needs no count of them.
     expect(
       words(
         paymentResults(read("method=receipt&period=90d"), {
@@ -200,14 +199,14 @@ describe("the line above a filtered list", () => {
           ],
         }),
       ),
-    ).toEqual(["2 payments from Jul 7 – Oct 4, 2026", "Received 12,011.28"]);
+    ).toEqual(["2 payments from Jul 7 - Oct 4, 2026", "Received 12,011.28"]);
   });
 
-  it("names each currency, adds up their receipts, and shows what refunds took back", () => {
+  it("totals per currency with refunds", () => {
     expect(
       words(paymentResults(read("currency=USD"), ninetyDays, ["USD", "EUR"])),
     ).toEqual([
-      "18 payments from Jul 7 – Oct 4, 2026",
+      "18 payments from Jul 7 - Oct 4, 2026",
       "Received 44,562.29 USD",
       "2 of them on receipts",
     ]);
@@ -236,11 +235,11 @@ describe("the line above a filtered list", () => {
   });
 });
 
-describe("the summary above the list", () => {
-  it("asks for the list's period by name and its currency, whatever it searches or the method", () => {
+describe("summary query", () => {
+  it("ignores search and method", () => {
     expect(
       paymentSummaryQuery(
-        read("q=quill&method=receipt&period=this-year&currency=EUR&page=2"),
+        read("q=deshmukh&method=receipt&period=this-year&currency=EUR&page=2"),
       ),
     ).toEqual({ period: "this-year", currency: "EUR" });
     expect(paymentSummaryQuery(read("period=90d"))).toEqual({ period: "90d" });

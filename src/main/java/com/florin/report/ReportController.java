@@ -42,7 +42,6 @@ public class ReportController {
         this.profitReport = profitReport;
     }
 
-    // The last 30 or 90 days, 12 months or this year: 90 days when none is given.
     @GetMapping("/overview")
     public OverviewResponse overview(
             @Requires(Permission.VIEW_RECORDS) BusinessAccess access,
@@ -79,7 +78,6 @@ public class ReportController {
         return taxReport.report(access, period, view);
     }
 
-    // Months as YYYY-MM, last month when none are given.
     @GetMapping("/gst")
     public GstReturnsResponse gst(
             @Requires(Permission.VIEW_RECORDS) BusinessAccess access,

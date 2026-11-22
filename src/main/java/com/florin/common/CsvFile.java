@@ -13,12 +13,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
-// A spreadsheet-safe CSV download. A text cell that a spreadsheet would read
-// as a formula gets a leading apostrophe, so opening the file never runs
-// anything typed into the app; so does text that already starts with
-// apostrophes ahead of such a character, so an import that takes one away
-// gives back exactly what was typed. Numbers and dates are written as they
-// are. The byte order mark makes Excel read the file as UTF-8.
 public record CsvFile(String fileName, byte[] content) {
 
     private static final Pattern GUARDED = Pattern.compile("'*[=+\\-@\t\r]");

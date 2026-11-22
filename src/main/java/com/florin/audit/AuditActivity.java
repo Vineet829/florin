@@ -21,10 +21,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// Reads the audit log: an account's own sign-ins and changes, a business's
-// team changes for its owner and admins, and the whole log for admins. The
-// shared demo account sees only what the visitor did in this session, never
-// another visitor's addresses.
 @Service
 public class AuditActivity {
 
@@ -59,8 +55,6 @@ public class AuditActivity {
                 event.getSessionId() != null && event.getSessionId().equals(currentSession)));
     }
 
-    // Who was invited, joined, left or changed role in a business, and who
-    // handed it over, newest first.
     @Transactional(readOnly = true)
     public EventPageResponse<TeamActivityResponse> team(Long businessPkid, int page, int size) {
         Specification<AuditEvent> inBusiness = (root, query, builder) ->
@@ -68,7 +62,6 @@ public class AuditActivity {
         return page(inBusiness, page, size, TeamActivityResponse::from);
     }
 
-    // The whole log, newest first, by email and kind of event.
     @Transactional(readOnly = true)
     public EventPageResponse<AuditEventResponse> all(String email, String type, int page, int size) {
         Specification<AuditEvent> matching = Specification.where(null);

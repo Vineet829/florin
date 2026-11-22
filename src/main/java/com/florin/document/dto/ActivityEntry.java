@@ -4,8 +4,6 @@ import com.florin.document.DocumentEvent;
 import com.florin.user.User;
 import java.time.Instant;
 
-// One event in a document's timeline. The actor is the member who did it,
-// by name, or null when no member did; byYou marks the viewer's own.
 public record ActivityEntry(String type, String detail, Instant at, String actor, boolean byYou) {
 
     public static ActivityEntry from(DocumentEvent event, Long viewerPkid) {

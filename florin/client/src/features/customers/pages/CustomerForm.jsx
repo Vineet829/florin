@@ -51,7 +51,7 @@ const fields = [
     type: "tel",
     autoComplete: "tel",
     maxLength: 30,
-    hint: "Include the country code, for example +1 555 010 0100.",
+    hint: "Include the country code, for example +91 98765 43210.",
   },
   {
     key: "vatTinNo",
@@ -85,8 +85,6 @@ const CustomerFields = ({ customer, onSubmit, busy }) => {
   const [values, setValues] = useState(() =>
     Object.fromEntries(fields.map(({ key }) => [key, customer?.[key] ?? ""])),
   );
-  // In GST mode a client without a GSTIN can still have a state, which
-  // decides where a supply to them goes.
   const gstMode =
     useGetSettingsQuery().data?.settings?.taxRegime === "GST_INDIA";
   const states =
@@ -98,7 +96,7 @@ const CustomerFields = ({ customer, onSubmit, busy }) => {
         event.preventDefault();
         const gstin = normalizeGstin(values.gstin);
         if (gstin && !isValidGstin(gstin)) {
-          toast.error("Check the GSTIN: it isn’t a valid one yet.");
+          toast.error("Check the GSTIN: it isn't a valid one yet.");
           return;
         }
         const { stateCode, ...rest } = values;
@@ -146,7 +144,7 @@ const CustomerFields = ({ customer, onSubmit, busy }) => {
                         <option value="">Not set</option>
                         {states.map((state) => (
                           <option key={state.code} value={state.code}>
-                            {state.code} – {state.name}
+                            {state.code} - {state.name}
                           </option>
                         ))}
                       </Field>
@@ -161,7 +159,7 @@ const CustomerFields = ({ customer, onSubmit, busy }) => {
                     {...(key === "vatTinNo" &&
                       !values.gstin &&
                       looksLikeGstin(values.vatTinNo) && {
-                        hint: "This looks like a GSTIN. Enter it under GSTIN too, so it’s checked and printed as one.",
+                        hint: "This looks like a GSTIN. Enter it under GSTIN too, so it's checked and printed as one.",
                       })}
                     name={key}
                     value={values[key]}
@@ -180,14 +178,14 @@ const CustomerFields = ({ customer, onSubmit, busy }) => {
           <div className="flex justify-end max-[700px]:[&>*]:flex-1">
             <button type="submit" className={primaryButton} disabled={busy}>
               <FiCheck aria-hidden="true" />
-              {busy ? "Saving…" : customer ? "Save changes" : "Create client"}
+              {busy ? "Saving..." : customer ? "Save changes" : "Create client"}
             </button>
           </div>
         </div>
         <aside className="min-w-0 max-[1359px]:hidden min-[1360px]:sticky min-[1360px]:top-[30px]">
           <div className="rounded-[30px] border border-white/85 bg-white/50 p-6 shadow-panel-soft backdrop-blur-[16px] compact:p-[18px] [&>p]:mt-3 [&>p]:text-[13.5px] [&>p]:leading-[1.7] [&>p]:text-spot-body [&>svg]:mb-4 [&>svg]:size-7 [&>svg]:stroke-[1.4] [&>svg]:text-spot-violet">
             <FiUsers aria-hidden="true" />
-            <h2 className={sectionTitle}>Details that stay with you.</h2>
+            <h2 className={sectionTitle}>Client details.</h2>
             <p>
               These details are used when you select this client for an invoice,
               quotation, or receipt.
@@ -203,7 +201,7 @@ const CustomerForm = () => {
   const { custId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  useTitle(`${custId ? "Edit client" : "Add client"} — Florin`);
+  useTitle(`${custId ? "Edit client" : "Add client"} - Florin`);
   const editRefusal = useBusiness().reason("EDIT_RECORDS");
   const query = useGetSingleCustomerQuery(custId, { skip: !custId });
   const [create, { isLoading: creating }] = useCreateCustomerMutation();
@@ -219,7 +217,7 @@ const CustomerForm = () => {
         { replace: !custId },
       );
     } catch (error) {
-      toast.error(errorMessage(error, "The client could not be saved."));
+      toast.error(errorMessage(error, "The client couldn't be saved."));
     }
   };
   return (
@@ -229,8 +227,8 @@ const CustomerForm = () => {
         title={custId ? "Edit client" : "Add client"}
         description={
           custId
-            ? "Keep your client’s contact and billing details up to date."
-            : "A few details now make the next invoice easier."
+            ? "Keep your client's contact and billing details up to date."
+            : "Enter your client's contact and billing details."
         }
       />
       {editRefusal ? (

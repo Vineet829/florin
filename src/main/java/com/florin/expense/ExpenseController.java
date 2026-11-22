@@ -34,8 +34,6 @@ public class ExpenseController {
         this.expenseService = expenseService;
     }
 
-    // A period is the last 30 or 90 days or 12 months, as the overview has
-    // them, in place of dates; a currency is a code such as USD, as written.
     @GetMapping
     public ExpenseListResponse list(
             @Requires(Permission.VIEW_RECORDS) BusinessAccess access,
@@ -53,7 +51,6 @@ public class ExpenseController {
                 access, ExpenseSearch.of(query, category, currency, period, from, to, page, size));
     }
 
-    // The categories the business has used, for picking one again.
     @GetMapping("/categories")
     public ExpenseCategoriesResponse categories(@Requires(Permission.VIEW_RECORDS) BusinessAccess access) {
         return new ExpenseCategoriesResponse(true, expenseService.categories(access));

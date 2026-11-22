@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { FiCreditCard, FiFileText, FiUserPlus } from "react-icons/fi";
 import { RefusalNote, useBusiness } from "../../business/permissions";
 
-// A white key, with its icon on a lilac tile; a disabled one greys out.
 const key =
   "group inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-[13px] border border-white/95 bg-white/[.78] pl-3 pr-[15px] text-[13.5px] text-spot-night shadow-[0_8px_18px_-14px_#3c346473] transition-colors hover:bg-white disabled:cursor-default disabled:bg-white/40 disabled:text-spot-disabled disabled:opacity-100 coarse:min-h-11";
 const tile =
@@ -14,10 +13,6 @@ const SHORTCUTS = [
   { to: "/create-customer", label: "Add a client", icon: FiUserPlus },
 ];
 
-// The overview's ways to start the work that comes up most: an invoice, an
-// expense, a client. A role that can't make them sees them disabled, each
-// pointing to the one note that gives the reason. On a narrow screen they
-// wrap.
 const Shortcuts = () => {
   const refusal = useBusiness().reason("EDIT_RECORDS");
   return (

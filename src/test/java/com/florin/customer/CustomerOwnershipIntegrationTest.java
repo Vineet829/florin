@@ -8,7 +8,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.florin.IntegrationTest;
 import com.florin.user.User;
 import com.jayway.jsonpath.JsonPath;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -26,14 +25,12 @@ class CustomerOwnershipIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("two businesses can each have the same client")
     void sameClientForTwoUsers() throws Exception {
         create(createUser(), "shared@northwind.test", "null").andExpect(status().isOk());
         create(createUser(), "shared@northwind.test", "null").andExpect(status().isOk());
     }
 
     @Test
-    @DisplayName("one user can't have two clients with the same email, in any letter case")
     void duplicateForOneUser() throws Exception {
         User owner = createUser();
         create(owner, "twice@northwind.test", "null").andExpect(status().isOk());
@@ -44,7 +41,6 @@ class CustomerOwnershipIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("renaming a client's email onto another of the user's clients is refused")
     void duplicateOnUpdate() throws Exception {
         User owner = createUser();
         create(owner, "first@northwind.test", "null").andExpect(status().isOk());
@@ -62,7 +58,6 @@ class CustomerOwnershipIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a VAT or tax number keeps its letters, and a zero means none")
     void vatNumbers() throws Exception {
         User owner = createUser();
 

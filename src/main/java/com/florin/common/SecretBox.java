@@ -13,9 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-// Seals secrets with AES-GCM under the app's one encryption key, so a copy of
-// the database alone can't use them. Each value keeps its own random nonce in
-// front of it.
 @Component
 public class SecretBox {
 
@@ -55,8 +52,6 @@ public class SecretBox {
                 .encodeToString(ByteBuffer.allocate(nonce.length + sealed.length).put(nonce).put(sealed).array());
     }
 
-    // Anything this key didn't seal, whether changed, cut short or sealed under
-    // another key, is refused with an IllegalStateException.
     public byte[] open(String sealed) {
         byte[] bytes;
         try {

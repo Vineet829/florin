@@ -12,7 +12,7 @@ afterEach(() => {
   container.remove();
 });
 
-it("shows the app's own address in the picture's address bar", () => {
+it("shows the app's address", () => {
   container = document.body.appendChild(document.createElement("div"));
   root = createRoot(container);
   act(() =>

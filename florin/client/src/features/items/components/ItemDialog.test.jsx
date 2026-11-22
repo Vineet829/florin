@@ -3,8 +3,6 @@ import { createRoot } from "react-dom/client";
 import { act } from "react-dom/test-utils";
 import ItemDialog from "./ItemDialog";
 
-// The dialog saves through these hooks, so it needs no store or server; the
-// browser's modal is left out.
 const idle = () => [vi.fn(), { isLoading: false }];
 vi.mock("../itemsApiSlice", () => ({
   useCreateItemMutation: () => idle(),
@@ -19,7 +17,7 @@ vi.mock("../../../components/workspace/Dialog", () => ({
 
 window.IS_REACT_ACT_ENVIRONMENT = true;
 
-it("takes a tax rate with up to the 4 decimals the server keeps", () => {
+it("accepts up to 4 decimals", () => {
   const container = document.createElement("div");
   const root = createRoot(container);
   act(() => {

@@ -17,8 +17,6 @@ import {
 
 const plural = (count, noun) => `${count} ${noun}${count === 1 ? "" : "s"}`;
 
-// Choosing a file shows every row first, each marked ready or with what
-// stops it; only then are the ready rows added.
 const ImportForm = ({ onClose }) => {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -35,7 +33,7 @@ const ImportForm = ({ onClose }) => {
     try {
       setPreview(await check(chosen).unwrap());
     } catch (error) {
-      setProblem(errorMessage(error, "This file could not be checked."));
+      setProblem(errorMessage(error, "This file couldn't be checked."));
     }
   };
   const submit = async (event) => {
@@ -45,7 +43,7 @@ const ImportForm = ({ onClose }) => {
       toast.success(result.message);
       onClose();
     } catch (error) {
-      toast.error(errorMessage(error, "The clients could not be added."));
+      toast.error(errorMessage(error, "The clients couldn't be added."));
     }
   };
   const skipped = preview ? preview.total - preview.ready : 0;
@@ -69,7 +67,7 @@ const ImportForm = ({ onClose }) => {
       </label>
       <div role="status" aria-live="polite" className="empty:hidden">
         {checking
-          ? "Checking the file…"
+          ? "Checking the file..."
           : preview &&
             `${plural(preview.total, "row")}: ${preview.ready} ready${skipped ? `, ${skipped} with problems` : ""}.`}
       </div>
@@ -135,7 +133,7 @@ const ImportForm = ({ onClose }) => {
         >
           <FiUpload aria-hidden="true" />
           {adding
-            ? "Adding…"
+            ? "Adding..."
             : preview?.ready
               ? `Add ${plural(preview.ready, "client")}`
               : "Add clients"}

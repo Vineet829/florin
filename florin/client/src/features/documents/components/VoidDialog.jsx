@@ -13,8 +13,6 @@ import { useVoidDocMutation } from "../documentsApiSlice";
 
 const VoidForm = ({ document, onClose }) => {
   const [reason, setReason] = useState("");
-  // Why the server refused, word for word: payments to delete first, or a
-  // schedule to stop.
   const [refusal, setRefusal] = useState(null);
   const [voidDoc, { isLoading: voiding }] = useVoidDocMutation();
   const name = `${document.documentType.toLowerCase()} ${document.documentNumber}`;
@@ -29,7 +27,7 @@ const VoidForm = ({ document, onClose }) => {
       if (error?.status === 409) {
         setRefusal(errorMessage(error));
       } else {
-        toast.error(errorMessage(error, "The document could not be voided."));
+        toast.error(errorMessage(error, "The document couldn't be voided."));
       }
     }
   };
@@ -39,7 +37,7 @@ const VoidForm = ({ document, onClose }) => {
         <li>It keeps its number, {document.documentNumber}.</li>
         <li>It no longer counts toward balances, reports or reminders.</li>
         <li>Its PDF and its share link show it as void, with your reason.</li>
-        <li>This can’t be undone. Duplicate it to start again.</li>
+        <li>This can't be undone. Duplicate it to start again.</li>
       </ul>
       {refusal && (
         <p className={errorBanner} role="alert">
@@ -70,14 +68,13 @@ const VoidForm = ({ document, onClose }) => {
         </button>
         <button type="submit" className={dangerButton} disabled={voiding}>
           <FiSlash aria-hidden="true" />
-          {voiding ? "Voiding…" : `Void ${name}`}
+          {voiding ? "Voiding..." : `Void ${name}`}
         </button>
       </div>
     </form>
   );
 };
 
-// Voids an issued document, with the reason its client will see.
 const VoidDialog = ({ document, open, onClose }) => (
   <Dialog
     open={open}

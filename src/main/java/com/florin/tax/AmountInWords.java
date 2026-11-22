@@ -5,12 +5,6 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.util.function.Function;
 
-// An amount written out for a GST invoice. Rupees count in the Indian way, in
-// thousands, lakhs and crores, with the paise after them: "Rupees One Lakh
-// Twenty Three Thousand Four Hundred Fifty Six and Seventy Eight Paise Only".
-// Other currencies are written cheque style, with the cents as a fraction,
-// since each names its minor unit differently: "USD One Thousand Two Hundred
-// Thirty Four and 56/100".
 public final class AmountInWords {
 
     private static final String[] ONES = {
@@ -43,7 +37,6 @@ public final class AmountInWords {
                 + " and " + String.format("%02d", fraction) + "/100";
     }
 
-    // Crores can themselves run to lakhs and more: "One Lakh Crore".
     static String indian(BigInteger number) {
         return join(
                 number,

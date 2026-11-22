@@ -18,18 +18,13 @@ const SECTIONS = [
   { id: "pricing", label: "Pricing" },
 ];
 
-// The page's canvas: the workspace's reset and type, on two soft glows.
 const page =
   "dashboard-app min-h-dvh overflow-x-hidden bg-[radial-gradient(ellipse_at_10%_60%,#eef0fb_0,#eef0fb00_44%),radial-gradient(ellipse_at_90%_75%,#f1dcd2_0,#f1dcd200_38%)] bg-spot-canvas font-ui font-normal leading-[normal] tracking-normal text-spot-ink [color-scheme:light]";
-// The dark stage the page opens on: rounded, inset from the window's
-// edges and lit by three soft glows, with focus rings that show on it.
 const stage =
   "m-[clamp(8px,1.2vw,14px)] overflow-hidden rounded-[clamp(24px,3vw,38px)] bg-[radial-gradient(ellipse_at_74%_42%,#7c62d68c_0,#7c62d600_52%),radial-gradient(ellipse_at_18%_108%,#e8835f3d_0,#e8835f00_46%),radial-gradient(ellipse_at_100%_0%,#6ea0d238_0,#6ea0d200_40%)] bg-[#1b1430] text-white [&_:is(a,button):focus-visible]:outline-white";
 
-// The homepage: the dark stage with the hero, then how an invoice gets
-// paid, the price, and the sign-off.
 const HomePage = () => {
-  useTitle("Florin — Good work. Great invoices.");
+  useTitle("Florin - GST invoices paid by UPI");
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const user = useSelector((state) => state.auth.user);
@@ -37,8 +32,6 @@ const HomePage = () => {
   const [demoError, setDemoError] = useState("");
   const motion = !usePrefersReducedMotion();
 
-  // The demo: the sample business, as a guest, or straight in when
-  // already signed in.
   const openDemo = async () => {
     if (user) {
       navigate("/dashboard");
@@ -84,10 +77,7 @@ const HomePage = () => {
         >
           Florin<span>.</span>
         </Link>
-        <p>
-          © {new Date().getFullYear()} Florin · Made for independent
-          business
-        </p>
+        <p>© {new Date().getFullYear()} Florin · Made for small businesses</p>
       </footer>
     </div>
   );

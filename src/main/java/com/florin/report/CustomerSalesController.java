@@ -9,8 +9,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-// Sales by customer, beside the clients' own addresses. A path without
-// variables is matched before /{id}, so it is never read as a client's id.
 @RestController
 @RequestMapping("/api/v1/customer")
 public class CustomerSalesController {
@@ -21,9 +19,6 @@ public class CustomerSalesController {
         this.customerSales = customerSales;
     }
 
-    // Every client billed in one currency over one of the documents list's
-    // periods, or all dates when none is given, sorted by billed, paid, owed
-    // or name, the most billed first unless another is asked for.
     @GetMapping("/sales")
     public CustomerSalesResponse sales(
             @Requires(Permission.VIEW_RECORDS) BusinessAccess access,

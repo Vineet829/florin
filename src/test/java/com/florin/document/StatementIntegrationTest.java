@@ -19,7 +19,6 @@ import com.jayway.jsonpath.JsonPath;
 import jakarta.mail.Session;
 import jakarta.mail.internet.MimeMessage;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.http.HttpHeaders;
@@ -54,8 +53,7 @@ class StatementIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a statement needs a sign-in, and only the client's owner can see it")
-    void access() throws Exception {
+    void onlyOwnerSeesStatement() throws Exception {
         User owner = createUser();
         String client = customer(owner, email());
 
@@ -69,8 +67,7 @@ class StatementIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the owner gets the statement as an inline PDF named after the client's account")
-    void pdf() throws Exception {
+    void downloadsInlinePdf() throws Exception {
         User owner = createUser();
         String client = customer(owner, email());
 
@@ -89,7 +86,6 @@ class StatementIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("emailing sends the statement to the client, with replies going to the owner")
     void emailStatement() throws Exception {
         User owner = createUser();
         String address = email();
@@ -113,7 +109,6 @@ class StatementIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the demo account can't email a statement")
     void demoCannotEmail() throws Exception {
         User demo = demoUser();
         String client = customer(demo, email());

@@ -95,6 +95,6 @@
         totals(${account.currency()}, ${account.totals()}, 'Amount due', ${account.due()})}"></table>
   </div>
 
-  <p class="muted empty" th:if="${statement.accounts().isEmpty()}">No invoices yet, so nothing is due.</p>
+  <p class="muted empty" th:if="${statement.accounts().isEmpty()}">No invoices yet.</p>
 </body>
 </html>

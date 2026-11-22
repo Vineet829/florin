@@ -8,7 +8,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.florin.IntegrationTest;
 import com.florin.user.User;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -30,8 +29,7 @@ class SettingsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a new user gets the defaults")
-    void defaults() throws Exception {
+    void newUserGetsDefaults() throws Exception {
         mockMvc.perform(get("/api/v1/settings").header(HttpHeaders.AUTHORIZATION, bearer(createUser())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.settings.defaultCurrency").value("USD"))
@@ -47,8 +45,7 @@ class SettingsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("automatic reminders are saved as chosen, within their limits")
-    void reminders() throws Exception {
+    void savesReminderSettings() throws Exception {
         User user = createUser();
         String reminders = VALID.replace("\"timeZone\": \"Asia/Kolkata\"}", """
                 "timeZone": "Asia/Kolkata", "remindersEnabled": true, "reminderDaysBefore": 0,
@@ -70,7 +67,6 @@ class SettingsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("saved settings come back on the next read, for that user only")
     void savesPerUser() throws Exception {
         User user = createUser();
         save(user, VALID)
@@ -88,8 +84,7 @@ class SettingsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("unknown time zones, bad currencies and tax rates over 100 or past 4 decimals are refused")
-    void validation() throws Exception {
+    void refusesInvalidSettings() throws Exception {
         User user = createUser();
 
         save(user, VALID.replace("Asia/Kolkata", "Mars/Olympus"))
@@ -101,7 +96,6 @@ class SettingsIntegrationTest extends IntegrationTest {
         save(user, VALID.replace("\"defaultTaxRate\": 18", "\"defaultTaxRate\": 101"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("The tax rate must be from 0 to 100"));
-        // Past 3 whole digits two limits apply, and either may be the one named.
         save(user, VALID.replace("\"defaultTaxRate\": 18", "\"defaultTaxRate\": 1000"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(startsWith("The tax rate must be from 0 to 100")));

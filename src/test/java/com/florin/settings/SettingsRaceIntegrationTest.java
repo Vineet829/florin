@@ -23,7 +23,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -34,11 +33,6 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-// Saving settings and issuing a document both write the business's settings
-// row, and each reads it under the row's lock. So whichever comes second sees
-// what the first saved: issuing never puts back settings saved while it ran,
-// and settings and payment details saved at once both stay. Each test holds a
-// transaction of its own open while the requests arrive.
 class SettingsRaceIntegrationTest extends IntegrationTest {
 
     private static final String SETTINGS = """
@@ -46,9 +40,9 @@ class SettingsRaceIntegrationTest extends IntegrationTest {
              "timeZone": "Europe/Berlin", "remindersEnabled": true}
             """;
     private static final String DETAILS = """
-            {"accountHolder": "Ada & Co", "bankName": "HDFC Bank", "accountNumber": "50100123456789",
-             "bankCodeType": "IFSC", "bankCode": "hdfc0001234", "upiId": "Ada@OKHDFCBANK",
-             "payLink": "https://pay.example.com/ada", "instructions": "Use the invoice number as the reference."}
+            {"accountHolder": "Apte & Co", "bankName": "HDFC Bank", "accountNumber": "50100123456789",
+             "bankCodeType": "IFSC", "bankCode": "hdfc0001234", "upiId": "Apte@OKHDFCBANK",
+             "payLink": "https://pay.example.com/apte", "instructions": "Use the invoice number as the reference."}
             """;
 
     @Autowired
@@ -102,9 +96,6 @@ class SettingsRaceIntegrationTest extends IntegrationTest {
                 "$.newDocument._id");
     }
 
-    // Issues the draft as the issue endpoint does, reading the settings for
-    // the business's time zone first and taking the number last, with the
-    // request made in between. Gives the request's status.
     private int whileIssuing(Callable<ResultActions> request) throws Exception {
         CountDownLatch read = new CountDownLatch(1);
         CountDownLatch answered = new CountDownLatch(1);
@@ -137,7 +128,6 @@ class SettingsRaceIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("settings saved while a document is being issued stay saved")
     void settingsSavedWhileIssuing() throws Exception {
         assertThat(whileIssuing(() -> send(put("/api/v1/settings"), SETTINGS))).isEqualTo(200);
 
@@ -150,17 +140,15 @@ class SettingsRaceIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("payment details saved while a document is being issued stay saved")
     void paymentDetailsSavedWhileIssuing() throws Exception {
         assertThat(whileIssuing(() -> send(put("/api/v1/settings/payment-details"), DETAILS))).isEqualTo(200);
 
         send(get("/api/v1/settings/payment-details"), "")
-                .andExpect(jsonPath("$.paymentDetails.accountHolder").value("Ada & Co"))
-                .andExpect(jsonPath("$.paymentDetails.upiId").value("ada@okhdfcbank"));
+                .andExpect(jsonPath("$.paymentDetails.accountHolder").value("Apte & Co"))
+                .andExpect(jsonPath("$.paymentDetails.upiId").value("apte@okhdfcbank"));
     }
 
     @Test
-    @DisplayName("settings and payment details saved at the same moment both stay")
     void savedAtOnce() throws Exception {
         CountDownLatch held = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
@@ -202,6 +190,6 @@ class SettingsRaceIntegrationTest extends IntegrationTest {
         assertThat(statuses).containsExactly(200, 200);
         send(get("/api/v1/settings"), "").andExpect(jsonPath("$.settings.taxLabel").value("VAT"));
         send(get("/api/v1/settings/payment-details"), "")
-                .andExpect(jsonPath("$.paymentDetails.accountHolder").value("Ada & Co"));
+                .andExpect(jsonPath("$.paymentDetails.accountHolder").value("Apte & Co"));
     }
 }

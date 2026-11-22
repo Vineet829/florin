@@ -9,12 +9,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.zip.CRC32;
 import javax.imageio.ImageIO;
 
-// Images for the upload and PDF tests.
 public final class TestImages {
 
     private TestImages() {}
 
-    // A real, blank image of the given size, as a "png", "jpg" or "gif" file.
     public static byte[] image(String format, int width, int height) {
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -25,11 +23,8 @@ public final class TestImages {
         }
     }
 
-    // The start of a PNG that says it is width × height pixels, with none of
-    // its pixels: enough to read its size from, and nothing to open.
     public static byte[] pngHeader(int width, int height) {
         byte[] type = "IHDR".getBytes(StandardCharsets.US_ASCII);
-        // 8-bit colour with transparency, the kind a PDF holds four bytes a pixel for.
         byte[] fields = ByteBuffer.allocate(13).putInt(width).putInt(height).put((byte) 8).put((byte) 6).array();
         CRC32 crc = new CRC32();
         crc.update(type);

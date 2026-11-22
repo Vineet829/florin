@@ -18,7 +18,6 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,7 +62,6 @@ class InvitationIntegrationTest extends IntegrationTest {
                 """.formatted(email, role));
     }
 
-    // The link in the last invitation email.
     private String sentToken(String to) {
         ArgumentCaptor<SimpleMailMessage> mail = ArgumentCaptor.forClass(SimpleMailMessage.class);
         verify(mailSender, timeout(2000).atLeastOnce()).send(mail.capture());
@@ -83,7 +81,6 @@ class InvitationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("someone invited by email joins with the role they were given, and works in the business at once")
     void invitesAndAccepts() throws Exception {
         User invitee = createUser();
         invite(owner, invitee.getEmail().toUpperCase(), "MEMBER")
@@ -122,7 +119,6 @@ class InvitationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("only the verified account the invitation was sent to can accept it")
     void onlyTheInvitee() throws Exception {
         invite(owner, "someone-" + UUID.randomUUID() + "@example.test", "VIEWER").andExpect(status().isCreated());
         String token = sentToken(invitationRepository.findWaiting(business.getPkid()).get(0).getEmail());
@@ -133,7 +129,6 @@ class InvitationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("resending replaces the link; revoking or expiry closes it")
     void resendRevokeExpire() throws Exception {
         User invitee = createUser();
         String id = JsonPath.read(invite(owner, invitee.getEmail(), "ADMIN")
@@ -165,8 +160,7 @@ class InvitationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("invitations are refused for members, the demo account, owners, and people who can't manage the team")
-    void refusals() throws Exception {
+    void refusesInvalidInvitations() throws Exception {
         User member = createMember(business, BusinessRole.MEMBER);
         String email = "twice-" + UUID.randomUUID() + "@example.test";
         invite(owner, email, "MEMBER").andExpect(status().isCreated());
@@ -193,7 +187,6 @@ class InvitationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a business has at most fifty invitations waiting, not counting any that expired")
     void waitingCap() throws Exception {
         for (int index = 0; index < 50; index++) {
             jdbcTemplate.update(
@@ -212,7 +205,6 @@ class InvitationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a business sends at most twenty invitations an hour")
     void rateLimited() throws Exception {
         for (int sent = 0; sent < 20; sent++) {
             invite(owner, "many-" + UUID.randomUUID() + "@example.test", "VIEWER").andExpect(status().isCreated());

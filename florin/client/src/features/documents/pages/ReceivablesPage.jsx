@@ -58,8 +58,6 @@ const NO_INVOICES = [];
 const NO_CLIENTS = [];
 const DEMO_EMAIL_NOTE = "Emailing is turned off for the shared demo account.";
 
-// Each mode's part of the server's answer, its bands, its colour and its
-// words.
 const VIEWS = {
   "coming-in": {
     group: "current",
@@ -69,12 +67,12 @@ const VIEWS = {
     bar: "bg-owed-due",
     figure: "Coming in",
     none: "Nothing is coming in",
-    nobody: "No one owes anything that isn’t due yet.",
+    nobody: "No one owes anything that isn't due yet.",
     title: "Invoices coming in",
     order: "Soonest due first. Invoices with no due date come last.",
     empty: {
       title: "Nothing is coming in.",
-      text: "Unpaid invoices that aren’t due yet show up here, soonest due first.",
+      text: "Unpaid invoices that aren't due yet show up here, soonest due first.",
       icon: FiClock,
     },
   },
@@ -97,15 +95,9 @@ const VIEWS = {
   },
 };
 
-// An amount in the summary's currency, named only when the business bills
-// in more than one.
 const amountIn = (value, currency, several) =>
   several ? money(value, currency) : formatAmount(value, currency);
 
-// The figure's bands, side by side, each as long as its share of the
-// figure. A band with nothing in it is left out; the rest keep a sliver at
-// least. The legend gives the same figures in words, so the bar is left to
-// the eye.
 const BandBar = ({ bands, byKey }) => {
   const parts = bands.filter((band) => Number(byKey[band.key]?.amount) > 0);
   return (
@@ -124,9 +116,6 @@ const BandBar = ({ bands, byKey }) => {
   );
 };
 
-// Each band with its amount and how many invoices it is on; a band with
-// nothing in it shows its zero. Four across when there is room, two
-// otherwise.
 const Legend = ({ view, byKey, currency }) => (
   <div className="[container-type:inline-size]">
     <ul
@@ -169,8 +158,6 @@ const Legend = ({ view, byKey, currency }) => (
   </div>
 );
 
-// While the figures load, blocks keep the summary's room, so the list below
-// stays where it is when they arrive.
 const SummaryPlaceholder = () => (
   <div className={panel} aria-hidden="true">
     <div className="mb-5 flex gap-2 compact:mb-4">
@@ -194,11 +181,6 @@ const SummaryPlaceholder = () => (
   </div>
 );
 
-// What clients owe today in one currency, as the overview's Total
-// receivables counts it: the figure for the mode shown, of everything owed,
-// split into its bands, and the clients who owe the most of it. The pills
-// switch the mode, and the currency menu the currency when there are
-// several.
 const Summary = ({ summary, mode, onMode, onCurrency, busy }) => {
   const view = VIEWS[mode];
   const group = summary[view.group] || {};
@@ -320,28 +302,19 @@ const Summary = ({ summary, mode, onMode, onCurrency, busy }) => {
   );
 };
 
-// Documents › Receivables: what clients owe today, coming in or overdue, as
-// the overview's Total receivables splits it, above the invoices behind the
-// figure. Overdue invoices come most late first, each with a way to remind
-// the client; those coming in soonest due first. The mode, the currency and
-// the page are kept in the address.
 const ReceivablesPage = () => {
-  useTitle("Receivables — Florin");
+  useTitle("Receivables - Florin");
   const [list, update] = useListState(readReceivables, receivablesSearch);
   const view = VIEWS[list.mode];
   const summaryQuery = useGetReceivablesQuery(list.currency || undefined, {
     refetchOnMountOrArgChange: 60,
   });
   const summary = summaryQuery.data;
-  // The invoices are in the figure's currency: the one the address names,
-  // or else the one the server answered in.
   const currency = list.currency || summary?.currency;
   const query = useGetAllMyDocsQuery(receivablesQuery(list, currency), {
     skip: !list.currency && !summary,
     refetchOnMountOrArgChange: 60,
   });
-  // The rows shown are the last answer's, while it is for the mode shown;
-  // a new mode's rows load in its place rather than under its columns.
   const answered = useLastAnswer(query.currentData, list);
   const shown =
     answered.data && answered.list.mode === list.mode ? answered.data : null;
@@ -354,7 +327,6 @@ const ReceivablesPage = () => {
     setPage: (page) => update({ page: page + 1 }),
     setSize: (size) => update({ size, page: 1 }),
   });
-  // A page past the end, from an old link, shows the last.
   const pages = query.currentData?.numberOfPages;
   useEffect(() => {
     if (pages && list.page > pages) update({ page: pages });
@@ -362,13 +334,9 @@ const ReceivablesPage = () => {
 
   const { reason } = useBusiness();
   const editRefusal = reason("EDIT_RECORDS");
-  // Sending is refused to viewers, and turned off for the demo account, as
-  // on the invoice's own page.
   const demo = useGetUserProfileQuery().data?.userProfile?.demo;
   const sendNote = editRefusal || (demo ? DEMO_EMAIL_NOTE : undefined);
   const [reminding, setReminding] = useState(null);
-  // Days late and days to go count from the business's today, as the
-  // server's bands above do.
   const today = useBusinessToday();
 
   const columns = [
@@ -381,7 +349,7 @@ const ReceivablesPage = () => {
         </Link>
       ),
     },
-    { label: "Client", render: (row) => row.customer?.name || "—" },
+    { label: "Client", render: (row) => row.customer?.name || "-" },
     {
       label: "Due date",
       render: (row) => <DueDate value={row.dueDate} overdue={row.overdue} />,
@@ -433,7 +401,7 @@ const ReceivablesPage = () => {
     <WorkspacePage section="Documents">
       <PageHeader
         title="Documents"
-        description="Invoices, quotations, and receipts. All your paperwork in one place."
+        description="Invoices, quotations, receipts and credit notes."
         actions={
           <>
             <DocumentsTabs />

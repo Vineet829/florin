@@ -21,7 +21,6 @@ import jakarta.mail.internet.MimeMessage;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +32,6 @@ class DocumentPdfIntegrationTest extends IntegrationTest {
     @Autowired
     private DocumentRepository documentRepository;
 
-    // An issued invoice, made out by the owner's business as it is now.
     private Document documentFor(User owner, String clientEmail) {
         Document document = new Document();
         document.setBusiness(businessOf(owner));
@@ -65,7 +63,6 @@ class DocumentPdfIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("PDF routes, old and new, refuse requests without a sign-in")
     void anonymousRequestsAreRejected() throws Exception {
         Document document = documentFor(createUser(), "beta@x.com");
 
@@ -78,7 +75,6 @@ class DocumentPdfIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the owner gets their document as an inline PDF named after its number")
     void ownerDownloadsPdf() throws Exception {
         User owner = createUser();
         Document document = documentFor(owner, "beta@x.com");
@@ -98,7 +94,6 @@ class DocumentPdfIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("another user can neither download nor email someone else's document")
     void otherUsersAreForbidden() throws Exception {
         Document document = documentFor(createUser(), "beta@x.com");
         String stranger = bearer(createUser());
@@ -113,7 +108,6 @@ class DocumentPdfIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("emailing sends the PDF to the document's client, with replies going to the owner")
     void ownerEmailsDocument() throws Exception {
         User owner = createUser();
         Document document = documentFor(owner, "beta@x.com");
@@ -133,7 +127,6 @@ class DocumentPdfIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a document whose client has no email address cannot be emailed")
     void clientWithoutEmail() throws Exception {
         User owner = createUser();
         Document document = documentFor(owner, " ");
@@ -145,7 +138,6 @@ class DocumentPdfIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the email draft offers the client's address and names the document and sender")
     void emailDraft() throws Exception {
         User owner = createUser();
         Document document = documentFor(owner, "beta@x.com");
@@ -159,7 +151,6 @@ class DocumentPdfIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a chosen recipient and subject replace the defaults, and line breaks never reach the subject")
     void customEmail() throws Exception {
         User owner = createUser();
         Document document = documentFor(owner, "beta@x.com");
@@ -183,7 +174,6 @@ class DocumentPdfIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an invalid recipient address is refused before anything is sent")
     void invalidRecipient() throws Exception {
         User owner = createUser();
         Document document = documentFor(owner, "beta@x.com");
@@ -198,7 +188,6 @@ class DocumentPdfIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the email draft follows the saved invoice email, with the client, document and business filled in")
     void savedMessage() throws Exception {
         User owner = createUser();
         Document document = documentFor(owner, "beta@x.com");

@@ -20,7 +20,6 @@ import java.time.Clock;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -72,7 +71,6 @@ class CustomerServiceTest {
     }
 
     @Test
-    @DisplayName("a customer needs a name, email and phone number")
     void rejectsIncompleteCustomer() {
         assertThatThrownBy(() -> service.create(access(1L, 1L), request("Acme", "a@b.com", null)))
                 .isInstanceOf(ApiException.class)
@@ -81,7 +79,6 @@ class CustomerServiceTest {
     }
 
     @Test
-    @DisplayName("a customer email the business already has is refused")
     void rejectsDuplicateEmail() {
         when(customerRepository.existsByBusinessPkidAndEmailIgnoreCase(1L, "a@b.com")).thenReturn(true);
 
@@ -93,7 +90,6 @@ class CustomerServiceTest {
     }
 
     @Test
-    @DisplayName("a created customer gets a generated account number, its business and its author")
     void createsCustomerWithAccountNumber() {
         User author = userWithPkid(7L);
         Business business = businessWithPkid(3L);
@@ -114,7 +110,6 @@ class CustomerServiceTest {
     }
 
     @Test
-    @DisplayName("viewing another business's customer is forbidden")
     void forbidsForeignCustomerAccess() {
         Customer customer = new Customer();
         customer.setBusiness(businessWithPkid(99L));
@@ -129,7 +124,6 @@ class CustomerServiceTest {
     }
 
     @Test
-    @DisplayName("an unknown customer id yields a 404")
     void unknownCustomerIsNotFound() {
         UUID id = UUID.randomUUID();
         when(customerRepository.findByExternalId(id)).thenReturn(Optional.empty());

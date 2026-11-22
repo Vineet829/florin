@@ -17,7 +17,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -63,7 +62,6 @@ class DailyJobsTest {
     }
 
     @Test
-    @DisplayName("every step runs at the same moment, even after one of them fails, and each is timed")
     void everyStepRuns() {
         when(recurringService.makeDue(NOW)).thenThrow(new IllegalStateException("database is down"));
         when(automaticReminders.send(NOW)).thenReturn(2);
@@ -103,8 +101,7 @@ class DailyJobsTest {
     }
 
     @Test
-    @DisplayName("the jobs run once a day at 07:00 by default, at a set time, or not at all when turned off")
-    void schedule() {
+    void runsDailyAtSetTime() {
         runner.run(context -> assertThat(cronTasks(context)).containsExactly("0 0 7 * * *"));
         runner.withPropertyValues("app.jobs.cron=0 30 6 * * *")
                 .run(context -> assertThat(cronTasks(context)).containsExactly("0 30 6 * * *"));

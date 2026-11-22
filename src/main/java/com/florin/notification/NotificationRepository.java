@@ -19,7 +19,6 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     long countByUserPkidAndBusinessPkidAndReadAtIsNull(Long userPkid, Long businessPkid);
 
-    // How much unread news someone has in each of their businesses.
     @Query("""
             select n.business.pkid as businessPkid, count(n) as unread from Notification n
             where n.user.pkid = :userPkid and n.readAt is null
@@ -34,7 +33,6 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
         long getUnread();
     }
 
-    // A member leaving takes nothing about the business with them.
     @Modifying
     @Query("delete from Notification n where n.user.pkid = :userPkid and n.business.pkid = :businessPkid")
     int deleteForMember(@Param("userPkid") Long userPkid, @Param("businessPkid") Long businessPkid);

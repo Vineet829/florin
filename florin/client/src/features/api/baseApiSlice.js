@@ -15,8 +15,6 @@ const baseQuery = fetchBaseQuery({
   },
 });
 
-// A 409 naming the session's business means another tab switched it, or the
-// user is no longer in any. The app then starts over in that business.
 const followBusiness = (response, api) => {
   const moved =
     response?.error?.status === 409 &&
@@ -25,10 +23,6 @@ const followBusiness = (response, api) => {
   return response;
 };
 
-// A refresh can swap the session's cookie. keepalive lets the new cookie
-// reach the browser even when the page reloads or closes before the answer
-// does; a browser left holding the cookie the server replaced would, on a
-// later refresh, sign out every device of the account.
 export const refreshRequest = {
   url: "/auth/new_access_token",
   keepalive: true,
@@ -36,14 +30,9 @@ export const refreshRequest = {
 
 let refreshInFlight;
 
-// Only the server refusing the session ends it. A refresh lost to the
-// network, or answered by a server that is restarting, leaves the user
-// signed in, with whatever they were typing, to try again.
 const sessionRefused = (error) =>
   [401, 403].includes(error?.originalStatus ?? error?.status);
 
-// The server answers an expired or revoked access token with an empty 403.
-// A 403 with a message is a refusal the token can't fix, so it isn't retried.
 const rejectedToken = (error) =>
   (error?.originalStatus ?? error?.status) === 403 && !error?.data;
 
@@ -51,8 +40,6 @@ const baseQueryWithRefreshToken = async (args, api, extraOptions) =>
   followBusiness(await refreshingQuery(args, api, extraOptions), api);
 
 const refreshingQuery = async (args, api, extraOptions) => {
-  // A dashboard loads several resources at once. Rotate its cookie once, then
-  // let every waiting request use the same new access token.
   if (refreshInFlight) await refreshInFlight;
   const accessToken = api.getState().auth.user?.accessToken;
   let response = await baseQuery(args, api, extraOptions);
@@ -69,8 +56,6 @@ const refreshingQuery = async (args, api, extraOptions) => {
             api.dispatch(logIn({ ...result.data }));
           } else if (sessionRefused(result?.error)) {
             api.dispatch(logOut());
-            // What the session loaded goes with it, so whoever signs in next
-            // in this tab never sees it.
             api.dispatch(baseApiSlice.util.resetApiState());
           }
           return result;

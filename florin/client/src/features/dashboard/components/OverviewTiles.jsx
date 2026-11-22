@@ -26,10 +26,6 @@ import {
   financeTones,
 } from "./DashboardPanels";
 
-// The colours of the tiles in the homepage's picture of the overview: the
-// financial cards' blue, lilac and peach, and sage for profit. The homepage
-// draws its picture with these and the parts below, at a smaller size; the
-// overview's own cards take these for their trends.
 export const TONES = {
   blue: {
     tile: "bg-card-blue",
@@ -72,15 +68,11 @@ const CHANGES = {
   down: { icon: FiChevronDown, color: "text-change-down", words: "down" },
   flat: { icon: FiMinus, color: "text-spot-muted", words: "no change" },
 };
-// A change in words: "up 29.1%", or "no change".
 const changeWords = (change) =>
   change.direction === "flat"
     ? CHANGES.flat.words
     : `${CHANGES[change.direction].words} ${percentLabel(change.percent)}`;
 
-// How a figure moved against the period before: an arrow and the size of
-// the change, green when it rose and rust when it fell, with the
-// comparison named beside it on the same baseline.
 const Change = ({ change, compared }) => {
   const { icon: Icon, color, words } = CHANGES[change.direction];
   return (
@@ -100,8 +92,6 @@ const Change = ({ change, compared }) => {
   );
 };
 
-// A trend across the period as a line over a light wash, with a dot on the
-// latest figure. The class sets its height.
 export const Sparkline = ({ values, colors, className = "h-10" }) => {
   const points = trendPoints(values);
   if (!points.length) return null;
@@ -139,9 +129,6 @@ export const Sparkline = ({ values, colors, className = "h-10" }) => {
   );
 };
 
-// Profit in each part of the period as columns: profit stands on zero and
-// a loss hangs below it, in a darker rust. The latest column is solid. The
-// class sets its height.
 export const TrendColumns = ({ values, className = "h-10" }) => {
   const { zero, columns } = trendColumns(values);
   return (
@@ -169,8 +156,6 @@ export const TrendColumns = ({ values, className = "h-10" }) => {
   );
 };
 
-// What is owed now, split into what is not due yet and what is overdue.
-// The class sets its text size, which the bar follows, and its spacing.
 export const OwedSplit = ({
   owed,
   currency,
@@ -202,11 +187,6 @@ export const OwedSplit = ({
   );
 };
 
-// A figure card is a link to the view behind its figure, as large as the
-// Reports page's cards. Its name for assistive technology carries the
-// figure, what it includes, the change and where it leads. The figure and
-// the line under it keep to the top, and the change and the trend to the
-// foot, so all three cards line up whatever each has under its figure.
 const FigureCard = ({ to, label, title, value, tone, detail, line, chart }) => {
   const colors = financeTones[tone];
   return (
@@ -245,11 +225,6 @@ const FigureCard = ({ to, label, title, value, tone, detail, line, chart }) => {
   );
 };
 
-// The period's billed, received and profit, each against the period before
-// when there was one, and the tax billed includes. Each opens the view that
-// explains it, for the same period, in the same currency when one was
-// chosen: billed the Documents tab's Sales, received the Payments list with
-// its summary, and profit the Reports page's profit and loss.
 const OverviewTiles = ({ snapshot, currencyChosen }) => {
   const { currency, totals, trend } = snapshot;
   const period = findPeriod(snapshot.period.key);
@@ -263,7 +238,6 @@ const OverviewTiles = ({ snapshot, currencyChosen }) => {
       line: change && <Change change={change} compared={period.compared} />,
     };
   };
-  // An older server's answer has no tax.
   const taxed = totals.tax != null;
   return (
     <section aria-labelledby="figures-title">

@@ -111,15 +111,10 @@ public class RecurringService {
                 .map(this::respond);
     }
 
-    // A schedule given a new date or frequency counts its dates from the date
-    // given; one that keeps both keeps counting from its first. Invoices
-    // already made still count toward the most allowed.
     @Transactional
     public RecurringResponse update(BusinessAccess access, String id, RecurringRequest request) {
         RecurringSchedule schedule = requireInBusiness(access, id);
         apply(schedule, request, today(access.businessPkid()));
-        // A schedule makes one invoice a day at most, so one moved onto a day
-        // it already made an invoice on could never make its next.
         if (schedule.getNextRun() != null
                 && runRepository.existsByScheduleAndRunDate(schedule, schedule.getNextRun())) {
             throw new ApiException(
@@ -129,10 +124,6 @@ public class RecurringService {
         return respond(schedule);
     }
 
-    // A schedule resumed after dates passed while it was paused skips those
-    // dates and carries on from its next one, today or later: a pause stops
-    // the invoices of its time, rather than saving them up to be made all at
-    // once, each dated the day of the next daily run.
     @Transactional
     public RecurringResponse setPaused(BusinessAccess access, String id, boolean paused) {
         RecurringSchedule schedule = requireInBusiness(access, id);
@@ -143,9 +134,6 @@ public class RecurringService {
         return respond(schedule);
     }
 
-    // Each date skipped moves the count its dates are worked out from on by
-    // one, so a schedule keeps its day of the month, and only the invoices it
-    // made count toward the most allowed.
     private static void skipPassedDates(RecurringSchedule schedule, LocalDate today) {
         LocalDate next = schedule.getNextRun();
         while (next != null && next.isBefore(today)) {
@@ -160,9 +148,6 @@ public class RecurringService {
         scheduleRepository.delete(requireInBusiness(access, id));
     }
 
-    // Makes every invoice that is due, one schedule at a time, catching up
-    // on missed periods. Each run is recorded under its date, so a period is
-    // never invoiced twice; one that fails is logged and the rest still run.
     public int makeDue(Instant now) {
         int made = 0;
         LocalDate latest = LocalDate.ofInstant(now, ZoneOffset.UTC).plusDays(1);
@@ -241,7 +226,6 @@ public class RecurringService {
         }
     }
 
-    // The run after the ones done, or none once the count or end date is met.
     private static LocalDate nextRun(RecurringSchedule schedule) {
         return schedule.runAfter(schedule.getRunsDone());
     }
@@ -259,9 +243,6 @@ public class RecurringService {
         if (request.endDate() != null && request.endDate().isBefore(request.startDate())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "The end date must come after the first invoice");
         }
-        // A change that keeps the frequency and the next date, as its dialog
-        // sends it, keeps counting from the first date, so one from Jan 31
-        // still runs on Mar 31 after Feb 28.
         boolean sameDates = frequency == schedule.getFrequency()
                 && request.startDate().equals(schedule.getNextRun());
         schedule.setFrequency(frequency);
@@ -313,9 +294,6 @@ public class RecurringService {
         return LocalDate.now(clock.withZone(ZoneId.of(settingsService.forBusiness(businessPkid).getTimeZone())));
     }
 
-    // The document, locked until the transaction ends when a schedule is made
-    // for it, as deleting a draft locks it: a delete that waits for the
-    // schedule then finds it, and keeps the draft instead of deleting both.
     private Document requireDocumentInBusiness(BusinessAccess access, String id, boolean lock) {
         Document document = parse(id)
                 .flatMap(lock ? documentRepository::findForUpdateByExternalId : documentRepository::findByExternalId)
@@ -326,8 +304,6 @@ public class RecurringService {
         return document;
     }
 
-    // The schedule, locked until the transaction ends, so a change to it and
-    // a run making its invoice take turns.
     private RecurringSchedule requireInBusiness(BusinessAccess access, String id) {
         RecurringSchedule schedule = parse(id)
                 .flatMap(scheduleRepository::findForUpdateByExternalId)

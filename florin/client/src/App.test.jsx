@@ -38,11 +38,8 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-// Each test loads the whole app afresh, which can take longer than the
-// default 5 seconds while other test files run alongside.
 const LOADING_TIME = 30_000;
 
-// The app as index.jsx draws it, opened at `path`, with every path it shows.
 const mount = async (path) => {
   const { Provider } = await import("react-redux");
   const { MemoryRouter, Routes, Route, useLocation } =
@@ -71,7 +68,7 @@ const mount = async (path) => {
 };
 
 it(
-  "draws nothing and does not bounce to /login while restoring",
+  "renders nothing while restoring",
   async () => {
     localStorage.setItem("user", JSON.stringify({ username: "asha" }));
     const { store, container, seen } = await mount("/settings/security");
@@ -89,7 +86,7 @@ it(
 );
 
 it(
-  "sends a failed restore to /login, as a signed-out visitor",
+  "failed restore goes to /login",
   async () => {
     localStorage.setItem("user", JSON.stringify({ username: "asha" }));
     const { store, seen } = await mount("/settings/security");

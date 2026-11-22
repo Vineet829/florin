@@ -3,10 +3,6 @@ import { NavLink } from "react-router-dom";
 const tab = ({ isActive }) =>
   `inline-flex min-h-9 items-center whitespace-nowrap rounded-[10px] px-3.5 text-[13px] transition-colors coarse:min-h-11 max-[700px]:flex-1 max-[700px]:justify-center ${isActive ? "bg-spot-night font-medium text-white" : "text-spot-body hover:bg-white"}`;
 
-// Documents, what clients owe on them, what was billed, the payments on
-// them and their recurring schedules, as views of one page. It sits in the
-// page header, so the documents table keeps its height; on a phone it takes
-// a row of its own, and the tabs wrap onto a second row.
 const DocumentsTabs = () => (
   <nav
     aria-label="Documents views"

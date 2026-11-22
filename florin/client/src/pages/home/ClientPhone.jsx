@@ -1,8 +1,6 @@
 import QrPattern from "./QrPattern";
 import { dayMonthYear } from "../../utils/dates";
 
-// Two weeks after the visitor's own today, so the sample is always still to
-// pay: a homepage has no business, and so no business's today.
 const dueDay = () => {
   const day = new Date();
   day.setHours(0, 0, 0, 0);
@@ -10,10 +8,6 @@ const dueDay = () => {
   return dayMonthYear(day);
 };
 
-// What the client sees on their phone: the invoice's number, due date and
-// amount, the sample UPI QR, and the two things they can do with it. It
-// overlaps the tour's corner and floats gently; a phone-sized window has
-// no room for it.
 const ClientPhone = ({ motion }) => (
   <div
     className={`absolute -bottom-16 -left-[72px] w-[196px] rounded-[34px] bg-[#0e0a1a] p-[9px] shadow-[0_40px_80px_-30px_#000000cc,0_0_0_1px_#ffffff1f] max-[860px]:hidden ${motion ? "animate-home-float" : ""}`}
@@ -22,7 +16,7 @@ const ClientPhone = ({ motion }) => (
   >
     <div className="overflow-hidden rounded-[26px] bg-white text-spot-ink">
       <div className="bg-spot-thead px-3.5 pb-3 pt-4">
-        <p className="text-[11px] text-spot-muted">Tester Studio</p>
+        <p className="text-[11px] text-spot-muted">Apte Design Studio</p>
         <p className="mt-0.5 font-display text-[18px] font-light tracking-[-0.03em]">
           INV-0042
         </p>

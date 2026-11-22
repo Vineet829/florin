@@ -31,7 +31,6 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,9 +40,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mail.MailSendException;
 import org.springframework.test.web.servlet.ResultActions;
 
-// Emails about a document carry its link to view and pay it, and how to pay,
-// without ever breaking a link a client already has, unless the person
-// sending was told first.
 class DocumentEmailLinkIntegrationTest extends IntegrationTest {
 
     private static final Pattern LINK = Pattern.compile("https?://\\S+/p/[A-Za-z0-9_-]{43}");
@@ -110,7 +106,6 @@ class DocumentEmailLinkIntegrationTest extends IntegrationTest {
                 .andExpect(status().isOk());
     }
 
-    // Every email sent so far, with the text of its message.
     private List<Sent> sent() throws Exception {
         ArgumentCaptor<MimeMessage> captor = ArgumentCaptor.forClass(MimeMessage.class);
         verify(mailSender, atLeast(0)).send(captor.capture());
@@ -155,7 +150,6 @@ class DocumentEmailLinkIntegrationTest extends IntegrationTest {
         return url.substring(url.lastIndexOf('/') + 1);
     }
 
-    // As if the link was made before links were kept sealed.
     private void forgetSealed(Invoice invoice) {
         jdbcTemplate.update(
                 "update share_links set token_sealed = null"
@@ -171,7 +165,6 @@ class DocumentEmailLinkIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an invoice's email carries its link to view and pay and how to pay, and later emails the same link")
     void sameLink() throws Exception {
         Invoice invoice = invoice(LocalDate.now(ZoneOffset.UTC).plusDays(30));
         draft(invoice)
@@ -198,7 +191,6 @@ class DocumentEmailLinkIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a link that can't be shown again is replaced only by an email someone sends, after a warning")
     void legacyLink() throws Exception {
         Invoice invoice = invoice(LocalDate.now(ZoneOffset.UTC).plusDays(30));
         String old = JsonPath.read(
@@ -221,7 +213,6 @@ class DocumentEmailLinkIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a link that can't be shown again keeps working when the email that would replace it fails to send")
     void failedEmailKeepsLink() throws Exception {
         Invoice invoice = invoice(LocalDate.now(ZoneOffset.UTC).plusDays(30));
         String old = JsonPath.read(
@@ -256,7 +247,6 @@ class DocumentEmailLinkIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an automatic reminder leaves the link out rather than replace one the client already has")
     void automaticReminder() throws Exception {
         mockMvc.perform(put("/api/v1/settings")
                         .header(HttpHeaders.AUTHORIZATION, bearer(owner))
@@ -289,7 +279,6 @@ class DocumentEmailLinkIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an email without {link} makes no link, and a paid invoice's email leaves out how to pay")
     void noLink() throws Exception {
         mockMvc.perform(put("/api/v1/settings/email-templates/INVOICE")
                         .header(HttpHeaders.AUTHORIZATION, bearer(owner))

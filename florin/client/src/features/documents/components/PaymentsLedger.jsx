@@ -32,7 +32,6 @@ import EmailReceiptDialog from "./EmailReceiptDialog";
 const DEMO_EMAIL_NOTE = "Emailing is turned off for the shared demo account.";
 
 const EditPaymentForm = ({ document, payment, busy, onSave, onClose }) => {
-  // What is still owed if this payment were removed.
   const limit = cents(
     Number(document.ledger?.balanceDue || 0) +
       Number(payment.amountPaid || 0) +
@@ -41,7 +40,6 @@ const EditPaymentForm = ({ document, payment, busy, onSave, onClose }) => {
   const [values, setValues] = useState({
     datePaid: payment.datePaid || "",
     amountPaid: String(payment.amountPaid ?? ""),
-    // The tax the client withheld, or null while its field is hidden.
     tdsAmount: Number(payment.tdsAmount) > 0 ? String(payment.tdsAmount) : null,
     paymentMethod: payment.paymentMethod || "",
     additionalInfo: payment.additionalInfo || "",
@@ -151,7 +149,7 @@ const EditPaymentForm = ({ document, payment, busy, onSave, onClose }) => {
           disabled={busy || settles <= 0}
         >
           <FiCheck aria-hidden="true" />
-          {busy ? "Saving…" : "Save payment"}
+          {busy ? "Saving..." : "Save payment"}
         </button>
       </div>
     </form>
@@ -178,9 +176,6 @@ const DeletedPayment = ({ payment, document }) => {
   );
 };
 
-// The payments recorded on a document, each with its receipt, edit and
-// delete. The server recalculates the amount received and the status after
-// every change. Each receipt keeps the number its payment was given.
 const PaymentsLedger = ({ document, demo = false, refusal, deleteRefusal }) => {
   const [editing, setEditing] = useState(null);
   const [removing, setRemoving] = useState(null);
@@ -202,7 +197,7 @@ const PaymentsLedger = ({ document, demo = false, refusal, deleteRefusal }) => {
         ),
       );
     } catch (error) {
-      toast.error(errorMessage(error, "The receipt could not be prepared."));
+      toast.error(errorMessage(error, "The receipt couldn't be prepared."));
     } finally {
       setDownloading(null);
     }
@@ -220,7 +215,7 @@ const PaymentsLedger = ({ document, demo = false, refusal, deleteRefusal }) => {
       toast.success("Payment updated.");
       setEditing(null);
     } catch (error) {
-      toast.error(errorMessage(error, "The payment could not be updated."));
+      toast.error(errorMessage(error, "The payment couldn't be updated."));
     }
   };
   const confirmRemove = async () => {
@@ -229,7 +224,7 @@ const PaymentsLedger = ({ document, demo = false, refusal, deleteRefusal }) => {
       toast.success("Payment deleted.");
       setRemoving(null);
     } catch (error) {
-      toast.error(errorMessage(error, "The payment could not be deleted."));
+      toast.error(errorMessage(error, "The payment couldn't be deleted."));
     }
   };
   const columns = [
@@ -241,7 +236,7 @@ const PaymentsLedger = ({ document, demo = false, refusal, deleteRefusal }) => {
     { label: "Payment method", render: (payment) => payment.paymentMethod },
     {
       label: "Additional info",
-      render: (payment) => payment.additionalInfo || "—",
+      render: (payment) => payment.additionalInfo || "-",
     },
     {
       label: "Amount paid",
@@ -250,7 +245,6 @@ const PaymentsLedger = ({ document, demo = false, refusal, deleteRefusal }) => {
         <Amount value={payment.amountPaid} currency={document.currency} />
       ),
     },
-    // Only once some payment had tax withheld from it.
     ...(payments.some((payment) => Number(payment.tdsAmount) > 0)
       ? [
           {
@@ -322,8 +316,6 @@ const PaymentsLedger = ({ document, demo = false, refusal, deleteRefusal }) => {
       ),
     },
   ];
-  // Viewers see the payments and their receipts, but not the ways to change
-  // them; members don't see the way to delete them.
   const shown = columns.filter(
     (column) =>
       !(refusal && ["Edit", "Delete"].includes(column.label)) &&

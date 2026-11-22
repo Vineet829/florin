@@ -37,7 +37,6 @@ const moment = (value) =>
 
 const actions = "mt-6 flex flex-wrap justify-end gap-2.5";
 
-// When the link was turned on, and how often it has been opened since.
 const LinkSummary = ({ link }) => (
   <p className="mt-5 rounded-2xl bg-spot-violet/[.06] px-4 py-3.5 text-[13.5px] leading-[1.6] text-spot-body">
     A link has been on since {moment(link.createdAt)}.{" "}
@@ -47,13 +46,6 @@ const LinkSummary = ({ link }) => (
   </p>
 );
 
-// A client's portal link: one link to all their documents, balances and
-// statement, which can be emailed or sent on WhatsApp. A new link replaces
-// the old one. Like a share link, it is kept sealed to be shown again when
-// the server has an encryption key. Members who can't make changes (the
-// `refusal`) see whether a link is on and how it is used, but not the link,
-// which lets whoever has it accept quotations and report payments, nor the
-// ways to change or send it.
 const PortalDialog = ({ customer, open, onClose, demoNote, refusal }) => {
   const status = useGetPortalStatusQuery(customer._id, { skip: !open });
   const [create, { isLoading: creating }] = useCreatePortalLinkMutation();
@@ -73,7 +65,7 @@ const PortalDialog = ({ customer, open, onClose, demoNote, refusal }) => {
     try {
       setMade(await create(customer._id).unwrap());
     } catch (error) {
-      toast.error(errorMessage(error, "The link could not be created."));
+      toast.error(errorMessage(error, "The link couldn't be created."));
     }
   };
   const turnOff = async () => {
@@ -82,7 +74,7 @@ const PortalDialog = ({ customer, open, onClose, demoNote, refusal }) => {
       setMade(null);
       toast.success(result.message || "The portal link was turned off.");
     } catch (error) {
-      toast.error(errorMessage(error, "The link could not be turned off."));
+      toast.error(errorMessage(error, "The link couldn't be turned off."));
     }
   };
   const sendEmail = async (form) => {
@@ -92,11 +84,9 @@ const PortalDialog = ({ customer, open, onClose, demoNote, refusal }) => {
       setMade(null);
       setEmailing(false);
     } catch (error) {
-      toast.error(errorMessage(error, "The portal link could not be emailed."));
+      toast.error(errorMessage(error, "The portal link couldn't be emailed."));
     }
   };
-  // The tab opens at once, while the click still counts, so no pop-up
-  // blocker stops it; it goes to WhatsApp once the server has the link.
   const sendOnWhatsApp = async () => {
     const tab = window.open("", "_blank");
     if (tab) tab.opener = null;
@@ -107,13 +97,13 @@ const PortalDialog = ({ customer, open, onClose, demoNote, refusal }) => {
       else window.location.assign(result.url);
       if (result.linkReplaced) {
         toast.info(
-          "This replaced the client’s earlier portal link, which no longer works.",
+          "This replaced the client's earlier portal link, which no longer works.",
         );
       }
     } catch (error) {
       tab?.close();
       toast.error(
-        errorMessage(error, "The WhatsApp message could not be prepared."),
+        errorMessage(error, "The WhatsApp message couldn't be prepared."),
       );
     }
   };
@@ -122,7 +112,7 @@ const PortalDialog = ({ customer, open, onClose, demoNote, refusal }) => {
       await navigator.clipboard.writeText(url);
       toast.success("Link copied.");
     } catch {
-      toast.error("The link couldn’t be copied. Select it in the box instead.");
+      toast.error("The link couldn't be copied. Select it in the box instead.");
     }
   };
   const link = status.data;
@@ -170,7 +160,7 @@ const PortalDialog = ({ customer, open, onClose, demoNote, refusal }) => {
             made.url,
             made.kept
               ? "You can come back here for the link at any time."
-              : "Copy it now. For security the link can’t be shown again, but you can make a new one at any time.",
+              : "Copy it now. For security the link can't be shown again, but you can make a new one at any time.",
           )}
           <div className={actions}>
             {turnOffButton}
@@ -185,7 +175,7 @@ const PortalDialog = ({ customer, open, onClose, demoNote, refusal }) => {
         </>
       ) : status.isError ? (
         <div className="mt-5 flex flex-wrap items-center gap-3">
-          <p className={panelNote}>The link’s status couldn’t be loaded.</p>
+          <p className={panelNote}>The link's status couldn't be loaded.</p>
           <button
             type="button"
             className={retryButton}
@@ -196,7 +186,7 @@ const PortalDialog = ({ customer, open, onClose, demoNote, refusal }) => {
         </div>
       ) : status.isFetching || !link ? (
         <p className={`mt-5 ${panelNote}`} role="status">
-          Checking the link…
+          Checking the link...
         </p>
       ) : refusal ? (
         <>
@@ -213,11 +203,11 @@ const PortalDialog = ({ customer, open, onClose, demoNote, refusal }) => {
           {link.url ? (
             shownLink(
               link.url,
-              "If it reached someone it shouldn’t have, make a new one and this one stops working.",
+              "If it reached someone it shouldn't have, make a new one and this one stops working.",
             )
           ) : (
             <p className={`mt-2.5 ${panelNote}`}>
-              This link can’t be shown again. Lost it? Make a new one, and the
+              This link can't be shown again. Lost it? Make a new one, and the
               old one stops working.
             </p>
           )}
@@ -231,7 +221,7 @@ const PortalDialog = ({ customer, open, onClose, demoNote, refusal }) => {
               autoFocus={!link.url}
             >
               <FiRefreshCw aria-hidden="true" />
-              {creating ? "Making the link…" : "Make a new link"}
+              {creating ? "Making the link..." : "Make a new link"}
             </button>
             {link.url && (
               <button
@@ -254,7 +244,7 @@ const PortalDialog = ({ customer, open, onClose, demoNote, refusal }) => {
             autoFocus
           >
             <FiLink aria-hidden="true" />
-            {creating ? "Making the link…" : "Create link"}
+            {creating ? "Making the link..." : "Create link"}
           </button>
         </div>
       )}
@@ -278,7 +268,7 @@ const PortalDialog = ({ customer, open, onClose, demoNote, refusal }) => {
               disabled={busy}
             >
               <FiMessageCircle aria-hidden="true" />
-              {messaging ? "Opening WhatsApp…" : "Share on WhatsApp"}
+              {messaging ? "Opening WhatsApp..." : "Share on WhatsApp"}
             </button>
           </div>
         </div>

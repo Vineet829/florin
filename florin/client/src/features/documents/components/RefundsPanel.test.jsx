@@ -4,9 +4,6 @@ import { act } from "react-dom/test-utils";
 import RefundsPanel from "./RefundsPanel";
 import { dateInput } from "../../../components/workspace/Workspace";
 
-// The panel records refunds through these hooks, and reads the business it
-// works in from the last, so it needs no store or server; the browser's
-// modal is left out.
 const idle = () => [vi.fn(), { isLoading: false }];
 vi.mock("../documentsApiSlice", () => ({
   useCreateRefundMutation: () => idle(),
@@ -28,8 +25,6 @@ afterEach(() => {
   active.business = undefined;
 });
 
-// The date fields as they start, and the latest day each takes: a new
-// refund's, then a changed one's once its Edit is pressed.
 const dateFields = () => {
   const container = document.createElement("div");
   const root = createRoot(container);
@@ -64,17 +59,14 @@ const dateFields = () => {
   return fields;
 };
 
-// A new refund and a changed one share their fields.
-it("dates a new refund today, and no refund later", () => {
+it("refund date defaults to today", () => {
   expect(dateFields()).toEqual([
     { value: dateInput(), max: dateInput() },
     { value: "2026-09-01", max: dateInput() },
   ]);
 });
 
-// At 5 in the morning of Oct 8 in Kolkata it is still Oct 7 in Los Angeles,
-// where the business is.
-it("dates refunds by the business's calendar, not the viewer's", () => {
+it("uses the business calendar", () => {
   const zone = process.env.TZ;
   process.env.TZ = "Asia/Kolkata";
   try {

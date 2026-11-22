@@ -47,8 +47,6 @@ public class RegistrationController {
         return new MessageResponse(true, registrationService.register(request));
     }
 
-    // The emailed link opens in a browser, so whatever comes of it is shown
-    // on a page of the app rather than as the API's answer.
     @GetMapping("/verify/{emailToken}/{userId}")
     public ResponseEntity<Void> verify(
             @PathVariable String emailToken, @PathVariable String userId) {
@@ -75,8 +73,6 @@ public class RegistrationController {
         return new MessageResponse(true, passwordResetService.requestReset(request.email()));
     }
 
-    // Counted whether or not the address has an account, so being refused
-    // says nothing about it.
     private void limitEmailsTo(String email) {
         if (email != null && !email.isBlank()) {
             rateLimiter.consume(RateLimit.ACCOUNT_EMAIL_TO, email.trim().toLowerCase(Locale.ROOT));

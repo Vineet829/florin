@@ -7,7 +7,6 @@ import com.florin.jobs.DailyJobs;
 import com.florin.jobs.JobsConfig;
 import java.util.List;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -40,8 +39,7 @@ class DemoRenewalTest {
     }
 
     @Test
-    @DisplayName("a seeded demo set to reset is renewed every day at the jobs' time, under a lock of its own")
-    void daily() throws Exception {
+    void renewsDailyUnderOwnLock() throws Exception {
         runner().withPropertyValues("app.demo.seed=true", "app.demo.reset=true")
                 .run(context -> assertThat(cronTasks(context)).containsExactly("0 0 7 * * *"));
         runner().withPropertyValues("app.demo.seed=true", "app.demo.reset=true", "app.jobs.cron=0 30 6 * * *")
@@ -56,7 +54,6 @@ class DemoRenewalTest {
     }
 
     @Test
-    @DisplayName("it isn't renewed when reset is off, when the demo isn't seeded, or when the jobs are off")
     void switchedOff() {
         runner().withPropertyValues("app.demo.seed=true")
                 .run(context -> assertThat(context).doesNotHaveBean(DemoRenewal.class));
@@ -69,7 +66,6 @@ class DemoRenewalTest {
     }
 
     @Test
-    @DisplayName("a seeded demo is set to reset unless DEMO_RESET turns it off")
     void resetsWhenSeeded() {
         ApplicationContextRunner settings =
                 new ApplicationContextRunner().withInitializer(new ConfigDataApplicationContextInitializer());

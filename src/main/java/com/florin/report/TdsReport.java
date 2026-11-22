@@ -29,9 +29,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
-// The tax clients withheld from their payments (TDS) in a period, by the date
-// paid, in each currency: every payment it was withheld from, and the totals
-// per client and per month, to check against the tax credited to you.
 @Service
 public class TdsReport {
 
@@ -68,7 +65,6 @@ public class TdsReport {
                         .toList());
     }
 
-    // Every payment tax was withheld from, oldest first, for every currency.
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public CsvFile csv(BusinessAccess access, String periodKey) {
         TdsReportResponse report = report(access, periodKey);
@@ -108,7 +104,6 @@ public class TdsReport {
                         .toList());
     }
 
-    // The clients who withheld the most come first.
     private static List<TdsClient> clients(List<ReportQueries.Withheld> payments) {
         return payments.stream()
                 .collect(Collectors.groupingBy(
@@ -134,7 +129,6 @@ public class TdsReport {
                 .toList();
     }
 
-    // Only the months tax was withheld in, in order.
     private static List<TdsMonth> months(List<ReportQueries.Withheld> payments) {
         return payments.stream()
                 .collect(Collectors.groupingBy(
@@ -149,8 +143,6 @@ public class TdsReport {
                 .toList();
     }
 
-    // A client's PAN is in their GSTIN, the income tax number TDS is filed
-    // against.
     private static String pan(ReportQueries.Withheld payment) {
         return payment.gstin() == null ? null : Gstin.pan(payment.gstin());
     }

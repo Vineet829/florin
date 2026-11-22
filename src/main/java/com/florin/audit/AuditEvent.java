@@ -18,8 +18,6 @@ import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 
-// One entry in the audit log. The email is the account's at the time, so an
-// entry still says whose it was after the account is deleted.
 @Entity
 @Table(name = "audit_events")
 @Getter
@@ -46,7 +44,6 @@ public class AuditEvent {
     @JoinColumn(name = "actor_pkid")
     private User actor;
 
-    // The business an event happened in, when it is about one.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "business_pkid", updatable = false)
     private Business business;

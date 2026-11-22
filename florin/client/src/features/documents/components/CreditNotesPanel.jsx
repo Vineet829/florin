@@ -8,8 +8,6 @@ import {
 import { textLink } from "../../../components/workspace/pastel";
 import { DocumentStatusBadge, documentName } from "../documentState";
 
-// The credit notes made against an invoice or receipt, drafts and void ones
-// included. Only issued ones take their total off.
 const CreditNotesPanel = ({ document }) => (
   <Panel
     title="Credit notes"
@@ -31,7 +29,7 @@ const CreditNotesPanel = ({ document }) => (
         },
         {
           label: "Issued",
-          render: (note) => (note.issueDate ? dateLabel(note.issueDate) : "—"),
+          render: (note) => (note.issueDate ? dateLabel(note.issueDate) : "-"),
         },
         {
           label: "State",

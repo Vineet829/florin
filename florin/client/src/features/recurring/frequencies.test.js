@@ -8,11 +8,11 @@ it.each([
   ["2026-11-30", "QUARTERLY", "2027-02-28"],
   ["2028-02-29", "YEARLY", "2029-02-28"],
   ["2026-12-15", "MONTHLY", "2027-01-15"],
-])("one period after %s, %s, is %s", (day, frequency, next) => {
+])("%s plus one %s is %s", (day, frequency, next) => {
   expect(afterOnePeriod(day, frequency)).toBe(next);
 });
 
-it("names a frequency as the server spells it", () => {
+it("uses server frequency names", () => {
   expect(frequencyLabel("QUARTERLY")).toBe("Quarterly");
   expect(frequencyLabel("SOMETIMES")).toBe("SOMETIMES");
 });

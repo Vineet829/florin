@@ -1,9 +1,6 @@
 import { Component } from "react";
 import { primaryButton, secondaryButton } from "./workspace/pastel";
 
-// Whatever goes wrong while a page draws, the visitor gets a way back instead
-// of a blank screen: reload, or sign in again with a fresh session. It needs
-// nothing else of the app, which may be what failed.
 class ErrorBoundary extends Component {
   state = { failed: false };
 
@@ -26,7 +23,7 @@ class ErrorBoundary extends Component {
             Something went wrong<span className="text-spot-brand">.</span>
           </h1>
           <p className="mt-3 text-[14.5px] leading-[1.6] text-spot-sub">
-            This page hit a problem it couldn’t recover from. Reloading usually
+            This page hit a problem it couldn't recover from. Reloading usually
             fixes it. If it keeps happening, sign in again.
           </p>
           <div className="mt-7 flex flex-wrap gap-2.5 [&>*]:flex-1">

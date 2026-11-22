@@ -17,9 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-// Issuing a draft: it is dated, takes the next number, and keeps the client,
-// the business and the name of its tax as they are at that moment. A credit
-// note is first checked against the document it credits.
 @Component
 public class DocumentIssuer {
 
@@ -45,9 +42,6 @@ public class DocumentIssuer {
         this.clock = clock;
     }
 
-    // The day asked for, else the day planned on the draft, else today in
-    // the business's time zone. An invoice without a due date is due as the
-    // business's payment terms say, counted from that day.
     @Transactional(propagation = Propagation.MANDATORY)
     public void issue(Document document, LocalDate requested, User actor) {
         if (!document.isDraft()) {
@@ -70,10 +64,7 @@ public class DocumentIssuer {
             throw new ApiException(HttpStatus.BAD_REQUEST, "A document can't be dated after today");
         }
         document.setIssueDate(issueDate);
-        // The client as the draft was saved, before it is refreshed: it tells
-        // a chosen place of supply from one worked out from the client.
         CustomerSnapshot saved = document.getCustomerSnapshot();
-        // A credit note keeps the client as its invoice named them.
         Customer customer = document.getCustomer();
         if (customer != null && document.getDocumentType() != DocumentType.CREDIT_NOTE) {
             document.setCustomerSnapshot(CustomerSnapshot.of(customer));
@@ -84,7 +75,6 @@ public class DocumentIssuer {
             document.setDueDate(Document.dueAt(issueDate.plusDays(settings.getPaymentTermsDays()), zone));
         }
         requireDueFromIssue(document, zone);
-        // A credit note keeps the supply of what it credits.
         boolean taxDocument = document.getDocumentType() != DocumentType.QUOTATION;
         if (document.getDocumentType() != DocumentType.CREDIT_NOTE) {
             gstSupply.placeAtIssue(document, saved);
@@ -102,7 +92,6 @@ public class DocumentIssuer {
         }
         document.setIssuedAt(Instant.now(clock));
         activity.record(document, DocumentEventType.ISSUED, document.getDocumentNumber(), actor);
-        // Counted once the issue commits, so one rolled back isn't.
         DocumentType type = document.getDocumentType();
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
@@ -112,8 +101,6 @@ public class DocumentIssuer {
         });
     }
 
-    // An invoice falls due, and a quotation stays valid, no earlier than the
-    // day it is dated. A draft not dated yet is checked as it is issued.
     static void requireDueFromIssue(Document document, ZoneId zone) {
         LocalDate due = document.dueDay(zone);
         if (due != null && document.getIssueDate() != null && due.isBefore(document.getIssueDate())) {

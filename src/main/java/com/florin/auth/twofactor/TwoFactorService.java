@@ -31,10 +31,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriUtils;
 
-// Two-factor sign-in with an authenticator app. Setup needs the password,
-// so a borrowed session can't lock the owner out; turning it off needs the
-// password and a code. Ten single-use recovery codes stand in for the app.
-// Wrong passwords and wrong codes are each limited per account.
 @Service
 public class TwoFactorService {
 
@@ -55,8 +51,6 @@ public class TwoFactorService {
 
     private static final int RECOVERY_CODES = 10;
     private static final String RECOVERY_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
-    // The issuer authenticator apps list the account under. It keeps the app's
-    // old name, so the apps people already use don't show a second entry.
     private static final String TOTP_ISSUER = "Invoice Spot";
 
     private final UserRepository userRepository;
@@ -108,8 +102,6 @@ public class TwoFactorService {
                 user.isTwoFactorEnabled() ? recoveryCodeRepository.countByUserPkidAndUsedAtIsNull(user.getPkid()) : 0);
     }
 
-    // A new secret for the app to scan. It counts once a code from it is
-    // confirmed; starting again replaces it.
     @Transactional
     public TwoFactorSetupResponse setup(User principal, String password) {
         User user = requireLocked(principal);
@@ -134,9 +126,6 @@ public class TwoFactorService {
                         + "&algorithm=SHA1&digits=6&period=30");
     }
 
-    // Turning it on or off signs out every other device, as a new password
-    // does: whoever else was signed in has to sign in again under the new
-    // rules.
     @Transactional
     public List<String> enable(User principal, UUID currentSession, String code) {
         User user = requireLocked(principal);
@@ -174,7 +163,6 @@ public class TwoFactorService {
         notifyOwner(user, "Two-factor sign-in was turned off", "turned off");
     }
 
-    // New recovery codes replace the old ones, which stop working.
     @Transactional
     public List<String> renewRecoveryCodes(User principal, String code) {
         User user = requireEnabled(principal);
@@ -187,8 +175,6 @@ public class TwoFactorService {
         return codes;
     }
 
-    // Checks the code a sign-in gives, from the app or a recovery code. A
-    // recovery code is used up; an app code can't be used again.
     @Transactional
     public Optional<Method> verify(User principal, String code) {
         User user = requireLocked(principal);
@@ -206,9 +192,6 @@ public class TwoFactorService {
     private Optional<Method> check(User user, String code) {
         String digits = code.replaceAll("\\s", "");
         if (digits.matches("\\d{6}")) {
-            // The app's secret is kept sealed with the server's key; without
-            // it a code can't be checked, but recovery codes, kept hashed,
-            // still sign in.
             if (!secretBox.available()) {
                 throw new ApiException(
                         HttpStatus.SERVICE_UNAVAILABLE,
@@ -257,7 +240,6 @@ public class TwoFactorService {
     }
 
     private void requirePassword(User user, String password) {
-        // An account made by signing in with Google has no password to confirm.
         if (user.getPassword() == null) {
             throw new ApiException(HttpStatus.CONFLICT, "Set a password first");
         }
@@ -284,8 +266,6 @@ public class TwoFactorService {
                 .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Account not found"));
     }
 
-    // The account, locked until the transaction ends, so a code checked here
-    // can't be spent by another request at the same time.
     private User requireLocked(User principal) {
         return userRepository.findForUpdateByPkid(principal.getPkid())
                 .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Account not found"));

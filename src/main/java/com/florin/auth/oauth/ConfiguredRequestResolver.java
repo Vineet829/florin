@@ -7,9 +7,6 @@ import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequest
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 
-// Starts sign-ins, with PKCE, for the providers this server is set up for
-// only. Any other is no sign-in at all, so its URL is a 404 like any unknown
-// one, rather than the error Spring raises for it.
 class ConfiguredRequestResolver implements OAuth2AuthorizationRequestResolver {
 
     private final ClientRegistrationRepository providers;

@@ -32,14 +32,10 @@ export const authApiSlice = baseApiSlice.injectEndpoints({
         method: "POST",
       }),
 
-      // The session ends here once the server has ended it and taken back
-      // its cookie, or couldn't be reached: either way nothing of it is kept,
-      // nor an invitation opened while signed in.
       async onQueryStarted(arg, { dispatch, queryFulfilled }) {
         try {
           await queryFulfilled;
         } catch {
-          // Signed out here all the same.
         }
         dispatch(logOut());
         dispatch(baseApiSlice.util.resetApiState());
@@ -67,12 +63,9 @@ export const authApiSlice = baseApiSlice.injectEndpoints({
         body: formData,
       }),
     }),
-    // The sign-in providers the server is set up for, such as Google.
     getSignInProviders: builder.query({
       query: () => "/auth/providers",
     }),
-    // Swaps the session's refresh cookie for an access token, as a reload
-    // does; Google sign-in ends with a session and nothing else.
     refreshSession: builder.mutation({
       query: () => refreshRequest,
     }),

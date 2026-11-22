@@ -13,15 +13,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// The PDF template a business picks reaches every PDF it makes: Compact sets
-// body text, such as the client's email, smaller than Classic does.
 class PdfTemplateIntegrationTest extends IntegrationTest {
 
     private String session;
@@ -52,8 +49,6 @@ class PdfTemplateIntegrationTest extends IntegrationTest {
         return PdfText.fontSizeOf(pdf, email);
     }
 
-    // The size of the client's email on the invoice, a payment receipt and
-    // the statement.
     private List<Float> bodySizes() throws Exception {
         List<Float> sizes = new ArrayList<>();
         sizes.add(bodySize("/api/v1/document/{id}/pdf", invoice));
@@ -91,7 +86,6 @@ class PdfTemplateIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the template chosen reaches invoices, payment receipts and statements")
     void everyPdf() throws Exception {
         List<Float> classic = bodySizes();
         settings("COMPACT").andExpect(status().isOk()).andExpect(jsonPath("$.settings.pdfTemplate").value("COMPACT"));
@@ -104,8 +98,7 @@ class PdfTemplateIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("PDFs start Classic, a template stays chosen when settings leave it out, and others are refused")
-    void choices() throws Exception {
+    void startsClassicAndKeepsChoice() throws Exception {
         send(get("/api/v1/settings"), "").andExpect(jsonPath("$.settings.pdfTemplate").value("CLASSIC"));
         settings("MODERN").andExpect(jsonPath("$.settings.pdfTemplate").value("MODERN"));
         settings(null).andExpect(jsonPath("$.settings.pdfTemplate").value("MODERN"));

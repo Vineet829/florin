@@ -11,7 +11,7 @@ const Broken = () => {
   throw new Error("the page broke");
 };
 
-it("shows a way back instead of a blank screen when a page fails to draw", () => {
+it("shows fallback on render error", () => {
   vi.spyOn(console, "error").mockImplementation(() => {});
   const container = document.createElement("div");
   act(() => {
@@ -29,7 +29,7 @@ it("shows a way back instead of a blank screen when a page fails to draw", () =>
   ).toEqual(["Reload the page", "Sign in again"]);
 });
 
-it("draws the page as it is when nothing fails", () => {
+it("renders children without error", () => {
   const container = document.createElement("div");
   act(() => {
     createRoot(container).render(

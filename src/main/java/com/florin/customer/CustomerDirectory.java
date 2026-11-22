@@ -88,7 +88,6 @@ class CustomerDirectory {
         return new PageImpl<>(rows, PageRequest.of(search.page() - 1, search.size()), total);
     }
 
-    // Every client the search matches, in its order, with their details.
     List<Contact> contacts(Long businessPkid, CustomerSearch search, String currency) {
         String direction = search.ascending() ? "asc" : "desc";
         return jdbc.sql("""
@@ -124,7 +123,6 @@ class CustomerDirectory {
                 .list();
     }
 
-    // What each of a business's clients still owes, per currency.
     List<Balance> balancesOf(Long businessPkid) {
         return jdbc.sql("""
                         select d.customer_pkid, d.currency, sum(%s) as outstanding

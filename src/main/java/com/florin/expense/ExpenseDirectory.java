@@ -12,23 +12,13 @@ import java.util.stream.Collectors;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
-// The expenses list's queries. Its filters are read in SQL, as the overview
-// and the reports read expenses, so that the list, its CSV file and what it
-// comes to cover the same expenses. Callers read in a transaction that sees
-// the expenses as they were at one moment, so the keys read first and the
-// expenses then read by them agree.
 @Repository
 class ExpenseDirectory {
 
-    // Newest first, and the last recorded first within a day, for expenses
-    // aliased e.
     private static final String ORDER_BY = "e.expense_date desc, e.pkid desc";
 
-    // The most keys one query for a CSV file reads expenses by, so that a
-    // long list never becomes one query with a key for every expense.
     private static final int BATCH = 500;
 
-    // A search's conditions on expenses aliased e, and their values.
     private record Filter(String where, Map<String, Object> params) {}
 
     private final JdbcClient jdbc;
@@ -39,8 +29,6 @@ class ExpenseDirectory {
         this.expenseRepository = expenseRepository;
     }
 
-    // One page of the expenses the search matches, in its order; the totals
-    // count them all.
     List<Expense> page(Long businessPkid, ExpenseSearch search) {
         Filter filter = filter(businessPkid, search);
         List<Long> pkids = jdbc.sql("""
@@ -57,7 +45,6 @@ class ExpenseDirectory {
         return load(pkids);
     }
 
-    // Every expense the search matches, in its order.
     List<Expense> all(Long businessPkid, ExpenseSearch search) {
         Filter filter = filter(businessPkid, search);
         List<Long> pkids = jdbc.sql("select e.pkid from expenses e where %s order by %s"
@@ -72,9 +59,6 @@ class ExpenseDirectory {
         return expenses;
     }
 
-    // What every expense the search matches comes to in each currency: how
-    // many there are, and what was paid for them, tax and all, as their rows'
-    // totals add up.
     List<ExpenseListTotals> totals(Long businessPkid, ExpenseSearch search) {
         Filter filter = filter(businessPkid, search);
         return jdbc.sql("""
@@ -92,8 +76,6 @@ class ExpenseDirectory {
                 .list();
     }
 
-    // The expenses with these keys, in the same order. Read without one
-    // moment's view, an expense deleted since its key was read is left out.
     private List<Expense> load(List<Long> pkids) {
         if (pkids.isEmpty()) {
             return List.of();
@@ -114,8 +96,6 @@ class ExpenseDirectory {
                      or lower(e.notes) like :pattern escape '!')""");
             params.put("pattern", SearchText.containing(search.query()));
         }
-        // A category in any letter case. The database lowercases both sides,
-        // so a stored spelling always finds itself.
         if (search.category() != null) {
             conditions.add("lower(e.category) = lower(:category)");
             params.put("category", search.category());

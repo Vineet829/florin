@@ -15,7 +15,6 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -95,13 +94,11 @@ class DocumentExportIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("documents export in the list's order, with nothing paid or owed on a quotation")
     void documentsCsv() throws Exception {
         String dates = today + "," + today.plusDays(7);
         assertThat(csv(owner, "/api/v1/document/csv")).containsExactly(
                 "﻿Number,Type,Status,Client,Client email,Currency,Subtotal,Tax,Total,Paid,Owed,Issued,Due,Overdue,"
                         + "Tax withheld,Exchange rate,Exchange rate to,Credits,Credited,Refunded",
-                // A receipt has no due date.
                 "REC-0001,Receipt,Paid,Acme,%s,USD,20.00,0.00,20.00,20.00,0.00,%s,,No,0.00,,,,0.00,0.00"
                         .formatted(email, today),
                 "QUO-0001,Quotation,Unpaid,Acme,%s,USD,70.00,0.00,70.00,,,%s,No,,,,,,".formatted(email, dates),
@@ -112,8 +109,7 @@ class DocumentExportIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the list's filters and sort apply to the export")
-    void filtered() throws Exception {
+    void exportFollowsListFilters() throws Exception {
         assertThat(csv(owner, "/api/v1/document/csv", "overdue", "true"))
                 .hasSize(2)
                 .last()
@@ -125,9 +121,7 @@ class DocumentExportIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a list longer than the export reads at once comes out whole, in its order")
     void longList() throws Exception {
-        // 1,200 copies of the receipt, each with a number of its own.
         String columns = String.join(", ", jdbcTemplate.queryForList("""
                 select column_name from information_schema.columns
                 where table_schema = current_schema() and table_name = 'documents'
@@ -153,9 +147,7 @@ class DocumentExportIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("payments and receipts export newest first, and each owner gets only their own")
     void paymentsCsv() throws Exception {
-        // A receipt is money in on the day it is dated, with no method of its own.
         assertThat(csv(owner, "/api/v1/document/payments/csv")).containsExactly(
                 "﻿Date,Document,Type,Client,Currency,Amount,Method,Paid by,Notes,Tax withheld,Kind",
                 today + ",REC-0001,Receipt,Acme,USD,20.00,,,,,Receipt",

@@ -22,18 +22,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-// Starts, continues and ends sessions. A refresh swaps the session's token
-// for a new one, at most once in a few seconds. The token it replaced still
-// works for those seconds and the new one isn't swapped again, so tabs that
-// refresh together all get an access token, whichever of the two cookies
-// each sent; after that, the old token coming back means it was copied, and
-// every session of that account is ended.
 @Service
 public class SessionService {
 
     static final Duration GRACE = Duration.ofSeconds(30);
 
-    // A session and, when it was rotated, the refresh token that now opens it.
     public record Continued(UserSession session, String refreshToken) {}
 
     private final UserSessionRepository repository;
@@ -80,8 +73,6 @@ public class SessionService {
             if (!session.isActiveAt(now) || !session.getUser().isActive()) {
                 return Optional.empty();
             }
-            // Swapped a moment ago: another tab may still be sending the
-            // token before it, which a second swap would make unknown.
             if (justRotated(session, now)) {
                 return Optional.of(new Continued(session, null));
             }
@@ -103,9 +94,6 @@ public class SessionService {
             return Optional.of(new Continued(session, null));
         }
         if (session.isActiveAt(now)) {
-            // The shared demo account has many visitors at once, each in a
-            // session of their own: an old token coming back ends only the
-            // session it was for, not every visitor's.
             boolean demo = demoAccountGuard.isDemo(session.getUser());
             if (demo) {
                 session.setRevokedAt(now);
@@ -129,9 +117,6 @@ public class SessionService {
         return session.getRotatedAt() != null && session.getRotatedAt().plus(GRACE).isAfter(now);
     }
 
-    // Ends the session a refresh token opens, and says whose it was. The token
-    // a refresh has just replaced still names it: a tab may sign out while
-    // another tab's refresh is on its way back.
     @Transactional
     public Optional<UserSession> end(String token) {
         String hash = SecretTokens.hash(token);
@@ -147,8 +132,6 @@ public class SessionService {
         repository.revokeAll(user.getPkid(), clock.instant());
     }
 
-    // The account's open sessions, most recently used first. The shared demo
-    // account shows only the visitor's own, never another visitor's.
     @Transactional(readOnly = true)
     public List<SessionResponse> list(User user, UUID current) {
         boolean demo = demoAccountGuard.isDemo(user);
@@ -164,8 +147,6 @@ public class SessionService {
                 .toList();
     }
 
-    // Signs out another of the account's devices at once. This one signs
-    // out with Log out, so its cookie goes too.
     @Transactional
     public void signOut(User user, String id, UUID current) {
         demoAccountGuard.requireNotDemo(user, "signing out other devices");
@@ -195,7 +176,6 @@ public class SessionService {
         return ended;
     }
 
-    // Signs out every other session of the account, as a password change does.
     @Transactional
     public void endOthers(User user, UUID keep) {
         repository.revokeOthers(user.getPkid(), keep, clock.instant());
@@ -213,14 +193,12 @@ public class SessionService {
         }
     }
 
-    // The session an access token names, while it lasts.
     @Transactional(readOnly = true)
     public Optional<UserSession> active(UUID id) {
         Instant now = clock.instant();
         return repository.findByExternalId(id).filter(session -> session.isActiveAt(now));
     }
 
-    // The address and browser the session was last used from.
     private static void describe(UserSession session) {
         if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attributes) {
             HttpServletRequest request = attributes.getRequest();

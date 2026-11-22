@@ -36,12 +36,11 @@ import {
 const dialogText = "mt-3 text-[14px] leading-[1.6] text-spot-body";
 const dialogActions = "mt-6 flex flex-wrap justify-end gap-2.5";
 
-// The codes are shown once: they can be saved as a file or copied.
 const RecoveryCodes = ({ codes, onDone }) => (
   <>
     <p className={dialogText}>
-      Each code signs you in once if you can’t use your authenticator app. Keep
-      them somewhere safe; you won’t see them again.
+      Each code signs you in once if you can't use your authenticator app. Keep
+      them somewhere safe; you won't see them again.
     </p>
     <ol
       className="m-0 mt-4 grid list-none grid-cols-2 gap-x-6 gap-y-2 rounded-2xl bg-spot-thead p-4 font-mono text-[14px] tracking-[0.04em] text-spot-ink max-[420px]:grid-cols-1"
@@ -79,9 +78,7 @@ const RecoveryCodes = ({ codes, onDone }) => (
             await navigator.clipboard.writeText(codes.join("\n"));
             toast.success("The recovery codes were copied");
           } catch {
-            toast.error(
-              "The codes could not be copied. Download them instead.",
-            );
+            toast.error("The codes couldn't be copied. Download them instead.");
           }
         }}
       >
@@ -94,7 +91,6 @@ const RecoveryCodes = ({ codes, onDone }) => (
   </>
 );
 
-// Password, then the app, then the recovery codes.
 const TurnOn = ({ onClose, onBusy }) => {
   const [password, setPassword] = useState("");
   const [setup, setSetup] = useState(null);
@@ -122,13 +118,13 @@ const TurnOn = ({ onClose, onBusy }) => {
             setSetup(await start(password).unwrap());
           } catch (error) {
             toast.error(
-              errorMessage(error, "Two-factor sign-in could not start."),
+              errorMessage(error, "Two-factor sign-in couldn't start."),
             );
           }
         }}
       >
         <p className={dialogText}>
-          First, confirm it’s you. You’ll then scan a code with an authenticator
+          First, confirm it's you. You'll then scan a code with an authenticator
           app such as Google Authenticator, 1Password or Microsoft
           Authenticator.
         </p>
@@ -153,7 +149,7 @@ const TurnOn = ({ onClose, onBusy }) => {
             className={primaryButton}
             disabled={starting || !password}
           >
-            {starting ? "Checking…" : "Continue"}
+            {starting ? "Checking..." : "Continue"}
           </button>
         </div>
       </form>
@@ -187,7 +183,7 @@ const TurnOn = ({ onClose, onBusy }) => {
           )}
         </span>
         <p className={`min-w-0 flex-1 basis-[180px] ${panelNote}`}>
-          Can’t scan it? Enter this key in the app instead:
+          Can't scan it? Enter this key in the app instead:
           <code className="mt-2 block font-mono text-[14px] tracking-[0.06em] text-spot-ink">
             {setup.secret.match(/.{1,4}/g).join(" ")}
           </code>
@@ -214,7 +210,7 @@ const TurnOn = ({ onClose, onBusy }) => {
           className={primaryButton}
           disabled={enabling || code.length !== 6}
         >
-          {enabling ? "Turning on…" : "Turn on"}
+          {enabling ? "Turning on..." : "Turn on"}
         </button>
       </div>
     </form>
@@ -235,7 +231,7 @@ const TurnOff = ({ onClose, onBusy }) => {
           onClose();
         } catch (error) {
           toast.error(
-            errorMessage(error, "Two-factor sign-in could not be turned off."),
+            errorMessage(error, "Two-factor sign-in couldn't be turned off."),
           );
         }
       }}
@@ -275,7 +271,7 @@ const TurnOff = ({ onClose, onBusy }) => {
           className={dangerButton}
           disabled={isLoading || !password || !code}
         >
-          {isLoading ? "Turning off…" : "Turn off"}
+          {isLoading ? "Turning off..." : "Turn off"}
         </button>
       </div>
     </form>
@@ -325,7 +321,7 @@ const NewCodes = ({ onClose, onBusy }) => {
           className={primaryButton}
           disabled={isLoading || code.length !== 6}
         >
-          {isLoading ? "Checking…" : "Get new codes"}
+          {isLoading ? "Checking..." : "Get new codes"}
         </button>
       </div>
     </form>
@@ -338,7 +334,6 @@ const DIALOGS = {
   codes: { title: "New recovery codes", Step: NewCodes },
 };
 
-// A code from an authenticator app as well as the password at sign-in.
 const TwoFactor = ({ demo }) => {
   const query = useGetTwoFactorQuery();
   const status = query.data;
@@ -391,8 +386,8 @@ const TwoFactor = ({ demo }) => {
             {demo
               ? "This is a shared demo account, so two-factor sign-in is turned off."
               : status.available
-                ? "Once it’s on, signing in asks for the 6-digit code your app shows. Recovery codes sign you in if you lose your phone."
-                : "Two-factor sign-in isn’t available on this server yet."}
+                ? "Once it's on, signing in asks for the 6-digit code your app shows. Recovery codes sign you in if you lose your phone."
+                : "Two-factor sign-in isn't available on this server yet."}
           </p>
           <button
             type="button"

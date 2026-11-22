@@ -1,13 +1,9 @@
 import { baseApiSlice } from "../api/baseApiSlice";
 import { fetchFile } from "../api/fetchFile";
 
-// A client's portal, opened by its link with no sign-in. Documents are named
-// by their number.
 const documentPath = (token, number, action = "") =>
   `/public/portal/${token}/document${action}?number=${encodeURIComponent(number)}`;
 
-// The document page shows what an answer or report left, and the portal's
-// list and balances are read again.
 const showDocument = async (
   { token, number },
   { dispatch, queryFulfilled },
@@ -22,7 +18,6 @@ const showDocument = async (
       ),
     );
   } catch {
-    // The page shows the error from the mutation itself.
   }
 };
 

@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { column } from "./layout";
 import { useReveal } from "./motion";
 
-// The three questions a visitor asks before signing up.
 const QUESTIONS = [
   [
     "What's included?",
@@ -18,7 +17,6 @@ const QUESTIONS = [
   ],
 ];
 
-// The price, which is none, with sign-up, beside the three questions.
 const Pricing = ({ motion }) => {
   const [ref, reveal] = useReveal(motion);
   return (

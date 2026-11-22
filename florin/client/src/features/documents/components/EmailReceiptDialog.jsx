@@ -6,7 +6,6 @@ import {
   useGetReceiptEmailDraftQuery,
 } from "../documentsApiSlice";
 
-// Emails the receipt for one payment as a PDF.
 const EmailReceiptDialog = ({ documentId, paymentId, onClose }) => {
   const open = Boolean(paymentId);
   const draft = useGetReceiptEmailDraftQuery(
@@ -24,7 +23,7 @@ const EmailReceiptDialog = ({ documentId, paymentId, onClose }) => {
       toast.success(result.message || "Receipt sent successfully.");
       onClose();
     } catch (error) {
-      toast.error(errorMessage(error, "The receipt could not be emailed."));
+      toast.error(errorMessage(error, "The receipt couldn't be emailed."));
     }
   };
   return (

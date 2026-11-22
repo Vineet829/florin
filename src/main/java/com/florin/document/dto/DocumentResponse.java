@@ -45,9 +45,6 @@ public record DocumentResponse(
         @JsonInclude(JsonInclude.Include.NON_NULL) String exchangeBase,
         @JsonInclude(JsonInclude.Include.NON_NULL) GstResponse gst,
         BigDecimal totalAmountReceived,
-        // What a list shows as owed: there only on an issued invoice. The
-        // ledger's balanceDue is worked out for every document but a
-        // quotation.
         BigDecimal balanceDue,
         LedgerResponse ledger,
         List<BillingItemResponse> billingItems,
@@ -72,14 +69,11 @@ public record DocumentResponse(
         return from(document, startOfToday, zone, null);
     }
 
-    // One document on its own also names the document it came from, the
-    // copies made of it and, for an invoice or receipt, its credit notes.
     public static DocumentResponse detail(
             Document document, Instant startOfToday, ZoneId zone, List<Document> copies) {
         return from(document, startOfToday, zone, copies.stream().map(DocumentLink::from).toList());
     }
 
-    // A due date is sent as its day in the business's time zone.
     private static DocumentResponse from(
             Document document, Instant startOfToday, ZoneId zone, List<DocumentLink> copies) {
         CustomerSnapshot snapshot = document.getCustomerSnapshot();
@@ -155,22 +149,17 @@ public record DocumentResponse(
                 document.isShowPaymentDetails());
     }
 
-    // What is still owed on an issued invoice, as the overview counts it. A
-    // quotation, receipt or credit note has no balance due, and neither does
-    // a draft or a void invoice.
     private static BigDecimal balanceDue(Document document) {
         return document.getDocumentType() == DocumentType.INVOICE && document.state() == DocumentState.ISSUED
                 ? DocumentTotals.balanceDue(document).setScale(2)
                 : null;
     }
 
-    // Invoices and receipts are the documents credit notes credit.
     private static boolean credits(Document document) {
         return document.getDocumentType() == DocumentType.INVOICE
                 || document.getDocumentType() == DocumentType.RECEIPT;
     }
 
-    // The one rate every line is taxed at, or none when they differ.
     private static String rates(Document document) {
         BigDecimal rate = DocumentTotals.singleRate(document);
         return rate == null ? null : BillingItemResponse.plain(rate).toPlainString();

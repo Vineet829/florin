@@ -5,22 +5,18 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.florin.IntegrationTest;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-// A document made through the API without a currency had none. From V62 each
-// has its business's default currency, and none can be without one again.
 class DocumentCurrencyMigrationIntegrationTest extends IntegrationTest {
 
     @Autowired
     private PostgreSQLContainer<?> postgres;
 
     @Test
-    @DisplayName("a document without a currency takes its business's default one; others keep theirs")
     void documentsWithoutCurrency() {
         try (MigrationDatabase database = MigrationDatabase.create(postgres)) {
             database.migrateTo("1");

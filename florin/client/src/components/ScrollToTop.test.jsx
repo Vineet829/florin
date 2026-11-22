@@ -59,14 +59,14 @@ const follow = (text) =>
       );
   });
 
-it("opens the page a link leads to at its top", () => {
+it("scrolls to top on navigation", () => {
   render();
   expect(scrollTo).not.toHaveBeenCalled();
   follow("Documents");
   expect(scrollTo).toHaveBeenCalledWith(0, 0);
 });
 
-it("keeps the place for the same page, a section, and going back", () => {
+it("same page and back keep scroll", () => {
   render();
   follow("30 days");
   follow("Unpaid invoices by age");

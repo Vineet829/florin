@@ -17,7 +17,6 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
     boolean existsByBusinessPkidAndVendorIn(Long businessPkid, Collection<String> vendors);
 
-    // The categories a business has used, in alphabetical order.
     @Query("""
             select e.category from Expense e
             where e.business.pkid = :businessPkid
@@ -26,9 +25,6 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
             """)
     List<String> categories(@Param("businessPkid") Long businessPkid);
 
-    // How the business's other expenses spell a category, in any letter case.
-    // Two members saving a new category at the same moment can each keep
-    // their own spelling; the one used first comes first.
     @Query("""
             select e.category from Expense e
             where e.business.pkid = :businessPkid and lower(e.category) = lower(:category) and e.pkid <> :exceptPkid

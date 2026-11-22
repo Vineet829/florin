@@ -16,7 +16,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -51,7 +50,6 @@ class SessionEndingIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("deactivating a user ends their sessions and stops their access token at once")
     void deactivatedUser() throws Exception {
         User user = createUser();
         SessionService.Continued session = sessionService.start(user);
@@ -68,7 +66,6 @@ class SessionEndingIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("access tokens issued before a password change are refused; newer ones still work")
     void passwordChange() throws Exception {
         User user = createUser();
         UUID session = sessionService.start(user).session().getId();
@@ -81,7 +78,6 @@ class SessionEndingIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a password reset signs out every session")
     void passwordReset() throws Exception {
         User user = createUser();
         String refreshToken = sessionService.start(user).refreshToken();

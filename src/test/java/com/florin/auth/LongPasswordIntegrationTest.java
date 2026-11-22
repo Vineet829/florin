@@ -7,7 +7,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.florin.IntegrationTest;
 import com.florin.user.User;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -15,13 +14,10 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.ResultActions;
 
-// A password is kept as a bcrypt hash, which can hold at most 72 bytes of it:
-// a longer one is refused with a message that says so, wherever it is set.
 class LongPasswordIntegrationTest extends IntegrationTest {
 
     private static final String TOO_LONG =
             "Password can be at most 72 characters long, or fewer with letters outside the English alphabet";
-    // 29 characters, but 79 bytes: each Devanagari letter takes three.
     private static final String HINDI = Character.toString(0x0915).repeat(25) + "Aa1!";
     private static final String ENGLISH = "Aa1!" + "a".repeat(69);
     private static final String CURRENT = "Str0ng!pass";
@@ -50,7 +46,6 @@ class LongPasswordIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("signing up with a password over 72 bytes is refused, saying how long one can be")
     void signUp() throws Exception {
         for (String password : new String[] {HINDI, ENGLISH}) {
             String handle = "long" + UUID.randomUUID().toString().substring(0, 8);
@@ -64,7 +59,6 @@ class LongPasswordIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("resetting or changing to a password over 72 bytes is refused the same way")
     void resetAndChange() throws Exception {
         User user = createUser();
         user.setPassword(passwordEncoder.encode(CURRENT));

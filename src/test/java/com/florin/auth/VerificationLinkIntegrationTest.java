@@ -13,14 +13,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-// A verification link opens in a browser, so whatever comes of it is a page of
-// the app, never the API's answer.
 class VerificationLinkIntegrationTest extends IntegrationTest {
 
     @Autowired
@@ -39,8 +36,7 @@ class VerificationLinkIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a link that works opens the verified page; a wrong or expired one, or one used again, says so")
-    void pages() throws Exception {
+    void linkShowsMatchingPage() throws Exception {
         User user = createUser();
         user.setEmailVerified(false);
         userRepository.save(user);
@@ -53,7 +49,6 @@ class VerificationLinkIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a sign-up's link lasts a day, as it may wait in an inbox a while")
     void lastsADay() throws Exception {
         String handle = "link" + UUID.randomUUID().toString().substring(0, 8);
         mockMvc.perform(post("/api/v1/auth/register")

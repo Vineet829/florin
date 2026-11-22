@@ -7,9 +7,6 @@ import java.time.LocalDate;
 import java.util.Set;
 import org.springframework.http.HttpStatus;
 
-// The payments list's search and filters: text in the client's name or email
-// or the document's number, one payment method or receipts, one currency, and
-// the days paid in one of the overview's periods or between two dates.
 public record PaymentSearch(
         String query,
         String method,
@@ -22,7 +19,6 @@ public record PaymentSearch(
         int page,
         int size) {
 
-    // What the method filter takes for receipts, which have no method.
     static final String RECEIPT = "receipt";
     private static final int MAX_PAGE_SIZE = 100;
     private static final Set<String> SORTABLE = Set.of("date", "amount", "client");
@@ -38,7 +34,6 @@ public record PaymentSearch(
             String sortDirection,
             int page,
             int size) {
-        // One of the overview's periods takes the place of dates.
         boolean periodic = period != null && !period.isBlank();
         if (periodic && (from != null || to != null)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Choose a period or dates, not both");
@@ -56,14 +51,10 @@ public record PaymentSearch(
                 Math.min(Math.max(size, 1), MAX_PAGE_SIZE));
     }
 
-    // One currency's rows, the newest first, dated between two days; the
-    // currency may be none.
     static PaymentSearch dated(String currency, LocalDate from, LocalDate to) {
         return new PaymentSearch(null, null, currency, null, from, to, "date", false, 1, 1);
     }
 
-    // The same search with its period, if it has one, as the dates that
-    // period covers today: the dates the rows are then read between.
     PaymentSearch on(LocalDate today) {
         if (period == null) {
             return this;
@@ -72,8 +63,6 @@ public record PaymentSearch(
         return new PaymentSearch(query, method, currency, null, days.from(), days.to(), sort, ascending, page, size);
     }
 
-    // A payment method's name, as payments and refunds are recorded with it,
-    // whatever its case.
     private static String method(String value) {
         if (value.equalsIgnoreCase(RECEIPT)) {
             return RECEIPT;

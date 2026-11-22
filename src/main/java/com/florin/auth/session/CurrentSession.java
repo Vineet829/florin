@@ -5,8 +5,6 @@ import java.util.UUID;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-// The session a request's access token belongs to, and the business that
-// session is working in, kept with the request's authentication.
 public final class CurrentSession {
 
     public record Details(UUID sessionId, Long businessPkid) {}

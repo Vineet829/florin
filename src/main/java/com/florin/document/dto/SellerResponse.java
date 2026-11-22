@@ -2,7 +2,6 @@ package com.florin.document.dto;
 
 import com.florin.document.SellerSnapshot;
 
-// The business as a document went out with it.
 public record SellerResponse(
         String name,
         String legalName,

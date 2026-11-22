@@ -54,7 +54,6 @@ public class PdfController {
         return inline(documentService.renderReceipt(access, id, paymentId));
     }
 
-    // A draft is for whoever can send it, and holds the document's link.
     @GetMapping("/{id}/payment/{paymentId}/receipt/email")
     public EmailDraftResponse receiptDraft(
             @Requires(Permission.EDIT_RECORDS) BusinessAccess access,

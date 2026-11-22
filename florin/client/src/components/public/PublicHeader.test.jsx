@@ -2,8 +2,6 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createRoot } from "react-dom/client";
 import { act } from "react-dom/test-utils";
 
-// The header as a public page draws it, through the app's store, signed
-// out. Nothing is fetched.
 window.IS_REACT_ACT_ENVIRONMENT = true;
 
 let root;
@@ -30,8 +28,6 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
-// The fonts as a browser reports them: a promise that settles once they
-// have loaded.
 const fontsLoading = () => {
   let loaded;
   const ready = new Promise((resolve) => {
@@ -49,7 +45,6 @@ const SECTIONS = [
   { id: "get-paid", label: "Getting paid" },
 ];
 
-// Mounts the header above two sections, at `path`.
 const mount = async (path = "/", props = {}) => {
   const { Provider } = await import("react-redux");
   const { MemoryRouter, useLocation } = await import("react-router-dom");
@@ -87,7 +82,7 @@ const click = (element) =>
     );
   });
 
-it("links each section by its id, before Log in and the sign-up button", async () => {
+it("links sections before auth buttons", async () => {
   const { page } = await mount("/", { signUpLabel: "Start for free" });
   const names = [...page.querySelectorAll("nav a")].map((a) =>
     a.textContent.trim(),
@@ -104,7 +99,7 @@ it("links each section by its id, before Log in and the sign-up button", async (
   expect(link(page, "Start for free").getAttribute("href")).toBe("/register");
 });
 
-it("keeps Get started and no section links by default", async () => {
+it("shows only Get started by default", async () => {
   const { page } = await mount("/", { sections: undefined });
   const names = [...page.querySelectorAll("nav a")].map((a) =>
     a.textContent.trim(),
@@ -113,7 +108,7 @@ it("keeps Get started and no section links by default", async () => {
   expect(scrolled).not.toHaveBeenCalled();
 });
 
-it("makes Log in the button where the page offers sign-up itself", async () => {
+it("Log in button without Get started", async () => {
   const { page } = await mount("/", { signUp: false });
   const names = [...page.querySelectorAll("nav a")].map((a) =>
     a.textContent.trim(),
@@ -122,7 +117,7 @@ it("makes Log in the button where the page offers sign-up itself", async () => {
   expect(link(page, "Log in").className).toContain("bg-spot-night");
 });
 
-it("scrolls smoothly to a section's address, and again on the next visit", async () => {
+it("smooth-scrolls to section links", async () => {
   const { page, address } = await mount();
   await click(link(page, "Getting paid"));
   expect(address().hash).toBe("#get-paid");
@@ -133,7 +128,7 @@ it("scrolls smoothly to a section's address, and again on the next visit", async
   expect(scrolled).toHaveBeenCalledTimes(2);
 });
 
-it("jumps instead when the visitor prefers less motion", async () => {
+it("jumps with reduced motion", async () => {
   vi.stubGlobal(
     "matchMedia",
     vi.fn((query) => ({ matches: query.includes("reduce") })),
@@ -144,7 +139,7 @@ it("jumps instead when the visitor prefers less motion", async () => {
   expect(scrolled).toHaveBeenLastCalledWith({ behavior: "auto" });
 });
 
-it("scrolls to the section a visitor arrives at, once the fonts are in", async () => {
+it("scrolls to hash after fonts load", async () => {
   const fontsLoaded = fontsLoading();
   await mount("/#features");
   expect(scrolled).not.toHaveBeenCalled();
@@ -153,7 +148,7 @@ it("scrolls to the section a visitor arrives at, once the fonts are in", async (
   expect(scrolledTo).not.toHaveBeenCalled();
 });
 
-it("scrolls to the section a visitor arrives at without waiting on fonts it cannot see", async () => {
+it("scrolls to hash without font API", async () => {
   await mount("/#features");
   await vi.waitFor(() =>
     expect(scrolled.mock.contexts[0]).toBe(
@@ -162,7 +157,7 @@ it("scrolls to the section a visitor arrives at without waiting on fonts it cann
   );
 });
 
-it("goes back to the top from a section when the page's own address is opened", async () => {
+it("page link scrolls back to top", async () => {
   const { page } = await mount("/#features");
   await vi.waitFor(() => expect(scrolled).toHaveBeenCalledTimes(1));
   await click(page.querySelector("a[aria-label='Florin home']"));
@@ -170,7 +165,7 @@ it("goes back to the top from a section when the page's own address is opened", 
   expect(scrolled).toHaveBeenCalledTimes(1);
 });
 
-it("leaves the window alone on arrival at the page's own address, and on a page without sections", async () => {
+it("no scroll without hash or sections", async () => {
   await mount("/");
   unmount();
   await mount("/#features", { sections: undefined });

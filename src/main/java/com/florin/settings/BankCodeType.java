@@ -1,7 +1,5 @@
 package com.florin.settings;
 
-// The code that routes a bank transfer to the account, named as clients know
-// it. Any other kind is named by the business.
 public enum BankCodeType {
     IFSC("IFSC"),
     SWIFT("SWIFT / BIC"),

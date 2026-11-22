@@ -14,9 +14,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.DynamicUpdate;
 
-// Many unrelated flows change an account: its profile, its password, its
-// two-factor sign-in, an admin's deactivation. Each writes back only the
-// columns it changed, so one under way can't put back what another just did.
 @Entity
 @Table(name = "users")
 @DynamicUpdate
@@ -75,8 +72,6 @@ public class User extends BaseEntity {
                         || issuedAt.getEpochSecond() >= passwordChangedAt.getEpochSecond());
     }
 
-    // How the app names the account to others: the full name, or the
-    // username when no name was given.
     public String displayName() {
         String name = (firstName + " " + lastName).trim();
         return name.isEmpty() ? username : name;

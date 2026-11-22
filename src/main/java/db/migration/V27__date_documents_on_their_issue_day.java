@@ -12,15 +12,6 @@ import java.util.Map;
 import org.flywaydb.core.api.migration.BaseJavaMigration;
 import org.flywaydb.core.api.migration.Context;
 
-// The day each document is dated. Until now it was the day the document was
-// created, read in its business's time zone; existing documents keep exactly
-// that day. From now on the day is chosen when a document is made, and may be
-// earlier than the day it was typed in.
-//
-// The day is worked out here in Java rather than in SQL because time zones
-// are saved as the names Java accepts: the database doesn't know some of them
-// (Asia/Calcutta, the name Chrome gives India) and reads others the other way
-// round (UTC+05:30).
 public class V27__date_documents_on_their_issue_day extends BaseJavaMigration {
 
     private static final int BATCH = 1000;

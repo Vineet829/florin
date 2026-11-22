@@ -4,14 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.florin.IntegrationTest;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-// The one email message a business could write before V49 becomes its
-// message for every kind of email it was used for.
 class EmailTemplateMigrationIntegrationTest extends IntegrationTest {
 
     @Autowired
@@ -27,12 +24,11 @@ class EmailTemplateMigrationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a saved message goes to every kind of email but reminders, with the subject they had")
     void copiesTheMessage() {
         try (MigrationDatabase database = MigrationDatabase.create(postgres)) {
             database.migrateTo("48");
             JdbcTemplate jdbc = database.jdbc();
-            long written = business(jdbc, "Ada Studio", "Hi {client},\n\n{document} is attached.\n\n{business}");
+            long written = business(jdbc, "Apte Studio", "Hi {client},\n\n{document} is attached.\n\n{business}");
             long blank = business(jdbc, "Blank Studio", "  \n ");
             long none = business(jdbc, "Quiet Studio", null);
 

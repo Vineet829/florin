@@ -13,7 +13,6 @@ afterEach(() => {
   container.remove();
 });
 
-// The demo account's summary on Oct 4, 2026.
 const summary = {
   success: true,
   currency: "USD",
@@ -27,7 +26,6 @@ const summary = {
   },
   receivedLast30Days: { total: 22763.97, payments: 7 },
 };
-// The summary query as RTK Query gives it, once answered.
 const answered = (data) => ({
   currentData: data,
   data,
@@ -65,7 +63,7 @@ const ringed = (bar) =>
     link.className.includes("ring-2"),
   );
 
-it("opens the invoices owed, the overdue ones and the last 30 days' payments", () => {
+it("links to owed, overdue and payments", () => {
   const bar = render({ query: answered(summary) });
   expect(links(bar)).toEqual([
     [
@@ -92,15 +90,13 @@ it("opens the invoices owed, the overdue ones and the last 30 days' payments", (
   ]) {
     expect(bar.textContent).toContain(text);
   }
-  // One currency, so the amounts don't name it.
   expect(bar.textContent).not.toContain("USD");
-  // The bar is split by what is overdue and what is not due yet.
   expect(
     [...bar.querySelector("a").children].map((part) => part.style.flex),
   ).toEqual(["6326.03 1 0px", "17959.76 1 0px"]);
 });
 
-it("keeps the currency in its links and names it when the business has several", () => {
+it("keeps currency in links", () => {
   const bar = render({
     query: answered({
       ...summary,
@@ -121,7 +117,7 @@ it.each([
   ["/documents?status=outstanding&sort=dueDate&dir=asc", 0],
   ["/documents?status=overdue", 1],
   ["/payments?period=30d", 2],
-])("rings only the part whose list is the one shown: %s", (shown, index) => {
+])("highlights the current list: %s", (shown, index) => {
   const bar = render({
     query: answered(summary),
     shows: (link) => link === shown,
@@ -132,7 +128,7 @@ it.each([
   expect(ringed(bar)).toEqual([0, 1, 2].map((part) => part === index));
 });
 
-it("says so when nothing is owed or overdue", () => {
+it("shows nothing owed", () => {
   const nothingLate = render({
     query: answered({
       ...summary,
@@ -166,7 +162,7 @@ it("says so when nothing is owed or overdue", () => {
   expect(nothingOwed.textContent).not.toContain("The bar opens");
 });
 
-it("keeps its room with empty cards while the figures load", () => {
+it("shows empty cards while loading", () => {
   const loading = render({
     query: { currentData: undefined, isFetching: true, isError: false },
   });
@@ -175,13 +171,12 @@ it("keeps its room with empty cards while the figures load", () => {
   expect(placeholder.children).toHaveLength(2);
   expect(loading.querySelectorAll("a")).toHaveLength(0);
   expect(loading.querySelector('[role="alert"]')).toBeNull();
-  // A business with nothing issued has no bar, once that is known.
   expect(
     again({ query: answered({ ...summary, currencies: [] }) }).textContent,
   ).toBe("");
 });
 
-it("says when the figures couldn't be loaded, and tries again", () => {
+it("load error with retry", () => {
   const refetch = vi.fn();
   const failed = render({
     query: {
@@ -193,11 +188,10 @@ it("says when the figures couldn't be loaded, and tries again", () => {
   });
   const note = failed.querySelector('[role="alert"]');
   expect(note.textContent).toBe(
-    "We couldn’t load what is owed and what came in.Try again",
+    "We couldn't load what's owed and what came in.Try again",
   );
   act(() => note.querySelector("button").click());
   expect(refetch).toHaveBeenCalledTimes(1);
-  // While it tries again, the cards keep the room.
   const retrying = again({
     query: { currentData: undefined, isFetching: true, isError: true, refetch },
   });

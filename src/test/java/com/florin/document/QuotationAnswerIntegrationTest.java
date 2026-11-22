@@ -19,16 +19,12 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// A client answers a quotation once, through its link: they accept it, or
-// decline it and may say why. A quotation left unanswered past its last day
-// can't be answered until the business gives it a later one.
 class QuotationAnswerIntegrationTest extends IntegrationTest {
 
     private static final ZoneId ZONE = ZoneId.of("Asia/Kolkata");
@@ -64,7 +60,6 @@ class QuotationAnswerIntegrationTest extends IntegrationTest {
         return day.atTime(LocalTime.NOON).atZone(ZONE).toInstant().toString();
     }
 
-    // A quotation valid until the given day, and the token of its share link.
     private String[] quotation(LocalDate validUntil) throws Exception {
         String id = JsonPath.read(
                 body(send(post("/api/v1/document/create"), """
@@ -84,8 +79,7 @@ class QuotationAnswerIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a declined quotation says why, tells the business, and can't then be accepted or changed")
-    void decline() throws Exception {
+    void declinedQuotationIsFinal() throws Exception {
         String[] quotation = quotation(LocalDate.now(ZONE).plusDays(10));
 
         answer(quotation[1], "decline", "{\"reason\": \"  We found a cheaper offer  \"}")
@@ -114,7 +108,6 @@ class QuotationAnswerIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an accepted quotation can't then be declined; a long reason or an invoice is refused")
     void acceptedOnce() throws Exception {
         String[] quotation = quotation(LocalDate.now(ZONE).plusDays(10));
 
@@ -137,8 +130,7 @@ class QuotationAnswerIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a quotation is open on its last day, expired the day after, and open again with a later date")
-    void expiry() throws Exception {
+    void expiresAfterLastDay() throws Exception {
         LocalDate today = LocalDate.now(ZONE);
         String[] lastDay = quotation(today);
         mockMvc.perform(get("/api/v1/public/share/{token}", lastDay[1]))
@@ -167,8 +159,7 @@ class QuotationAnswerIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a quotation is an offer, so nothing is owed on it, open, accepted or expired; an invoice is owed")
-    void nothingOwed() throws Exception {
+    void quotationsAreNotOwed() throws Exception {
         LocalDate today = LocalDate.now(ZONE);
         String[] open = quotation(today.plusDays(10));
         String[] accepted = quotation(today.plusDays(10));
@@ -182,7 +173,6 @@ class QuotationAnswerIntegrationTest extends IntegrationTest {
                     .andExpect(jsonPath("$.document.balanceDue").value(nullValue()))
                     .andExpect(jsonPath("$.document.ledger.balanceDue").value(nullValue()))
                     .andExpect(jsonPath("$.document.ledger.refundDue").value(0.0));
-            // The share page shows its total, with nothing to pay.
             mockMvc.perform(get("/api/v1/public/share/{token}", quotation[1]))
                     .andExpect(jsonPath("$.total").value(900.0))
                     .andExpect(jsonPath("$.payment").doesNotExist())

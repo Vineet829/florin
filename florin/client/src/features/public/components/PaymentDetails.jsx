@@ -14,13 +14,10 @@ const copy = (label, value) => async () => {
     await navigator.clipboard.writeText(value);
     toast.success(`${label} copied.`);
   } catch {
-    toast.error(`The ${label} couldn’t be copied. Select it instead.`);
+    toast.error(`The ${label} couldn't be copied. Select it instead.`);
   }
 };
 
-// A QR code any UPI app can scan to pay the balance, black on white as
-// scanners read best, and on a phone a link that opens the UPI app with the
-// payment filled in.
 const UpiCode = ({ upi }) => {
   const [image, setImage] = useState(null);
   useEffect(() => {
@@ -63,10 +60,6 @@ const UpiCode = ({ upi }) => {
   );
 };
 
-// How to pay an unpaid invoice, with whichever details the business gave:
-// its bank account, UPI ID, a link to pay online and instructions, and for
-// rupees a UPI QR code. Account numbers, codes and IDs can be copied as they
-// are.
 const PaymentDetails = ({ payment }) => {
   const rows = [
     ["Account holder", payment.accountHolder],

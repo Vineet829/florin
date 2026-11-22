@@ -18,7 +18,6 @@ import com.florin.user.UserRepository;
 import java.time.Instant;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
@@ -29,13 +28,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.SimpleTransactionStatus;
 
-// Hashing a password takes a while, so a sign-in checks it before it opens a
-// transaction: a database connection held meanwhile is one other requests
-// can't use.
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
 
-    private static final String EMAIL = "ada@example.test";
+    private static final String EMAIL = "neha@example.test";
     private static final String HASH = "hash-of-the-password";
 
     @Mock private UserRepository userRepository;
@@ -65,7 +61,6 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("the password is checked before a transaction opens, and the sign-in carries on in one")
     void checksThePasswordFirst() {
         when(passwordEncoder.matches("Str0ng!pass", HASH)).thenReturn(true);
         when(transactionManager.getTransaction(any())).thenReturn(new SimpleTransactionStatus());
@@ -83,7 +78,6 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("a wrong password is refused, and logged, without a transaction")
     void wrongPassword() {
         when(passwordEncoder.matches("wrong", HASH)).thenReturn(false);
 
@@ -96,7 +90,6 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("a password changed after it was checked has to be signed in with afresh")
     void passwordChangedMeanwhile() {
         when(passwordEncoder.matches("Str0ng!pass", HASH)).thenReturn(true);
         when(transactionManager.getTransaction(any())).thenReturn(new SimpleTransactionStatus());

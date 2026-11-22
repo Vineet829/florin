@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -127,7 +126,6 @@ class DocumentServiceTest {
     }
 
     @Test
-    @DisplayName("a document can only be created for one of the business's own customers")
     void requiresACustomer() {
         ownsCustomer(99L);
 
@@ -140,7 +138,6 @@ class DocumentServiceTest {
     }
 
     @Test
-    @DisplayName("a created document takes the type/status defaults and is issued as it is made")
     void createsDocumentWithDefaults() {
         ownsCustomer(1L);
         User member = userWithPkid(1L);
@@ -161,7 +158,6 @@ class DocumentServiceTest {
     }
 
     @Test
-    @DisplayName("a document saved as a draft isn't issued")
     void savesDraft() {
         ownsCustomer(1L);
 
@@ -172,7 +168,6 @@ class DocumentServiceTest {
     }
 
     @Test
-    @DisplayName("an unknown document type is rejected")
     void rejectsUnknownType() {
         ownsCustomer(1L);
         assertThatThrownBy(() -> service.create(access(1L), documentRequest("Nonsense")))
@@ -181,7 +176,6 @@ class DocumentServiceTest {
     }
 
     @Test
-    @DisplayName("viewing another business's document is forbidden")
     void forbidsForeignDocument() {
         Document document = new Document();
         document.setBusiness(businessWithPkid(99L));
@@ -195,7 +189,6 @@ class DocumentServiceTest {
     }
 
     @Test
-    @DisplayName("a draft can't take a payment until it is issued")
     void refusesPaymentOnDraft() {
         Document draft = paidInvoice(null);
         draft.setIssuedAt(null);
@@ -212,7 +205,6 @@ class DocumentServiceTest {
     }
 
     @Test
-    @DisplayName("recording a payment appends it with the customer name and default method")
     void recordsPayment() {
         Document document = paidInvoice(null);
         CustomerSnapshot snapshot = new CustomerSnapshot();
@@ -246,7 +238,6 @@ class DocumentServiceTest {
     }
 
     @Test
-    @DisplayName("tax and discount percentages are stored as exact numbers")
     void storesPercentages() {
         ownsCustomer(1L);
         service.create(access(1L), requestWith(" 18.5 ", "12.25"));
@@ -258,7 +249,6 @@ class DocumentServiceTest {
     }
 
     @Test
-    @DisplayName("a percentage can have its point first or last, as a browser's number field may send it")
     void readsPlainPercentages() {
         ownsCustomer(1L);
         service.create(access(1L), requestWith(".5", "7."));
@@ -270,7 +260,6 @@ class DocumentServiceTest {
     }
 
     @Test
-    @DisplayName("a percentage that isn't plain digits from 0 to 100 is refused, such as 1e2 or a long run of digits")
     void refusesBadPercentages() {
         ownsCustomer(1L);
         for (String bad : new String[] {"abc", "-1", "100.5", "0.00001", "1e2", "5E1", "+5", "0".repeat(30) + "5"}) {
@@ -285,7 +274,6 @@ class DocumentServiceTest {
     }
 
     @Test
-    @DisplayName("the server computes line totals, tax, total and status, whatever the client sends")
     void computesTotals() {
         ownsCustomer(1L);
         service.create(access(1L), requestWith("18", "10"));
@@ -300,7 +288,6 @@ class DocumentServiceTest {
         assertThat(saved.getStatus()).isEqualTo(DocumentStatus.NOT_PAID);
     }
 
-    // An issued invoice, with a payment when one is given.
     private Document paidInvoice(BigDecimal paid) {
         Document document = new Document();
         document.setBusiness(businessWithPkid(1L));
@@ -326,7 +313,6 @@ class DocumentServiceTest {
     }
 
     @Test
-    @DisplayName("an issued document's type and lines don't change; a void one doesn't change at all")
     void refusesLockedChanges() {
         UUID id = UUID.randomUUID();
         Document issued = paidInvoice(new BigDecimal("40"));

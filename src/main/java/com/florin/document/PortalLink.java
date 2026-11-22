@@ -16,8 +16,6 @@ import java.time.Instant;
 import lombok.Getter;
 import lombok.Setter;
 
-// A client's link to their portal. Like a share link it is found by its
-// token's hash, and kept sealed so it can be shown again.
 @Entity
 @Table(name = "portal_links")
 @Getter

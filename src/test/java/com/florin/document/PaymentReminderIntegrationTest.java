@@ -18,7 +18,6 @@ import com.jayway.jsonpath.JsonPath;
 import jakarta.mail.Session;
 import jakarta.mail.internet.MimeMessage;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.http.HttpHeaders;
@@ -72,8 +71,7 @@ class PaymentReminderIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a reminder for an overdue invoice says what is owed since when, and is counted once sent")
-    void overdue() throws Exception {
+    void overdueReminderStatesBalance() throws Exception {
         User owner = createUser();
         Sent invoice = document(owner, "Invoice", "2026-01-15T12:00:00Z");
         pay(owner, invoice.id(), 40);
@@ -101,7 +99,6 @@ class PaymentReminderIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a reminder for an invoice that isn't due yet says when it is due")
     void notYetDue() throws Exception {
         User owner = createUser();
         Sent invoice = document(owner, "Invoice", "2099-01-01T12:00:00Z");
@@ -112,8 +109,7 @@ class PaymentReminderIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("paid invoices and quotations need no reminder, and the demo account sends none")
-    void rules() throws Exception {
+    void noReminderWhenNotNeeded() throws Exception {
         User owner = createUser();
         Sent paid = document(owner, "Invoice", "2026-01-15T12:00:00Z");
         pay(owner, paid.id(), 100);

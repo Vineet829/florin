@@ -1,11 +1,5 @@
 import { textLink } from "../../../components/workspace/pastel";
 
-// The line above a filtered list: what the filters found and what it adds
-// up to, then a way back to the whole list. Each part may hold a figure
-// that stands out; an overdue part takes the overdue colour. A part keeps to
-// one line and starts with its dot, so a wrapped line never ends on one.
-// The line dims with the list while the next figures load. A list with only
-// a search names its way back after it.
 const ResultLine = ({
   parts,
   onClear,

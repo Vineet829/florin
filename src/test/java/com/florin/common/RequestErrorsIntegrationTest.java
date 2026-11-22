@@ -7,18 +7,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.florin.IntegrationTest;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 
-// A request the framework can't take, through the whole app, keeps the status
-// that says why rather than becoming a 500.
 class RequestErrorsIntegrationTest extends IntegrationTest {
 
     @Test
-    @DisplayName("a method, a body type or a part a route doesn't take is a 4xx that says why")
     void requestErrors() throws Exception {
         String authorization = bearer(createUser());
 

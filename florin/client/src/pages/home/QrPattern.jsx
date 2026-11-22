@@ -1,8 +1,5 @@
 import { useMemo } from "react";
 
-// A pattern in the shape of a UPI QR code, for the homepage's samples: the
-// three finder squares and a scatter of cells that is the same for a seed
-// every time, and that no reader resolves to anything.
 const CELLS = 25;
 
 const pattern = (seed) => {
@@ -39,8 +36,6 @@ const pattern = (seed) => {
     .join("");
 };
 
-// Size it with a class, such as size-[150px]. A pill on its corner says
-// it is a sample, so nobody points a phone at it.
 const QrPattern = ({ seed = 7, className = "" }) => {
   const cells = useMemo(() => pattern(seed), [seed]);
   return (

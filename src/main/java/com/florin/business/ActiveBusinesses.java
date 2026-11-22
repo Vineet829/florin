@@ -20,10 +20,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// The business a session works in: the one it last chose, while its user is
-// still a member there, else the one the user last worked in. Membership is
-// checked on every request, so someone removed from a business loses it at
-// once.
 @Service
 public class ActiveBusinesses {
 
@@ -59,9 +55,6 @@ public class ActiveBusinesses {
         return member.map(found -> access(found, user));
     }
 
-    // Every business the user works in, by name, marking the session's, with
-    // how many of the user's notifications wait unread in each and its time
-    // zone, each read for all of them at once.
     @Transactional
     public List<BusinessSummaryResponse> list(User user, UUID sessionId, Long preferred) {
         Long active = resolve(user, sessionId, preferred).map(BusinessAccess::businessPkid).orElse(null);
@@ -90,9 +83,6 @@ public class ActiveBusinesses {
         return notificationRepository.countByUserPkidAndBusinessPkidAndReadAtIsNull(userPkid, businessPkid);
     }
 
-    // The time zone the server counts a business's days in, as the overview
-    // and the receivables read it from its settings, or the settings'
-    // default while it has none yet.
     @Transactional(readOnly = true)
     public String timeZone(Long businessPkid) {
         return timeZones(List.of(businessPkid)).get(businessPkid);
@@ -107,8 +97,6 @@ public class ActiveBusinesses {
         return zones;
     }
 
-    // Switching business is per session, so two browsers can work in two
-    // businesses at once.
     @Transactional
     public BusinessAccess use(User user, UUID sessionId, UUID businessId) {
         BusinessMember member = memberRepository.findByBusinessIdAndUserPkid(businessId, user.getPkid())

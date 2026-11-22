@@ -38,12 +38,10 @@ import LineName from "../../gst/LineName";
 const NO_ITEMS = [];
 
 const ItemsPage = () => {
-  useTitle("Items — Florin");
+  useTitle("Items - Florin");
   const [list, update] = useListState(readItemList, itemListSearch);
   const query = useGetItemsQuery();
   const items = query.data?.items || NO_ITEMS;
-  // The list holds the first 500 items, by name; the server says how many
-  // there are in all. Its search looks through those it holds.
   const total = query.data?.totalItems ?? items.length;
   const cut =
     total > items.length ? (
@@ -54,7 +52,6 @@ const ItemsPage = () => {
     ) : null;
   const rows = useMemo(() => matchingItems(items, list.q), [items, list.q]);
   const pagination = usePagination(rows, 10);
-  // A search shows its first page.
   const { setPage } = pagination;
   const search = useCallback(
     (q) => {
@@ -63,9 +60,6 @@ const ItemsPage = () => {
     },
     [update, setPage],
   );
-  // Clear search is gone once the search is cleared, so focus moves to the
-  // search box. The list is searched here, so the box is there at once, or
-  // not at all: a business with no items has none, and focus stays put.
   const tools = useRef(null);
   const [refocus, setRefocus] = useState(false);
   const clearSearch = () => {
@@ -77,10 +71,8 @@ const ItemsPage = () => {
     setRefocus(false);
     tools.current?.querySelector('input[type="search"]')?.focus();
   }, [refocus]);
-  // A new business has nothing to search yet.
   const showTools =
     Boolean(query.data) && (items.length > 0 || Boolean(list.q));
-  // `editing` is the item being edited, or "new" for the add dialog.
   const [editing, setEditing] = useState(null);
   const [removing, setRemoving] = useState(null);
   const { reason } = useBusiness();
@@ -95,7 +87,7 @@ const ItemsPage = () => {
       toast.success("Item deleted.");
       setRemoving(null);
     } catch (error) {
-      toast.error(errorMessage(error, "The item could not be deleted."));
+      toast.error(errorMessage(error, "The item couldn't be deleted."));
     }
   };
   const columns = [
@@ -107,14 +99,13 @@ const ItemsPage = () => {
     {
       label: "Name",
       type: "main",
-      // In GST mode, with the HSN or SAC code its lines take.
       render: (row) => (
         <LineName name={row.name} hsnSac={gstMode ? row.hsnSac : null} />
       ),
     },
     {
       label: "Description",
-      render: (row) => row.description || "—",
+      render: (row) => row.description || "-",
     },
     {
       label: "Unit price",
@@ -163,7 +154,6 @@ const ItemsPage = () => {
       ),
     },
   ];
-  // Viewers see the items, but not the ways to change them.
   const shown = columns.filter(
     (column) =>
       !(editRefusal && ["Edit", "Delete"].includes(column.label)) &&
@@ -251,7 +241,7 @@ const ItemsPage = () => {
             </>
           ) : (
             <EmptyState
-              title="Price it once, reuse it everywhere."
+              title="No items yet."
               text="Save the products and services you sell, and the document editor suggests them as you type."
               icon={FiPackage}
             />

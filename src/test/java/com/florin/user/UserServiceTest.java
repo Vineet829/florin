@@ -24,7 +24,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -58,7 +57,7 @@ class UserServiceTest {
     }
 
     private static UpdateProfileRequest onlyAllowed() {
-        return new UpdateProfileRequest(null, null, null, null, null, null, null, "Grace", null);
+        return new UpdateProfileRequest(null, null, null, null, null, null, null, "Priya", null);
     }
 
     private static UpdateProfileRequest with(
@@ -67,7 +66,6 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("updating a password on the profile route is rejected")
     void rejectsPasswordUpdate() {
         assertThatThrownBy(() -> service.updateProfile(1L, with("Secret1!", null, null)))
                 .isInstanceOf(ApiException.class)
@@ -76,7 +74,6 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("updating a protected field (email/roles) on the profile route is rejected")
     void rejectsProtectedFieldUpdate() {
         assertThatThrownBy(() -> service.updateProfile(1L, with(null, "new@x.com", null)))
                 .isInstanceOf(ApiException.class)
@@ -84,20 +81,18 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("allowed fields are applied and persisted")
     void appliesAllowedFields() {
         User user = new User();
-        user.setFirstName("Ada");
+        user.setFirstName("Neha");
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
         var response = service.updateProfile(1L, onlyAllowed());
 
-        assertThat(response.firstName()).isEqualTo("Grace");
+        assertThat(response.firstName()).isEqualTo("Priya");
         verify(userRepository).save(user);
     }
 
     @Test
-    @DisplayName("deleting an unknown user id yields a 404")
     void deleteUnknownUser() {
         UUID id = UUID.randomUUID();
         when(userRepository.findByExternalId(id)).thenReturn(Optional.empty());
@@ -110,7 +105,6 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("deactivating a user flips the active flag, persists and is recorded with the admin who did it")
     void deactivatesUser() {
         User user = new User();
         user.setPkid(1L);
@@ -130,7 +124,6 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("the last active admin can't be made a regular user, deactivated or deleted")
     void keepsLastAdmin() {
         User last = new User();
         last.setPkid(1L);

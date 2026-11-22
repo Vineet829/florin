@@ -4,22 +4,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.florin.IntegrationTest;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-// From V64 the business the demo's sample data was added to is marked, where
-// nothing in the app changes the mark. A business that held the sample data
-// before is found by any of its sample clients still there.
 class SampleDataMarkMigrationIntegrationTest extends IntegrationTest {
 
     @Autowired
     private PostgreSQLContainer<?> postgres;
 
     @Test
-    @DisplayName("a business with a sample client is marked, whichever one is left; others are not")
     void marksTheSampleBusiness() {
         try (MigrationDatabase database = MigrationDatabase.create(postgres)) {
             database.migrateTo("1");
@@ -29,7 +24,6 @@ class SampleDataMarkMigrationIntegrationTest extends IntegrationTest {
             long real = owner(jdbc, "real");
             client(jdbc, demo, "accounts@harborandpine.example");
             client(jdbc, demo, "billing@bluefin.example");
-            // Its first sample client renamed, another one left.
             client(jdbc, renamed, "someone@clients.test");
             client(jdbc, renamed, "Team@MarigoldEvents.example");
             client(jdbc, real, "orders@clients.test");

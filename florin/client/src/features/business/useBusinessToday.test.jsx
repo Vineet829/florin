@@ -4,7 +4,6 @@ import { act } from "react-dom/test-utils";
 import useBusinessToday, { todayIn } from "./useBusinessToday";
 import { parseDate } from "../../utils/dates";
 
-// The business this tab works in, as the businesses list sends it.
 const active = vi.hoisted(() => ({ business: undefined }));
 vi.mock("./permissions", () => ({
   useBusiness: () => ({ business: active.business }),
@@ -12,7 +11,6 @@ vi.mock("./permissions", () => ({
 
 window.IS_REACT_ACT_ENVIRONMENT = true;
 
-// The viewer is in India, hours ahead of a business in Los Angeles.
 const zone = process.env.TZ;
 beforeAll(() => {
   process.env.TZ = "Asia/Kolkata";
@@ -26,15 +24,13 @@ afterEach(() => {
   active.business = undefined;
 });
 
-// The clock at a moment; only the date is faked.
 const at = (moment) => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date(moment));
 };
 const day = (date) => [date.getFullYear(), date.getMonth() + 1, date.getDate()];
 
-it("gives the day it is where the business is, as a local midnight", () => {
-  // 05:00 on Oct 8 in Kolkata is 16:30 on Oct 7 in Los Angeles.
+it("gives today in the business zone", () => {
   at("2026-10-08T05:00:00+05:30");
   const today = todayIn("America/Los_Angeles");
   expect(day(today)).toEqual([2026, 10, 7]);
@@ -42,14 +38,13 @@ it("gives the day it is where the business is, as a local midnight", () => {
   expect(day(todayIn("Asia/Kolkata"))).toEqual([2026, 10, 8]);
 });
 
-it("falls back to the browser's own day without a zone it knows", () => {
+it("falls back for unknown zones", () => {
   at("2026-10-08T05:00:00+05:30");
   expect(day(todayIn(undefined))).toEqual([2026, 10, 8]);
   expect(day(todayIn(""))).toEqual([2026, 10, 8]);
   expect(day(todayIn("Nowhere/Town"))).toEqual([2026, 10, 8]);
 });
 
-// Draws a component that reads the hook, and draws it again on `again`.
 const render = () => {
   const seen = [];
   const Probe = () => {
@@ -65,9 +60,8 @@ const render = () => {
   };
 };
 
-it("counts from the active business's day, and turns over at its midnight", () => {
+it("turns over at business midnight", () => {
   active.business = { _id: "b-1", timeZone: "America/Los_Angeles" };
-  // A minute before midnight in Los Angeles, already midday in Kolkata.
   at("2026-10-08T06:59:00Z");
   const page = render();
   expect(page.seen.at(-1)).toEqual([2026, 10, 7]);
@@ -77,7 +71,7 @@ it("counts from the active business's day, and turns over at its midnight", () =
   page.unmount();
 });
 
-it("counts from the browser's day while the business names no zone", () => {
+it("uses browser day without a zone", () => {
   active.business = { _id: "b-1" };
   at("2026-10-08T05:00:00+05:30");
   const page = render();

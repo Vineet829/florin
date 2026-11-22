@@ -26,7 +26,6 @@ import {
 import { Party, card } from "../../public/components/PublicDocument";
 import { Notice, frame } from "../../public/components/PublicPage";
 
-// Where a document stands, in the words the share page uses.
 const Standing = ({ entry }) => {
   if (entry.state === "void") return <Badge tone="unpaid">Void</Badge>;
   if (entry.documentType === "Quotation") {
@@ -44,7 +43,6 @@ const Standing = ({ entry }) => {
   );
 };
 
-// What the client owes in one currency, as their statement shows it.
 const Balance = ({ balance }) => (
   <div className="rounded-2xl border border-white/90 bg-white/60 p-5">
     <p className={panelNote}>Due in {balance.currency}</p>
@@ -72,8 +70,6 @@ const Balance = ({ balance }) => (
   </div>
 );
 
-// A client's portal: every document the business issued them, what they owe
-// in each currency, and their statement. The link is the key: no sign-in.
 const ClientPortalPage = () => {
   const { token } = useParams();
   const [page, setPage] = useState(1);
@@ -84,7 +80,7 @@ const ClientPortalPage = () => {
   useTitle(
     portal
       ? `${portal.client} at ${portal.business.name}`
-      : "Your documents — Florin",
+      : "Your documents - Florin",
   );
   const download = async () => {
     try {
@@ -93,7 +89,7 @@ const ClientPortalPage = () => {
         `Statement-${dateInput()}.pdf`,
       );
     } catch (error) {
-      toast.error(errorMessage(error, "The statement could not be prepared."));
+      toast.error(errorMessage(error, "The statement couldn't be prepared."));
     }
   };
   const columns = [
@@ -113,7 +109,7 @@ const ClientPortalPage = () => {
     { label: "Issued", render: (entry) => dateLabel(entry.issueDate) },
     {
       label: "Due",
-      render: (entry) => (entry.dueDate ? dateLabel(entry.dueDate) : "—"),
+      render: (entry) => (entry.dueDate ? dateLabel(entry.dueDate) : "-"),
     },
     {
       label: "Total",
@@ -127,7 +123,7 @@ const ClientPortalPage = () => {
       type: "amount",
       render: (entry) =>
         entry.balance === undefined ? (
-          "—"
+          "-"
         ) : (
           <Amount value={entry.balance} currency={entry.currency} />
         ),
@@ -138,17 +134,17 @@ const ClientPortalPage = () => {
     <div className={frame}>
       {query.isLoading ? (
         <p className={panelNote} role="status">
-          Opening your documents…
+          Opening your documents...
         </p>
       ) : query.isError ? (
         query.error?.status === 404 ? (
           <Notice
-            title="This link doesn’t work anymore"
+            title="This link doesn't work anymore"
             text="It may have been turned off or replaced. Ask the business that sent it for a new link."
           />
         ) : (
           <Notice
-            title="We couldn’t open your documents"
+            title="We couldn't open your documents"
             text={errorMessage(query.error)}
             retry={query.refetch}
           />
@@ -165,7 +161,7 @@ const ClientPortalPage = () => {
               aria-busy={downloading}
             >
               <FiDownload aria-hidden="true" />
-              {downloading ? "Preparing…" : "Download statement"}
+              {downloading ? "Preparing..." : "Download statement"}
             </button>
           </header>
           <div className="mt-7">

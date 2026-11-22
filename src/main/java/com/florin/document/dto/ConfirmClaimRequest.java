@@ -4,8 +4,6 @@ import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 
-// The payment to record for a client's report, as it was reported unless
-// changed here.
 public record ConfirmClaimRequest(
         String datePaid,
         @DecimalMax(value = "999999999999999.99", message = "Amounts can have at most 15 whole digits")

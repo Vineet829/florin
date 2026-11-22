@@ -8,7 +8,6 @@ import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.Setter;
 
-// How clients can pay the business. Every part is optional.
 @Embeddable
 @Getter
 @Setter
@@ -30,7 +29,6 @@ public class PaymentDetails {
     @Column(name = "pay_bank_code", length = 40)
     private String bankCode;
 
-    // The name of a bank code of another kind, such as "Branch code".
     @Column(name = "pay_bank_code_label", length = 30)
     private String bankCodeLabel;
 
@@ -43,7 +41,6 @@ public class PaymentDetails {
     @Column(name = "pay_instructions", length = 1000)
     private String instructions;
 
-    // What the bank code is called on documents.
     public String bankCodeName() {
         if (bankCodeType == null) {
             return null;

@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.jdbc.JdbcConnectionDetails;
@@ -26,9 +25,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-// The app's own limiter keeps its buckets in the test database. Each limiter
-// made by server() stands in for another instance of the app: its own store
-// and connection pool, on the same database.
 class SharedRateLimiterIntegrationTest extends IntegrationTest {
 
     @Autowired
@@ -46,7 +42,6 @@ class SharedRateLimiterIntegrationTest extends IntegrationTest {
     @Autowired
     private AppProperties properties;
 
-    // The app's own store, which names the rows its limiter writes.
     @Autowired
     private PostgresBucketStore appStore;
 
@@ -81,8 +76,7 @@ class SharedRateLimiterIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("two servers draw on one budget, refuse alike once it is spent, and refill alike")
-    void oneBudget() {
+    void serversShareOneBudget() {
         Clock clock = Clock.fixed(Instant.now(), ZoneOffset.UTC);
         RateLimiter first = server(clock);
         RateLimiter second = server(clock);
@@ -104,11 +98,10 @@ class SharedRateLimiterIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("failures recorded on one server lock sign-in on the other, and a reset on either clears them")
     void failuresAndResets() {
         RateLimiter first = server(Clock.systemUTC());
         RateLimiter second = server(Clock.systemUTC());
-        String attempt = address() + "|ada-" + UUID.randomUUID() + "@example.test";
+        String attempt = address() + "|neha-" + UUID.randomUUID() + "@example.test";
         for (int failure = 0; failure < 5; failure++) {
             first.requireAvailable(RateLimit.FAILED_SIGN_IN, attempt);
             second.recordFailure(RateLimit.FAILED_SIGN_IN, attempt);
@@ -123,7 +116,6 @@ class SharedRateLimiterIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a failure recorded in a transaction that rolls back still counts")
     void outlivesRollback() {
         String attempts = UUID.randomUUID().toString();
         new TransactionTemplate(transactionManager).executeWithoutResult(transaction -> {
@@ -139,8 +131,6 @@ class SharedRateLimiterIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the table keeps each limit with a keyed hash of its key, never the email or address,"
-            + " nor a plain hash anyone could match by trying every address")
     void storesHashes() {
         String address = address();
         String email = "hashed-" + UUID.randomUUID() + "@example.test";
@@ -160,7 +150,6 @@ class SharedRateLimiterIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a server with another secret counts in buckets of its own")
     void keyedBySecret() {
         Clock clock = Clock.fixed(Instant.now(), ZoneOffset.UTC);
         RateLimiter first = server(clock);
@@ -171,21 +160,17 @@ class SharedRateLimiterIntegrationTest extends IntegrationTest {
         }
 
         assertThatThrownBy(() -> first.consume(RateLimit.SIGN_UP, address)).isInstanceOf(RateLimitedException.class);
-        // The app's own limiter is keyed with the access-token secret too, so
-        // it counts in the same bucket.
         assertThatThrownBy(() -> rateLimiter.consume(RateLimit.SIGN_UP, address))
                 .isInstanceOf(RateLimitedException.class);
         assertThatCode(() -> other.consume(RateLimit.SIGN_UP, address)).doesNotThrowAnyException();
     }
 
     @Test
-    @DisplayName("the daily cleanup removes buckets that have long been full again and keeps the others")
     void removesExpired() {
         String old = address();
         String recent = address();
         rateLimiter.consume(RateLimit.SIGN_UP, old);
         rateLimiter.consume(RateLimit.SIGN_UP, recent);
-        // As if the first was written two days ago: its bucket has long been full again.
         jdbcTemplate.update(
                 "update rate_limit_buckets set expires_at = expires_at - ? where id = ?",
                 Duration.ofDays(2).toMillis(),
@@ -198,17 +183,13 @@ class SharedRateLimiterIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the daily cleanup keeps a bucket whose first write was cut short for a day, then removes it")
     void removesCutShort() {
         String id = id(RateLimit.SIGN_UP, address());
-        // Bucket4j inserts the id alone, then sets the state and expiry; the
-        // request ended in between.
         jdbcTemplate.update("insert into rate_limit_buckets (id, state) values (?, null)", id);
 
         rateLimiter.removeExpired();
         assertThat(storedIds()).contains(id);
 
-        // As if it was written two days ago.
         jdbcTemplate.update(
                 "update rate_limit_buckets set expires_at = expires_at - ? where id = ?",
                 Duration.ofDays(2).toMillis(),
@@ -219,7 +200,6 @@ class SharedRateLimiterIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("with RATE_LIMIT_SHARED=false each server keeps its buckets in memory")
     void inMemory() {
         ApplicationContextRunner runner = new ApplicationContextRunner()
                 .withUserConfiguration(RateLimitConfig.class, RateLimiter.class)

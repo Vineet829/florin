@@ -43,31 +43,31 @@
     "payers": [
       {
         "clientId": "00000000-0000-0000-0000-00000000c107",
-        "client": "Quill & Co. Publishing",
+        "client": "Deshmukh & Associates",
         "payments": 3,
         "amount": 11490.77
       },
       {
         "clientId": "00000000-0000-0000-0000-00000000c109",
-        "client": "Kestrel Outdoor",
+        "client": "Casa Fernandes Homestay",
         "payments": 2,
         "amount": 10317.45
       },
       {
         "clientId": "00000000-0000-0000-0000-00000000c101",
-        "client": "Atlas Robotics",
+        "client": "Pai Electricals",
         "payments": 2,
         "amount": 4331.1
       },
       {
         "clientId": null,
-        "client": "Verdant Farms",
+        "client": "Nisarg Organic Farms",
         "payments": 2,
         "amount": 3278.96
       },
       {
         "clientId": "00000000-0000-0000-0000-00000000c103",
-        "client": "Bluefin Analytics",
+        "client": "Shinde Constructions",
         "payments": 1,
         "amount": 2500.0
       }
@@ -86,7 +86,7 @@
         "kind": "payment",
         "id": "p-1",
         "date": "2026-10-04",
-        "client": "Harbor & Pine Architects",
+        "client": "Kale & Deshpande Architects",
         "document": {
           "id": "doc-1038",
           "number": "INV-1038",
@@ -101,7 +101,7 @@
         "kind": "receipt",
         "id": "doc-304",
         "date": "2026-10-02",
-        "client": "Quill & Co. Publishing",
+        "client": "Deshmukh & Associates",
         "document": {
           "id": "doc-304",
           "number": "REC-0304",
@@ -116,7 +116,7 @@
         "kind": "refund",
         "id": "r-7",
         "date": "2026-09-20",
-        "client": "Tidewater Logistics",
+        "client": "Jadhav Roadlines",
         "document": {
           "id": "doc-1019",
           "number": "INV-1019",

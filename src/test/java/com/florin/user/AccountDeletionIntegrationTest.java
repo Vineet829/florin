@@ -15,7 +15,6 @@ import com.florin.business.BusinessRole;
 import com.florin.customer.CustomerRepository;
 import com.jayway.jsonpath.JsonPath;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -32,8 +31,7 @@ class AccountDeletionIntegrationTest extends IntegrationTest {
     private CustomerRepository customerRepository;
 
     @Test
-    @DisplayName("an owner whose business others work in keeps their account until they hand it over or remove them")
-    void ownerOfASharedBusiness() throws Exception {
+    void sharedBusinessOwnerKeepsAccount() throws Exception {
         User owner = withAccountPassword(createUser());
         Business business = businessOf(owner);
         User member = createMember(business, BusinessRole.MEMBER);
@@ -59,8 +57,7 @@ class AccountDeletionIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("admins can't delete or deactivate an account that owns a business others work in")
-    void admins() throws Exception {
+    void adminsCannotRemoveSharedOwner() throws Exception {
         User owner = createUser();
         createMember(businessOf(owner), BusinessRole.VIEWER);
         String admin = bearer(createAdmin());
@@ -76,8 +73,7 @@ class AccountDeletionIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a member's account goes without the business, whose records stay without their author")
-    void member() throws Exception {
+    void memberLeavesRecordsBehind() throws Exception {
         User owner = createUser();
         Business business = businessOf(owner);
         User member = withAccountPassword(createMember(business, BusinessRole.MEMBER));
@@ -105,7 +101,6 @@ class AccountDeletionIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("deleting an account asks for its password again; a wrong one keeps it, and one without sets one first")
     void asksForThePassword() throws Exception {
         User user = withAccountPassword(createUser());
         String session = bearer(user);
@@ -121,7 +116,6 @@ class AccountDeletionIntegrationTest extends IntegrationTest {
         }
         assertThat(userRepository.findById(user.getPkid())).isPresent();
 
-        // Signed up with Google, so there is no password to confirm yet.
         User withoutPassword = createUser();
         mockMvc.perform(delete("/api/v1/user/profile")
                         .header(HttpHeaders.AUTHORIZATION, bearer(withoutPassword))

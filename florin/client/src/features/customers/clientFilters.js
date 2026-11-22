@@ -4,11 +4,9 @@ import {
   writeSortAndPage,
 } from "../../utils/listState";
 
-// The Clients list's search, sort and page, as kept in the URL. The server
-// sorts balances in the business's default currency.
 export const SORT_FIELDS = {
   createdAt: { first: "desc", asc: "Oldest first", desc: "Newest first" },
-  name: { first: "asc", asc: "Name A–Z", desc: "Name Z–A" },
+  name: { first: "asc", asc: "Name A-Z", desc: "Name Z-A" },
   balance: {
     first: "desc",
     asc: "Smallest balance",
@@ -34,8 +32,6 @@ export const clientListSearch = ({ q, ...sortAndPage }) => {
   return writeSortAndPage(params, sortAndPage, SORT_FIELDS, "createdAt");
 };
 
-// The list's search and order; an export of the list sends these without a
-// page.
 export const clientFilterQuery = ({ q, sort, dir }) => ({
   sort,
   dir,

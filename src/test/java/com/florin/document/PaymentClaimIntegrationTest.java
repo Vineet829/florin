@@ -23,22 +23,16 @@ import java.time.ZoneOffset;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 
-// Payments clients report from a shared invoice, and what the business does
-// with them. Each test reports from its own address, so the limit per network
-// is its own.
 class PaymentClaimIntegrationTest extends IntegrationTest {
 
     private static final AtomicInteger NETWORKS = new AtomicInteger();
 
     private final LocalDate today = LocalDate.now(ZoneOffset.UTC);
-    // UTC+14, the time zone furthest ahead: a day after its today is still to
-    // come everywhere.
     private final LocalDate latest = LocalDate.now(ZoneId.of("Pacific/Kiritimati"));
     private User owner;
     private String network;
@@ -51,7 +45,6 @@ class PaymentClaimIntegrationTest extends IntegrationTest {
         network = "10.20." + NETWORKS.incrementAndGet() + ".1";
     }
 
-    // An issued invoice of USD 200 for Beta LLC, shared by link.
     private Shared invoice() throws Exception {
         String customer = mockMvc.perform(post("/api/v1/customer/create")
                         .header(HttpHeaders.AUTHORIZATION, bearer(owner))
@@ -129,8 +122,7 @@ class PaymentClaimIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a client's report waits for the business: they hear of it, it's on the timeline, nothing is paid yet")
-    void waits() throws Exception {
+    void reportWaitsForBusiness() throws Exception {
         Shared invoice = invoice();
 
         report(invoice, reported("150", today, "UPI", "UTR123"))
@@ -155,9 +147,7 @@ class PaymentClaimIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a report that can't be right is refused: too much, with too many decimals, after today, a reference"
-            + " twice, a fourth waiting")
-    void refused() throws Exception {
+    void refusesBadReports() throws Exception {
         Shared invoice = invoice();
 
         report(invoice, reported("250", today, "UPI", null))
@@ -200,9 +190,7 @@ class PaymentClaimIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a client a day ahead of the business can report a payment made on their own today")
-    void clientAheadOfBusiness() throws Exception {
-        // Pago Pago, UTC-11, is always at least a day behind UTC+14.
+    void acceptsDateAheadOfBusiness() throws Exception {
         mockMvc.perform(put("/api/v1/settings")
                         .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -220,8 +208,7 @@ class PaymentClaimIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a network reporting more than five payments an hour is asked to wait, refused reports counting too")
-    void slowedDown() throws Exception {
+    void limitsReportsPerNetwork() throws Exception {
         Shared first = invoice();
         Shared second = invoice();
         for (int report = 0; report < 3; report++) {
@@ -238,8 +225,7 @@ class PaymentClaimIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("confirming records the payment as reported or as changed, once; only members who record payments may")
-    void confirm() throws Exception {
+    void confirmRecordsPaymentOnce() throws Exception {
         Shared invoice = invoice();
         Business business = businessOf(owner);
         report(invoice, reported("150", today.minusDays(2), "UPI", "X9")).andExpect(status().isOk());
@@ -275,8 +261,7 @@ class PaymentClaimIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("dismissing a report keeps its reason inside the business and changes nothing that is owed")
-    void dismiss() throws Exception {
+    void dismissChangesNothingOwed() throws Exception {
         Shared invoice = invoice();
         report(invoice, reported("80", today, "OTHER", null)).andExpect(status().isOk());
 
@@ -295,7 +280,6 @@ class PaymentClaimIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("reports waiting anywhere in the business are listed newest first, and only that business's")
     void waitingList() throws Exception {
         Shared first = invoice();
         Shared second = invoice();
@@ -317,7 +301,6 @@ class PaymentClaimIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("deleting a confirmed report's payment shows it as not confirmed, and the client may report it again")
     void paymentDeleted() throws Exception {
         Shared invoice = invoice();
         report(invoice, reported("150", today, "UPI", "X9")).andExpect(status().isOk());
@@ -350,7 +333,6 @@ class PaymentClaimIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("voiding an invoice dismisses the reports waiting on it, and the client sees they weren't confirmed")
     void documentVoided() throws Exception {
         Shared invoice = invoice();
         report(invoice, reported("30", today, "UPI", "V1")).andExpect(status().isOk());

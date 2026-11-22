@@ -26,8 +26,6 @@ const NO_CATEGORIES = [];
 
 const ExpenseForm = ({ expense, settings, busy, onSave, onClose }) => {
   const base = settings.baseCurrency || settings.defaultCurrency;
-  // A new expense is dated today by the business's calendar, the one the
-  // server counts its days by, and none later.
   const today = dateInput(useBusinessToday());
   const [values, setValues] = useState(() =>
     expenseForm(expense, {
@@ -36,7 +34,6 @@ const ExpenseForm = ({ expense, settings, busy, onSave, onClose }) => {
       base,
     }),
   );
-  // The categories already in use, offered as the category is typed.
   const categories =
     useGetExpenseCategoriesQuery().data?.categories || NO_CATEGORIES;
   const categoryList = useId();
@@ -127,7 +124,7 @@ const ExpenseForm = ({ expense, settings, busy, onSave, onClose }) => {
         <span>
           This tax can be claimed back
           <span className="block text-[13px] text-spot-muted">
-            Such as GST input tax credit. Tax you claim back isn’t counted as a
+            Such as GST input tax credit. Tax you claim back isn't counted as a
             cost.
           </span>
         </span>
@@ -142,7 +139,7 @@ const ExpenseForm = ({ expense, settings, busy, onSave, onClose }) => {
         >
           {currencies.map((item) => (
             <option key={item.code} value={item.code}>
-              {item.code} — {item.currency}
+              {item.code} - {item.currency}
             </option>
           ))}
         </Field>
@@ -202,14 +199,13 @@ const ExpenseForm = ({ expense, settings, busy, onSave, onClose }) => {
           disabled={busy || Boolean(taxProblem)}
         >
           <FiCheck aria-hidden="true" />
-          {busy ? "Saving…" : "Save expense"}
+          {busy ? "Saving..." : "Save expense"}
         </button>
       </div>
     </form>
   );
 };
 
-// Records an expense, or changes one when `expense` is given.
 const ExpenseDialog = ({ open, expense, onClose }) => {
   const settings = useGetSettingsQuery().data?.settings;
   const [create, { isLoading: creating }] = useCreateExpenseMutation();
@@ -223,7 +219,7 @@ const ExpenseDialog = ({ open, expense, onClose }) => {
       toast.success(result.message || "Expense saved.");
       onClose();
     } catch (error) {
-      toast.error(errorMessage(error, "The expense could not be saved."));
+      toast.error(errorMessage(error, "The expense couldn't be saved."));
     }
   };
   return (

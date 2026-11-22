@@ -16,10 +16,8 @@ import {
 } from "../dashboardModel";
 import { overviewPanel } from "./DashboardPanels";
 
-// The width of the axis figures beside the chart, and of the hover card.
 const AXIS = 52;
 const CARD = 190;
-// What each part of the period is called, by the chart's step.
 const PARTS = {
   day: ["Day", "day"],
   week: ["Week", "week"],
@@ -31,10 +29,6 @@ const sum = (trend, key) =>
 const net = (bucket) =>
   (Number(bucket.moneyIn) || 0) - (Number(bucket.moneyOut) || 0);
 
-// The same figures as the chart, for screen readers. It doesn't change as
-// the pointer or focus moves over the chart. It is hidden inside a box that
-// clips it: a table is never narrower than its widest row, so hidden itself
-// it would still widen the page on a small phone.
 const FiguresTable = memo(({ parts, part, partName, currency }) => (
   <div className="sr-only">
     <table>
@@ -61,11 +55,6 @@ const FiguresTable = memo(({ parts, part, partName, currency }) => (
   </div>
 ));
 
-// Money in and out of the business in each part of the period: money in
-// rises above the zero line, money out hangs below it, and the dark line is
-// what was left. The total money out opens the period's expenses. Hovering a column, or moving through them with the arrow
-// keys, shows its figures, until Escape hides them; a table gives screen
-// readers the same figures.
 const CashFlowPanel = ({ snapshot }) => {
   const { trend, currency } = snapshot;
   const step = snapshot.period.step;
@@ -77,8 +66,6 @@ const CashFlowPanel = ({ snapshot }) => {
   const [dismissed, setDismissed] = useState(false);
   const [stop, setStop] = useState(null);
   const amount = (value) => formatMoney(value, currency);
-  // Everything that depends only on the figures is worked out once for
-  // them, not again as the pointer or focus moves.
   const { scale, parts, points, moneyIn, moneyOut } = useMemo(() => {
     const chartScale = cashFlowScale(trend);
     const format = (value) => formatMoney(value, currency);
@@ -104,14 +91,11 @@ const CashFlowPanel = ({ snapshot }) => {
   }, [trend, step, currency]);
   const plotWidth = Math.max(width - AXIS, 0);
   const every = labelStep(trend.length, plotWidth, step === "month" ? 36 : 46);
-  // Every net figure gets a dot while the columns have room for one.
   const dotted = plotWidth / trend.length >= 18;
   const active = hovered ?? focused;
   const shown = active != null && active < trend.length ? active : null;
   const carded = dismissed ? null : shown;
-  // One column at a time is in the tab order; the arrow keys move along.
   const tabStop = Math.min(stop ?? trend.length - 1, trend.length - 1);
-  // Escape hides the card without moving the pointer or focus.
   useEffect(() => {
     if (carded == null) return undefined;
     const hide = (event) => {
@@ -124,8 +108,6 @@ const CashFlowPanel = ({ snapshot }) => {
     setter(index);
     setDismissed(false);
   };
-  // The hover card sits beside its column, clear of the column and its dot,
-  // on whichever side has room; on a narrow chart, above the column.
   const cardLeft = (index) => {
     const center = ((index + 0.5) / trend.length) * plotWidth;
     if (center + 20 + CARD <= plotWidth) return center + 20;
@@ -182,8 +164,6 @@ const CashFlowPanel = ({ snapshot }) => {
         </ul>
       </div>
       <div className="flex flex-wrap items-baseline justify-between gap-x-[18px] gap-y-1">
-        {/* Money out opens the period's expenses, in the overview's
-            currency, as its figure counts them. */}
         <dl className="flex flex-wrap items-baseline gap-x-[18px] gap-y-1 text-[13px] text-spot-body">
           {[
             ["In", moneyIn],
@@ -216,8 +196,6 @@ const CashFlowPanel = ({ snapshot }) => {
       </div>
       <div ref={measureRef} className="min-w-0">
         {scale ? (
-          // A new period or currency draws the chart afresh; the panel
-          // around it stays.
           <div
             key={`${snapshot.period.key}-${currency}`}
             className="grid grid-cols-[52px_minmax(0,1fr)] grid-rows-[272px_22px] max-[700px]:grid-rows-[200px_22px]"

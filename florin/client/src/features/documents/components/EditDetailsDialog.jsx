@@ -14,11 +14,8 @@ import {
 import { useUpdateDocMutation } from "../documentsApiSlice";
 
 const DetailsForm = ({ document, onClose }) => {
-  // A receipt and a credit note have no due date.
   const receipt = ["Receipt", "Credit Note"].includes(document.documentType);
   const quotation = document.documentType === "Quotation";
-  // A due date moves no earlier than the issue date. One an older document
-  // was saved with stays as it is, as the server allows.
   const savedDue = document.dueDate ? dateInput(document.dueDate) : "";
   const [dueDate, setDueDate] = useState(savedDue);
   const [notes, setNotes] = useState(document.additionalInfo || "");
@@ -41,7 +38,7 @@ const DetailsForm = ({ document, onClose }) => {
       toast.success(result.message || "The document was updated.");
       onClose();
     } catch (error) {
-      toast.error(errorMessage(error, "The document could not be updated."));
+      toast.error(errorMessage(error, "The document couldn't be updated."));
     }
   };
   return (
@@ -93,7 +90,7 @@ const DetailsForm = ({ document, onClose }) => {
           <span>
             Show how to pay
             <span className="block text-[13px] text-spot-muted">
-              Your details from Settings → Getting paid, while the invoice is
+              Your details from Settings &gt; Getting paid, while the invoice is
               unpaid.
             </span>
           </span>
@@ -110,15 +107,13 @@ const DetailsForm = ({ document, onClose }) => {
         </button>
         <button type="submit" className={primaryButton} disabled={saving}>
           <FiCheck aria-hidden="true" />
-          {saving ? "Saving…" : "Save details"}
+          {saving ? "Saving..." : "Save details"}
         </button>
       </div>
     </form>
   );
 };
 
-// What still changes on an issued document: when it is due, its notes and
-// terms, and for an invoice whether it shows how to pay.
 const EditDetailsDialog = ({ document, open, onClose }) => (
   <Dialog
     open={open}

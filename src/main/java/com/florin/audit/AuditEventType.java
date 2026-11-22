@@ -46,8 +46,6 @@ public enum AuditEventType {
             INVITATION_REVOKED,
             MEMBER_JOINED);
 
-    // Events about a business and its team, rather than one account's
-    // sign-ins and security.
     public static Set<AuditEventType> aboutABusiness() {
         return ABOUT_A_BUSINESS;
     }

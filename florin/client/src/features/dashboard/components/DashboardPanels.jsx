@@ -1,7 +1,5 @@
 import { skeleton, surface } from "../../../components/workspace/pastel";
 
-// Each digit rolls into place once. The digits keep their final width from
-// the start, so nothing around a figure moves while it animates.
 const NumberCharacters = ({ text, offset = 0 }) =>
   [...text].map((character, index) =>
     /\d/.test(character) ? (
@@ -25,8 +23,6 @@ const NumberCharacters = ({ text, offset = 0 }) =>
     ),
   );
 
-// The real value is available to assistive technology immediately; the
-// rolling digits are decorative.
 export const DashboardNumber = ({
   value,
   className = "",
@@ -53,13 +49,10 @@ export const DashboardNumber = ({
   );
 };
 
-// Loading placeholders keep every panel in place and never show figures.
 const Skeleton = ({ className }) => (
   <span className={`${skeleton} ${className}`} aria-hidden="true" />
 );
 
-// The financial cards' pastel tones, as the Reports page shows them, and
-// sage for the overview's profit.
 const CARD_TONES = {
   blue: {
     card: "bg-card-blue",
@@ -96,15 +89,10 @@ const CARD_TONES = {
 };
 export const financeTones = CARD_TONES;
 
-// Cards side by side keep the page's spacing between them, the same across
-// as down, as panels do on every page.
 export const financeCards =
   "grid min-h-0 grid-cols-3 gap-6 compact:gap-5 max-[700px]:grid-cols-1 max-[700px]:gap-5";
 export const financeCard = (tone) =>
   `flex min-w-0 flex-col justify-between gap-[18px] rounded-[30px] p-6 [container-name:finance-card] [container-type:inline-size] compact:gap-2.5 compact:p-[18px] max-[700px]:min-h-[240px] max-[700px]:rounded-3xl max-[700px]:p-[18px] ${CARD_TONES[tone].card}`;
-// A financial card's name, on a white pill whose text sits on the same
-// baseline as a panel's title, and its figure, as large as the card's width
-// allows for its count of characters, up to 56px.
 export const financeLabel = (tone) =>
   `rounded-full bg-white/70 px-4 py-1.5 font-ui text-[15px] font-normal [@container_finance-card_(min-width:162px)]:text-[16px] ${CARD_TONES[tone].label}`;
 export const financeFigure =
@@ -132,8 +120,6 @@ export const FinancialCard = ({ label, value, detail, icon: Icon, tone }) => {
           className="[font-size:min(56px,calc(100cqi_/_(var(--chars)_*_0.5)))]"
           decimalClass={colors.decimal}
         />
-        {/* When a description wraps, every card reserves two lines so the
-            three figures stay level. */}
         <p
           className={`mt-3 text-[15px] [@container_finance-card_(max-width:270px)]:min-h-[2lh] [@container_finance-card_(min-width:162px)]:text-[16px] ${colors.muted}`}
         >
@@ -144,30 +130,14 @@ export const FinancialCard = ({ label, value, detail, icon: Icon, tone }) => {
   );
 };
 
-// The overview's charts and lists sit on the frosted panel surface, with
-// small links to the full lists beside their titles. Every panel and card
-// keeps every page's panel padding and corners, so their titles start the
-// same way in from the edge.
 export const overviewPanel = `${surface} relative flex min-w-0 animate-ov-rise flex-col gap-2.5 p-6 compact:p-[18px] max-[700px]:rounded-3xl max-[700px]:p-[18px]`;
 export const panelLink =
   "inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-[15px] text-spot-night underline-offset-4 transition-colors hover:text-spot-violet hover:underline coarse:min-h-11 [&>svg]:size-[13px] [&>svg]:stroke-[1.5]";
-// A panel's way to start what it has none of yet, such as recording an
-// expense: a white key, greyed out when the role can't use it.
 export const panelAction =
   "inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-[11px] bg-white px-3.5 text-[15px] text-spot-night transition-colors hover:text-spot-violet disabled:cursor-default disabled:bg-white/40 disabled:text-spot-disabled disabled:opacity-100 coarse:min-h-11 [&>svg]:size-3.5 [&>svg]:stroke-[1.8]";
 
-// The rows under the figures: what is owed beside what needs attention,
-// on the figures' three columns from 1200px, what is owed in one and what
-// needs attention across the other two, so their edges line up with the
-// figures above; then the cash flow across the width. Every row keeps the
-// page's spacing, the same across as down.
 export const owedRow =
   "grid min-w-0 gap-6 compact:gap-5 max-[700px]:gap-5 min-[1200px]:grid-cols-3 min-[1200px]:[&>:last-child]:col-span-2";
-// The lists under the cash flow, as tall as each other: the top clients,
-// the top items and what is coming up, a column each from 1360px, on the
-// same three columns as every row above. Narrower, three would cut names
-// short, so the first two share a row and the third goes under them across
-// both. Two lists share the row equally.
 export const listRow = (count) =>
   [
     "grid min-w-0 gap-6 compact:gap-5 max-[700px]:gap-5",
@@ -178,14 +148,9 @@ export const listRow = (count) =>
     .filter(Boolean)
     .join(" ");
 
-// The period's figures, three across and one on phones, all as large as the
-// Reports page's cards, then what is owed today, as tall as what needs
-// attention beside it.
 export const figureRow = `${financeCards} animate-ov-rise [--rise-delay:80ms]`;
 export const receivablesCard = `${financeCard("peach")} animate-ov-rise [--rise-delay:160ms]`;
 
-// A list with a bar in each row, such as the top clients, while it loads:
-// its title, the words under it, then five rows.
 const BarListLoading = ({ lead, className = "" }) => (
   <div className={`${overviewPanel} ${className}`}>
     <Skeleton className="h-6 w-[120px] rounded-md" />
@@ -208,7 +173,7 @@ export const DashboardLoading = () => (
     role="status"
     aria-label="Loading your business overview"
   >
-    <span className="sr-only">Loading your business overview…</span>
+    <span className="sr-only">Loading your business overview...</span>
     <div className={figureRow} aria-hidden="true">
       {["blue", "lilac", "sage"].map((tone) => (
         <div className={financeCard(tone)} key={tone}>

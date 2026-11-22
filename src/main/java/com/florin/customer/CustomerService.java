@@ -117,8 +117,6 @@ public class CustomerService {
                         .toList());
     }
 
-    // Every client the list's search matches, in its order, with one column
-    // for what they owe in each currency.
     @Transactional(readOnly = true)
     public CsvFile csv(BusinessAccess access, CustomerSearch search) {
         Long businessPkid = access.businessPkid();
@@ -245,8 +243,6 @@ public class CustomerService {
         customerRepository.delete(customer);
     }
 
-    // Locked for an edit or a delete, so one that waits for another sees what
-    // that one did: the other's changes, or that the client is gone.
     private Customer requireInBusiness(
             BusinessAccess access, String id, boolean lock, String notFoundMessage, String forbiddenMessage) {
         Customer customer = externalId(id)
@@ -260,8 +256,6 @@ public class CustomerService {
         return customer;
     }
 
-    // Account numbers are unique in each business; a clash, likelier when many
-    // clients are imported at once, draws a new one.
     private String newAccountNo(Long businessPkid) {
         String accountNo;
         do {
@@ -284,8 +278,6 @@ public class CustomerService {
         return new ApiException(HttpStatus.CONFLICT, "You already have a customer with that email address");
     }
 
-    // A GSTIN sets the state it was issued in; without one, the state is any
-    // GST state code or outside India, or none. Blank clears either.
     private static void gst(Customer customer, String gstinValue, String stateValue) {
         String gstin = Gstin.parse(gstinValue);
         String state = stateValue == null || stateValue.isBlank() ? null : stateValue.trim();

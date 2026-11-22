@@ -6,7 +6,6 @@ import {
   useSendReminderMutation,
 } from "../documentsApiSlice";
 
-// Reminds a client about an unpaid invoice, with the invoice attached.
 const ReminderDialog = ({ documentId, open, onClose }) => {
   const draft = useGetReminderDraftQuery(documentId, { skip: !open });
   const [send, { isLoading: sending }] = useSendReminderMutation();
@@ -16,7 +15,7 @@ const ReminderDialog = ({ documentId, open, onClose }) => {
       toast.success(result.message || "Reminder sent successfully.");
       onClose();
     } catch (error) {
-      toast.error(errorMessage(error, "The reminder could not be sent."));
+      toast.error(errorMessage(error, "The reminder couldn't be sent."));
     }
   };
   return (

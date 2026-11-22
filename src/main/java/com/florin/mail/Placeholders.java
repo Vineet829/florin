@@ -4,11 +4,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-// Fills an email's {name} placeholders in one pass over the text the business
-// wrote, so no value is read for placeholders itself: a client named
-// "{business}" is greeted by that name. A placeholder without a value stays as
-// it was typed. A line whose placeholders all came out empty, such as a link
-// an email goes without, is left out, along with the blank lines it leaves.
 public final class Placeholders {
 
     private static final Pattern PLACEHOLDER = Pattern.compile("\\{([a-z_]+)\\}");

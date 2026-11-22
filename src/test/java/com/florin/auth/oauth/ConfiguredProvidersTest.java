@@ -3,12 +3,9 @@ package com.florin.auth.oauth;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.florin.config.OAuthProperties;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 
-// Google is offered only with both its client ID and secret, and sends
-// people back to the redirect base.
 class ConfiguredProvidersTest {
 
     private static ConfiguredProviders with(OAuthProperties.Provider google) {
@@ -16,8 +13,7 @@ class ConfiguredProvidersTest {
     }
 
     @Test
-    @DisplayName("Google, set up, signs in at Google's own addresses and comes back to the redirect base")
-    void configured() {
+    void configuredGoogleUsesItsUrls() {
         ConfiguredProviders providers = with(new OAuthProperties.Provider(" id ", " secret ", null));
 
         assertThat(providers.configured()).containsExactly(SignInProvider.GOOGLE);
@@ -32,7 +28,6 @@ class ConfiguredProvidersTest {
     }
 
     @Test
-    @DisplayName("without a client ID or secret, nothing is offered")
     void notConfigured() {
         for (ConfiguredProviders providers : new ConfiguredProviders[] {
             with(new OAuthProperties.Provider("id", " ", null)),

@@ -45,7 +45,7 @@ const ClientForm = ({ busy, onSave, onClose }) => {
         event.preventDefault();
         const gstin = normalizeGstin(values.gstin);
         if (gstin && !isValidGstin(gstin)) {
-          toast.error("Check the GSTIN: it isn’t a valid one yet.");
+          toast.error("Check the GSTIN: it isn't a valid one yet.");
           return;
         }
         onSave({ ...values, gstin });
@@ -83,14 +83,13 @@ const ClientForm = ({ busy, onSave, onClose }) => {
         </button>
         <button type="submit" className={primaryButton} disabled={busy}>
           <FiCheck aria-hidden="true" />
-          {busy ? "Saving…" : "Add client"}
+          {busy ? "Saving..." : "Add client"}
         </button>
       </div>
     </form>
   );
 };
 
-// Adds a client without leaving the page, then hands it to `onCreated`.
 const NewClientDialog = ({ open, onClose, onCreated }) => {
   const [create, { isLoading }] = useCreateCustomerMutation();
   const save = async (values) => {
@@ -102,7 +101,7 @@ const NewClientDialog = ({ open, onClose, onCreated }) => {
       onCreated(result.createdCustomer);
       onClose();
     } catch (error) {
-      toast.error(errorMessage(error, "The client could not be added."));
+      toast.error(errorMessage(error, "The client couldn't be added."));
     }
   };
   return (

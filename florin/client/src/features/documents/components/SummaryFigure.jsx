@@ -4,18 +4,12 @@ import { dateSpan } from "../../../utils/dates";
 import { formatAmount } from "../../../utils/money";
 import { changeFrom, percentLabel } from "../../dashboard/dashboardModel";
 
-// How a total moved, as the overview's cards show it: an arrow and the size
-// of the change, green when it rose and rust when it fell.
 const CHANGES = {
   up: { icon: FiChevronUp, color: "text-change-up", words: "up" },
   down: { icon: FiChevronDown, color: "text-change-down", words: "down" },
   flat: { icon: FiMinus, color: "text-spot-muted", words: "no change" },
 };
 
-// A summary's headline: what it adds up, its total, what the total is on
-// and, when the period has a period before it, that period's total, with
-// the change from it unless it was zero. Amounts name their currency when
-// the business bills in more than one.
 const SummaryFigure = ({
   label,
   total,

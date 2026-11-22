@@ -74,19 +74,16 @@ import { Select } from "../../../components/workspace/Select";
 
 const NO_DOCUMENTS = [];
 
-// A filter a link set, with a button that removes it. Its focus ring is
-// white, to show on the dark chip.
 const removableChip =
   "inline-flex h-9 items-center gap-1 whitespace-nowrap rounded-full border border-spot-night bg-spot-night pl-3.5 pr-1 text-[13px] text-white coarse:h-11";
 const removeButton =
   "grid size-7 place-items-center rounded-full bg-transparent p-0 text-white/80 transition-colors hover:bg-white/15 hover:text-white focus-visible:outline-white focus-visible:outline-offset-0 coarse:size-9 [&>svg]:size-3.5 [&>svg]:stroke-[2]";
 
 const DocumentsPage = () => {
-  useTitle("Documents — Florin");
+  useTitle("Documents - Florin");
   const [list, update] = useListState(readListState, listSearch);
   const [downloadCsv, exporting] = useFileDownload(useGetDocumentsCsvMutation);
   const search = useCallback((q) => update({ q, page: 1 }), [update]);
-  // The calendar's periods are days of the business's calendar.
   const today = useBusinessToday();
   const query = useGetAllMyDocsQuery(documentQuery(list, today), {
     refetchOnMountOrArgChange: 60,
@@ -95,8 +92,6 @@ const DocumentsPage = () => {
     refetchOnMountOrArgChange: 60,
   });
   const summary = summaryQuery.data;
-  // What the result line says comes from the last answer and the filters
-  // it answered.
   const answered = useLastAnswer(query.currentData, list);
   const rows = query.data?.myDocuments || NO_DOCUMENTS;
   const count = query.data?.totalDocuments ?? 0;
@@ -108,7 +103,6 @@ const DocumentsPage = () => {
     setPage: (page) => update({ page: page + 1 }),
     setSize: (size) => update({ size, page: 1 }),
   });
-  // A page past the end, after a delete or from an old link, shows the last.
   const pages = query.currentData?.numberOfPages;
   useEffect(() => {
     if (pages && list.page > pages) update({ page: pages });
@@ -124,12 +118,10 @@ const DocumentsPage = () => {
       toast.success(result.message || "Document deleted.");
       setSelected(null);
     } catch (error) {
-      toast.error(errorMessage(error, "The document could not be deleted."));
+      toast.error(errorMessage(error, "The document couldn't be deleted."));
     }
   };
   const filtered = isFiltered(list);
-  // A filter's control is gone once the filter is removed, so focus moves
-  // to the status chosen, as soon as the chips are shown.
   const statusGroup = useRef(null);
   const [refocus, setRefocus] = useState(false);
   const clearFilters = () => {
@@ -149,7 +141,6 @@ const DocumentsPage = () => {
     setRefocus(true);
   };
   const dueFilter = DUE_FILTERS.find((filter) => filter.value === list.due);
-  // A new account has nothing to search or filter yet.
   const showTools = Boolean(query.data) && (count > 0 || filtered);
   useEffect(() => {
     const checked =
@@ -176,7 +167,7 @@ const DocumentsPage = () => {
     {
       label: "Customer",
       sortBy: "client",
-      render: (row) => row.customer?.name || "—",
+      render: (row) => row.customer?.name || "-",
     },
     {
       label: "Amount",
@@ -184,13 +175,12 @@ const DocumentsPage = () => {
       sortBy: "total",
       render: (row) => <Amount value={row.total} currency={row.currency} />,
     },
-    // What is left to pay on an issued invoice; nothing is owed on the rest.
     {
       label: "Balance due",
       type: "amount",
       render: (row) =>
         row.balanceDue == null ? (
-          <span className="text-[13px] text-spot-muted">—</span>
+          <span className="text-[13px] text-spot-muted">-</span>
         ) : (
           <Amount value={row.balanceDue} currency={row.currency} />
         ),
@@ -221,7 +211,6 @@ const DocumentsPage = () => {
     {
       label: "Delete",
       type: "action",
-      // Only a draft is deleted; an issued document is voided from its page.
       render: (row) =>
         isDraft(row) && (
           <button
@@ -287,7 +276,7 @@ const DocumentsPage = () => {
     />
   ) : (
     <EmptyState
-      title="Your work, ready to invoice."
+      title="No documents yet."
       text="Create a document to keep your invoices, quotations, and receipts together."
       icon={FiFileText}
     />
@@ -297,7 +286,7 @@ const DocumentsPage = () => {
     <WorkspacePage section="Documents" fill>
       <PageHeader
         title="Documents"
-        description="Invoices, quotations, and receipts. All your paperwork in one place."
+        description="Invoices, quotations, receipts and credit notes."
         actions={
           <>
             <DocumentsTabs />
@@ -336,7 +325,6 @@ const DocumentsPage = () => {
           fill={rows.length > 0 && !query.isError}
         >
           {showTools && (
-            // The tools take the title's row, so the rows keep their room.
             <div className="mb-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-3 compact:mb-4">
               <h2 className="sr-only">Your documents</h2>
               <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -347,7 +335,6 @@ const DocumentsPage = () => {
                   <legend className="sr-only">Status</legend>
                   {STATUS_FILTERS.map((filter) => (
                     <label key={filter.value} className={filterChip}>
-                      {/* A week of due dates belongs to Outstanding. */}
                       <input
                         type="radio"
                         name="document-status"
@@ -389,9 +376,6 @@ const DocumentsPage = () => {
                 />
                 <label className="min-w-0 max-[700px]:flex-[1_1_100%]">
                   <span className="sr-only">Document type</span>
-                  {/* One option is much longer than the rest, so the trigger
-                      is as wide as the type chosen, and on a phone it has a
-                      row of its own. */}
                   <Select
                     size="toolbar"
                     fit="content"

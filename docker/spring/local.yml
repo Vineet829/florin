@@ -1,6 +1,3 @@
-# Published on this machine only: the database password is a well-known
-# default, and Mailpit's inbox shows sign-in and password-reset links and has
-# no login.
 services:
   postgres:
     image: postgres:16

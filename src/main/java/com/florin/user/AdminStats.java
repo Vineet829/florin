@@ -6,8 +6,6 @@ import java.time.Instant;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
-// Counts for the administration page. Sign-ins come from the audit log, so
-// they go back only as far as it does.
 @Repository
 class AdminStats {
 

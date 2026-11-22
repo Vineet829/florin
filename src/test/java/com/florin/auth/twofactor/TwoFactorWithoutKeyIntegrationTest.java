@@ -9,7 +9,6 @@ import com.florin.common.SecretTokens;
 import com.florin.user.User;
 import com.jayway.jsonpath.JsonPath;
 import java.time.Instant;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -17,9 +16,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.ResultActions;
 
-// A server started without its encryption key can't open the secrets codes
-// from authenticator apps are checked against. Such a code is refused with a
-// way in, rather than a server error, and a recovery code still signs in.
 @TestPropertySource(properties = "app.encryption.key=")
 class TwoFactorWithoutKeyIntegrationTest extends IntegrationTest {
 
@@ -51,7 +47,6 @@ class TwoFactorWithoutKeyIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an app code is refused with a way in, and a recovery code still signs in")
     void recoveryCodesStillWork() throws Exception {
         User user = createUser();
         user.setPassword(passwordEncoder.encode(PASSWORD));

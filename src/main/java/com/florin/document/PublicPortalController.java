@@ -17,8 +17,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-// A client's portal, opened by its link with no sign-in. Documents are named
-// by their number, in the query, since a number may hold a slash.
 @RestController
 @RequestMapping("/api/v1/public/portal/{token}")
 public class PublicPortalController {

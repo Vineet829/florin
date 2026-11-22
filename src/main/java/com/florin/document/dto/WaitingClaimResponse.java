@@ -7,8 +7,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
-// A payment a client reported, waiting to be confirmed, with the invoice it
-// was reported on.
 public record WaitingClaimResponse(
         UUID id,
         UUID documentId,

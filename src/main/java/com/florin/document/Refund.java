@@ -12,7 +12,6 @@ import java.time.LocalDate;
 import lombok.Getter;
 import lombok.Setter;
 
-// Money paid back to the client on an invoice or receipt.
 @Entity
 @Table(name = "refunds")
 @Getter

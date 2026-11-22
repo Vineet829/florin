@@ -1,5 +1,6 @@
 package com.florin.demo;
 
+import com.florin.business.Business;
 import com.florin.business.BusinessAccess;
 import com.florin.business.BusinessService;
 import com.florin.customer.CustomerRepository;
@@ -23,12 +24,15 @@ import com.florin.expense.dto.ExpenseRequest;
 import com.florin.expense.dto.ExpenseResponse;
 import com.florin.item.CatalogItemService;
 import com.florin.item.dto.CreateItemRequest;
+import com.florin.settings.BankCodeType;
 import com.florin.settings.BusinessSettingsRepository;
 import com.florin.settings.EmailTemplateKind;
 import com.florin.settings.EmailTemplateService;
+import com.florin.settings.PaymentDetails;
 import com.florin.settings.SettingsService;
 import com.florin.settings.dto.EmailTemplateRequest;
 import com.florin.settings.dto.UpdateSettingsRequest;
+import com.florin.tax.TaxRegime;
 import com.florin.user.UserRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -53,15 +57,13 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Component
 public class DemoDataSeeder {
 
-    private static final String ZONE = "America/Los_Angeles";
-    // The sample expenses and recurring invoices go with the rest of the
-    // sample data, never into another business.
+    private static final String ZONE = "Asia/Kolkata";
     private static final String NO_SAMPLE_DATA = "the demo account's business doesn't hold the sample data";
-    private static final BigDecimal TAX_RATE = new BigDecimal("7.25");
+    private static final BigDecimal TAX_RATE = new BigDecimal("18");
     private static final PaymentMethod[] METHODS = {
         PaymentMethod.BANK_TRANSFER, PaymentMethod.BANK_TRANSFER, PaymentMethod.BANK_TRANSFER,
-        PaymentMethod.CREDIT_CARD, PaymentMethod.CREDIT_CARD, PaymentMethod.PAYPAL,
-        PaymentMethod.CASH, PaymentMethod.MOBILE_MONEY, PaymentMethod.OTHERS
+        PaymentMethod.UPI, PaymentMethod.UPI, PaymentMethod.UPI,
+        PaymentMethod.CHEQUE, PaymentMethod.CHEQUE, PaymentMethod.CASH
     };
 
     private final UserRepository userRepository;
@@ -126,7 +128,6 @@ public class DemoDataSeeder {
         }
     }
 
-    // How many sample expenses were added, or why none were.
     public record ExpenseResult(boolean seeded, String reason, int expenses) {
 
         static ExpenseResult skipped(String reason) {
@@ -134,7 +135,6 @@ public class DemoDataSeeder {
         }
     }
 
-    // How many sample recurring invoices were added, or why none were.
     public record RecurringResult(boolean seeded, String reason, int schedules) {
 
         static RecurringResult skipped(String reason) {
@@ -147,19 +147,14 @@ public class DemoDataSeeder {
         if (owner.isEmpty()) {
             return Result.skipped(missing(demoEmail));
         }
-        // Sample data goes only into an empty business, so a demo email set to
-        // someone's real account never mixes it in with their records.
         if (customerRepository.existsByBusinessPkid(owner.get().businessPkid())) {
             return Result.skipped(holdsSampleData(owner.get().businessPkid())
                     ? "the demo account already has the sample data"
-                    : "the demo account has clients of its own, so no sample data was added");
+                    : "the demo account has clients of its own");
         }
         return transactionTemplate.execute(status -> seed(owner.get()));
     }
 
-    // The sample expenses, for an account without any expenses: neither the
-    // sample ones nor its own. They came after the rest of the sample data,
-    // so they are added on their own, to an account that has the rest too.
     public ExpenseResult seedExpenses(String demoEmail) {
         Optional<BusinessAccess> owner = owner(demoEmail);
         if (owner.isEmpty()) {
@@ -178,10 +173,6 @@ public class DemoDataSeeder {
         return transactionTemplate.execute(status -> new ExpenseResult(true, null, expenses(owner.get())));
     }
 
-    // Sample recurring invoices, for an account without any schedules, each
-    // repeating one of its sample invoices. They came after the rest of the
-    // sample data, so they are added on their own, to an account that has
-    // the rest too.
     public RecurringResult seedRecurring(String demoEmail) {
         Optional<BusinessAccess> owner = owner(demoEmail);
         if (owner.isEmpty()) {
@@ -199,7 +190,6 @@ public class DemoDataSeeder {
                 : new RecurringResult(true, null, schedules);
     }
 
-    // The demo account's own business, as its owner, if the account exists.
     private Optional<BusinessAccess> owner(String demoEmail) {
         return userRepository.findByEmailIgnoreCase(demoEmail == null ? "" : demoEmail.trim())
                 .map(demo -> businessService.ownerAccess(businessService.ownedBy(demo.getPkid()).getPkid()));
@@ -209,9 +199,6 @@ public class DemoDataSeeder {
         return "the demo account " + demoEmail + " does not exist";
     }
 
-    // Whether the sample data was added to the business: marked then, where
-    // nothing in the app changes the mark, unlike its records, which anyone
-    // trying the demo can delete or rename.
     private boolean holdsSampleData(Long businessPkid) {
         return Boolean.TRUE.equals(jdbcTemplate.queryForObject(
                 "select sample_data from businesses where pkid = ?", Boolean.class, businessPkid));
@@ -221,10 +208,13 @@ public class DemoDataSeeder {
         ZoneId zone = ZoneId.of(ZONE);
         jdbcTemplate.update("update businesses set sample_data = true where pkid = ?", owner.businessPkid());
         if (settingsRepository.findByBusinessPkid(owner.businessPkid()).isEmpty()) {
+            describe(businessService.require(owner.businessPkid()));
             settingsService.update(owner, new UpdateSettingsRequest(
-                    "USD", 14, TAX_RATE, "Sales tax", DemoData.NOTES, DemoData.TERMS,
-                    ZONE, "INV-", "QUO-", "REC-", 1001, 201, 301, null, null, null, null, null, null, null, null, null,
-                    null, null));
+                    "INR", 14, TAX_RATE, "GST", DemoData.NOTES, DemoData.TERMS,
+                    ZONE, "INV-", "QUO-", "REC-", 1001, 201, 301, null, null, null, null, null, null, null, null,
+                    TaxRegime.GST_INDIA.name(), null, null));
+            settingsRepository.findByBusinessPkid(owner.businessPkid()).orElseThrow()
+                    .setPaymentDetails(paymentDetails());
             for (EmailTemplateKind kind : EmailTemplateKind.values()) {
                 if (kind != EmailTemplateKind.REMINDER) {
                     emailTemplateService.save(owner, kind.name(), new EmailTemplateRequest(
@@ -232,12 +222,12 @@ public class DemoDataSeeder {
                 }
             }
         }
-        DemoData.ITEMS.forEach(item -> itemService.create(
-                owner, new CreateItemRequest(item.name(), item.description(), item.price(), null, null, null)));
+        DemoData.ITEMS.forEach(item -> itemService.create(owner, new CreateItemRequest(
+                item.name(), item.description(), item.price(), TAX_RATE.toPlainString(), null, item.sac())));
         List<String> clients = DemoData.CLIENTS.stream()
                 .map(client -> customerService.create(owner, new CreateCustomerRequest(
                                 client.name(), client.email(), client.phone(), null, client.address(),
-                                client.city(), "United States", null, null))
+                                client.city(), "India", client.gstin(), client.stateCode()))
                         .id()
                         .toString())
                 .toList();
@@ -245,9 +235,6 @@ public class DemoDataSeeder {
         LocalDate today = LocalDate.now(clock.withZone(zone));
         Random random = new Random(20260930L);
         List<Plan> plans = new ArrayList<>(plans(today, random, clients.size()));
-        // The invoices the sample schedules last made, one period before their
-        // next, for the schedules to repeat. They take nothing from the random
-        // numbers, so the rest of the sample data comes out the same.
         for (DemoData.SampleSchedule schedule : DemoData.SCHEDULES) {
             plans.add(new Plan(
                     lastRun(schedule, today),
@@ -263,9 +250,29 @@ public class DemoDataSeeder {
         return new Result(true, null, clients.size(), DemoData.ITEMS.size(), plans.size(), payments);
     }
 
-    // The sample expenses, in dollars as the sample documents are, each paid
-    // the given number of days before today and recorded on the day it was
-    // paid.
+    private static void describe(Business business) {
+        DemoData.Seller seller = DemoData.SELLER;
+        business.setName(seller.name());
+        business.setEmail(seller.email());
+        business.setPhoneNumber(seller.phone());
+        business.setAddress(seller.address());
+        business.setCity(seller.city());
+        business.setState(seller.state());
+        business.setPostalCode(seller.postalCode());
+        business.setCountry("India");
+        business.setTaxId(seller.gstin());
+    }
+
+    private static PaymentDetails paymentDetails() {
+        PaymentDetails details = new PaymentDetails();
+        details.setAccountHolder(DemoData.SELLER.name());
+        details.setAccountNumber(DemoData.ACCOUNT_NUMBER);
+        details.setBankCodeType(BankCodeType.IFSC);
+        details.setBankCode(DemoData.IFSC);
+        details.setUpiId(DemoData.UPI_ID);
+        return details;
+    }
+
     private int expenses(BusinessAccess owner) {
         ZoneId zone = ZoneId.of(ZONE);
         LocalDate today = LocalDate.now(clock.withZone(zone));
@@ -278,7 +285,7 @@ public class DemoDataSeeder {
                     expense.amount(),
                     expense.tax(),
                     expense.taxReclaimable(),
-                    "USD",
+                    "INR",
                     null,
                     expense.method().getValue(),
                     null,
@@ -289,14 +296,6 @@ public class DemoDataSeeder {
         return recorded.size();
     }
 
-    // Each sample schedule repeats an issued invoice in dollars that bills its
-    // item and nothing else, as many of it as the schedule bills, so that a
-    // monthly invoice bills one month of a monthly item: the latest of those
-    // that no other sample schedule repeats. The item is matched by name
-    // whatever its letter case and the spaces around it, so an account seeded
-    // when it was spelled another way still has it. Its next invoice is made
-    // the given number of days after today, issued as it is made and not
-    // emailed. A schedule with no such invoice to repeat is left out.
     private int schedules(BusinessAccess owner) {
         LocalDate today = LocalDate.now(clock.withZone(ZoneId.of(ZONE)));
         List<UUID> repeated = new ArrayList<>();
@@ -305,7 +304,7 @@ public class DemoDataSeeder {
                     .queryForList(
                             """
                             select d.id from documents d
-                            where d.business_pkid = ? and %s and d.document_type = 'Invoice' and d.currency = 'USD'
+                            where d.business_pkid = ? and %s and d.document_type = 'Invoice' and d.currency = 'INR'
                               and (select count(*) from document_billing_items i where i.document_pkid = d.pkid) = 1
                               and exists (select 1 from document_billing_items i
                                           where i.document_pkid = d.pkid and lower(btrim(i.item_name)) = ?
@@ -334,8 +333,6 @@ public class DemoDataSeeder {
         return repeated.size();
     }
 
-    // A document to add: dated the given day for one of the clients, with
-    // lines drawn at random, or with the one line given.
     private record Plan(LocalDate issued, DocumentType type, int client, BillingItemDto line) {
 
         Plan(LocalDate issued, DocumentType type, int client) {
@@ -343,8 +340,6 @@ public class DemoDataSeeder {
         }
     }
 
-    // The day a sample schedule last made its invoice: one period before the
-    // next.
     private static LocalDate lastRun(DemoData.SampleSchedule schedule, LocalDate today) {
         LocalDate next = today.plusDays(schedule.daysAhead());
         return switch (schedule.frequency()) {
@@ -355,14 +350,19 @@ public class DemoDataSeeder {
         };
     }
 
-    // The one line a sample schedule's invoice bills, at the item's price.
     private static BillingItemDto line(DemoData.SampleSchedule schedule) {
         DemoData.Item item = DemoData.ITEMS.stream()
                 .filter(found -> found.name().equals(schedule.item()))
                 .findFirst()
                 .orElseThrow();
         return new BillingItemDto(
-                item.name(), item.price(), BigDecimal.valueOf(schedule.quantity()), "0", null, null, null);
+                item.name(),
+                item.price(),
+                BigDecimal.valueOf(schedule.quantity()),
+                "0",
+                null,
+                TAX_RATE.toPlainString(),
+                item.sac());
     }
 
     private static List<Plan> plans(LocalDate today, Random random, int clientCount) {
@@ -396,7 +396,7 @@ public class DemoDataSeeder {
                 DemoData.NOTES,
                 DemoData.TERMS,
                 TAX_RATE.toPlainString(),
-                "USD",
+                "INR",
                 plan.line() == null ? lines(random) : List.of(plan.line()),
                 plan.issued(),
                 null,
@@ -433,7 +433,13 @@ public class DemoDataSeeder {
             int quantity = item.countable() ? 2 + random.nextInt(10) : 1;
             String discount = random.nextInt(10) == 0 ? "10" : "0";
             lines.add(new BillingItemDto(
-                    item.name(), item.price(), BigDecimal.valueOf(quantity), discount, null, null, null));
+                    item.name(),
+                    item.price(),
+                    BigDecimal.valueOf(quantity),
+                    discount,
+                    null,
+                    TAX_RATE.toPlainString(),
+                    item.sac()));
         }
         return lines;
     }
@@ -464,8 +470,6 @@ public class DemoDataSeeder {
         return dates;
     }
 
-    // A schedule's invoice was paid in full by bank transfer a week after it
-    // was made.
     private LocalDate paidInFull(BusinessAccess owner, DocumentResponse document, LocalDate issued, LocalDate today) {
         LocalDate date = earliest(issued.plusDays(7), today);
         documentService.addPayment(owner, document.id().toString(), new CreatePaymentRequest(
@@ -488,8 +492,6 @@ public class DemoDataSeeder {
         return date.isAfter(today) ? today : date;
     }
 
-    // A document's history happens when the document and its payments did.
-    // It was issued as it was made.
     private void backdateHistory(UUID documentId) {
         jdbcTemplate.update("update documents set issued_at = created_at where id = ?", documentId);
         jdbcTemplate.update("""

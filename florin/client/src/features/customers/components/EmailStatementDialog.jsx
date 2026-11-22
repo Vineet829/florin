@@ -6,7 +6,6 @@ import {
   useGetStatementEmailDraftQuery,
 } from "../customersApiSlice";
 
-// Emails a client's statement of account as a PDF.
 const EmailStatementDialog = ({ customerId, open, onClose }) => {
   const draft = useGetStatementEmailDraftQuery(customerId, { skip: !open });
   const [send, { isLoading: sending }] = useEmailStatementMutation();
@@ -16,7 +15,7 @@ const EmailStatementDialog = ({ customerId, open, onClose }) => {
       toast.success(result.message || "Statement sent successfully.");
       onClose();
     } catch (error) {
-      toast.error(errorMessage(error, "The statement could not be emailed."));
+      toast.error(errorMessage(error, "The statement couldn't be emailed."));
     }
   };
   return (

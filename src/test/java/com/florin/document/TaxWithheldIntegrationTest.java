@@ -15,16 +15,12 @@ import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// Tax a client withholds from a payment (TDS) settles the invoice like money
-// received, though it isn't cash: it counts toward the balance everywhere and
-// is shown apart from the money.
 class TaxWithheldIntegrationTest extends IntegrationTest {
 
     private String session;
@@ -54,7 +50,6 @@ class TaxWithheldIntegrationTest extends IntegrationTest {
                 "$.createdCustomer._id");
     }
 
-    // An invoice for 1,000, due nine days ago.
     private String invoice() throws Exception {
         String due = LocalDate.now(ZoneOffset.UTC).minusDays(9).atTime(LocalTime.NOON).toInstant(ZoneOffset.UTC)
                 .toString();
@@ -72,8 +67,7 @@ class TaxWithheldIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("tax withheld settles an invoice with the money received, and is kept apart from it")
-    void settles() throws Exception {
+    void withheldTaxSettlesInvoice() throws Exception {
         String id = invoice();
 
         String payment = JsonPath.read(
@@ -104,8 +98,7 @@ class TaxWithheldIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("money and tax withheld together can't settle more than is owed, and each is checked")
-    void limits() throws Exception {
+    void cannotSettleMoreThanOwed() throws Exception {
         String id = invoice();
 
         pay(id, "{\"amountPaid\": 950, \"tdsAmount\": 100}")
@@ -132,8 +125,7 @@ class TaxWithheldIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("balances, reports, the overview, the statement and the CSVs count tax withheld as settled")
-    void everywhere() throws Exception {
+    void withheldCountedEverywhere() throws Exception {
         String id = invoice();
         pay(id, "{\"amountPaid\": 600, \"tdsAmount\": 100}").andExpect(status().isCreated());
 

@@ -3,12 +3,10 @@ import { fetchFile } from "../api/fetchFile";
 
 export const expensesApiSlice = baseApiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    // One page of expenses; see expenseQuery for the search and filters.
     getExpenses: builder.query({
       query: (params = {}) => `/expense?${new URLSearchParams(params)}`,
       providesTags: ["Expense"],
     }),
-    // The categories the business has used, to pick one again.
     getExpenseCategories: builder.query({
       query: () => "/expense/categories",
       providesTags: ["Expense"],

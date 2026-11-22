@@ -91,8 +91,6 @@ public class CatalogItemService {
         if (request.unitPrice() != null) {
             item.setUnitPrice(request.unitPrice());
         }
-        // A blank rate or unit clears it: the item then leaves lines at the
-        // business's default rate, or without a unit.
         if (request.taxRate() != null) {
             item.setTaxRate(Percentage.parse(request.taxRate(), "Tax rate"));
         }

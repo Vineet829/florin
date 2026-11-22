@@ -5,7 +5,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-// The providers the sign-in page offers: only those this server is set up for.
 @RestController
 @RequestMapping("/api/v1/auth/providers")
 public class ProvidersController {

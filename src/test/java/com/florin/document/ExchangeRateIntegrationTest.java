@@ -15,7 +15,6 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -23,9 +22,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// A document in another currency than the reporting one can keep the rate
-// typed in for it, which is fixed once the document is issued; reports can
-// then show everything in the reporting currency, and say what they leave out.
 class ExchangeRateIntegrationTest extends IntegrationTest {
 
     @Autowired
@@ -81,8 +77,7 @@ class ExchangeRateIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a draft keeps a rate to the reporting currency until its currency changes, and it is fixed once issued")
-    void rates() throws Exception {
+    void rateFixedOnIssue() throws Exception {
         String draft = id(create("Invoice", "EUR", "200", "90.50", true)
                 .andExpect(jsonPath("$.newDocument.exchangeRate").value("90.5"))
                 .andExpect(jsonPath("$.newDocument.exchangeBase").value("INR")));
@@ -96,8 +91,6 @@ class ExchangeRateIntegrationTest extends IntegrationTest {
         edit(draft, "{\"exchangeRate\": \"0\"}")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Enter the exchange rate as a number greater than zero"));
-        // Only plain digits are read: not an exponent, and not so many digits
-        // that reading them as a number would take seconds.
         for (String bad : new String[] {"1e2", "1e2147483647", "1".repeat(100_000)}) {
             edit(draft, "{\"exchangeRate\": \"" + bad + "\"}")
                     .andExpect(status().isBadRequest())
@@ -120,7 +113,6 @@ class ExchangeRateIntegrationTest extends IntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.updatedDocument.exchangeRate").value("83.25"));
 
-        // Issuing keeps the draft's rate unless it is given; a blank one removes it.
         String kept = id(create("Invoice", "USD", "100", "83", true));
         send(post("/api/v1/document/{id}/issue", kept), "{}")
                 .andExpect(jsonPath("$.updatedDocument.exchangeRate").value("83"));
@@ -143,13 +135,12 @@ class ExchangeRateIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the report in the reporting currency converts each amount at its document's rate, and lists the rest")
     void convertedReport() throws Exception {
         pay(id(create("Invoice", "INR", "1000", null, false)), "400");
         pay(id(create("Invoice", "USD", "100", "83.333", false)), "50");
         create("Receipt", "USD", "10", "83.333", false).andExpect(status().isOk());
         create("Invoice", "EUR", "200", null, false).andExpect(status().isOk());
-        create("Invoice", "EUR", "999", "90", true).andExpect(status().isOk()); // a draft counts nowhere
+        create("Invoice", "EUR", "999", "90", true).andExpect(status().isOk());
 
         report("base")
                 .andExpect(status().isOk())
@@ -157,7 +148,6 @@ class ExchangeRateIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.baseCurrency").value("INR"))
                 .andExpect(jsonPath("$.currencies.length()").value(1))
                 .andExpect(jsonPath("$.currencies[0].currency").value("INR"))
-                // 1000 + 100 x 83.333 + 10 x 83.333, each rounded to the cent
                 .andExpect(jsonPath("$.currencies[0].billed").value(10166.63))
                 .andExpect(jsonPath("$.currencies[0].received").value(5399.98))
                 .andExpect(jsonPath("$.currencies[0].outstanding").value(4766.65))
@@ -179,7 +169,6 @@ class ExchangeRateIntegrationTest extends IntegrationTest {
                 .doesNotContain("USD,");
         report("everything").andExpect(status().isBadRequest());
 
-        // Rates typed against INR don't convert to another reporting currency.
         settings("EUR");
         report("base")
                 .andExpect(jsonPath("$.currencies[0].currency").value("EUR"))
@@ -193,8 +182,7 @@ class ExchangeRateIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a copy keeps a rate typed against the reporting currency, and so does each invoice a schedule makes")
-    void copies() throws Exception {
+    void copiesKeepTypedRate() throws Exception {
         String invoice = id(create("Invoice", "USD", "120", "83", false));
         send(post("/api/v1/document/{id}/duplicate", invoice), "")
                 .andExpect(status().isCreated())
@@ -206,7 +194,6 @@ class ExchangeRateIntegrationTest extends IntegrationTest {
                 """.formatted(invoice, LocalDate.now(ZoneOffset.UTC)))
                 .andExpect(status().isCreated());
         recurring.makeDue(Instant.now());
-        // 120 x 83 for the invoice, and again for the one its schedule made.
         report("base")
                 .andExpect(jsonPath("$.notConverted.length()").value(0))
                 .andExpect(jsonPath("$.currencies[0].billed").value(19920.0));
@@ -224,7 +211,6 @@ class ExchangeRateIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the reporting currency follows the default currency until it is set to another one")
     void followsDefault() throws Exception {
         session = bearer(createUser());
         defaultCurrency("GBP").andExpect(jsonPath("$.settings.baseCurrency").value("GBP"));

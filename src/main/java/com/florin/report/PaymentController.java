@@ -24,8 +24,6 @@ public class PaymentController {
         this.paymentSummary = paymentSummary;
     }
 
-    // A method is a payment method's name, or receipt for receipts; a period
-    // is the last 30 or 90 days or 12 months, as the overview has them.
     @GetMapping
     public PaymentListResponse list(
             @Requires(Permission.VIEW_RECORDS) BusinessAccess access,
@@ -45,8 +43,6 @@ public class PaymentController {
                 access, PaymentSearch.of(query, method, currency, period, from, to, sort, direction, page, size));
     }
 
-    // What the list comes to in one currency over one of the documents list's
-    // periods, or all dates when none is given, by method and by who paid.
     @GetMapping("/summary")
     public PaymentSummaryResponse summary(
             @Requires(Permission.VIEW_RECORDS) BusinessAccess access,

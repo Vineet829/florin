@@ -11,7 +11,6 @@ import com.florin.IntegrationTest;
 import com.florin.user.User;
 import java.time.Instant;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -49,7 +48,6 @@ class SessionListIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an account's sessions are listed newest first, this one marked; others can be signed out at once")
     void listAndSignOut() throws Exception {
         User user = createUser();
         UUID older = session(user);
@@ -81,7 +79,6 @@ class SessionListIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("no one can sign out another account's session")
     void othersSessions() throws Exception {
         UUID someoneElses = session(createUser());
 
@@ -92,8 +89,7 @@ class SessionListIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the shared demo account sees only the visitor's own session and signs out no one")
-    void demo() throws Exception {
+    void demoSeesOwnSessionOnly() throws Exception {
         User demo = demoUser();
         UUID visitor = session(demo);
         UUID another = session(demo);

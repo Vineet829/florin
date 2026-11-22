@@ -7,7 +7,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
-// A client's payment report as the business sees it.
 public record PaymentClaimResponse(
         UUID id,
         BigDecimal amount,

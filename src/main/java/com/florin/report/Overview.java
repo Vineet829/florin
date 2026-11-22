@@ -25,16 +25,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
-// The overview's figures, from issued documents; a draft isn't billed yet.
-// Income, received and pending are for one currency, from invoices and
-// receipts; a quotation is an offer, not income.
-// A period's totals, and those of the period before it, count money as the
-// reports do, and the tax in what they billed as the tax report does; what is
-// owed is as of today.
-// The top clients are those the period billed most, as its billed total
-// counts them, and the top items those its lines sold most of before tax,
-// which all add up to its income. What is coming up is the currency's, from
-// today: the invoices schedules will make and the quotations still open.
 @Service
 public class Overview {
 
@@ -42,13 +32,9 @@ public class Overview {
     private static final int TOP_CLIENTS = 5;
     private static final int TOP_ITEMS = 5;
 
-    // What is owed, by days late: not due yet, then 1 to 15, 16 to 30, 31 to
-    // 45, and over 45.
     private static final List<String> OWED_BANDS =
             List.of("current", "days1to15", "days16to30", "days31to45", "over45");
 
-    // The name a document linked to no client was saved with, for SQL over
-    // documents aliased d; none for a document linked to one.
     static final String SAVED_NAME = "(case when d.customer_pkid is null then d.customer_name end)";
 
     private record Money(BigDecimal expected, BigDecimal received, BigDecimal withheld) {}
@@ -129,11 +115,6 @@ public class Overview {
                 comingUp.read(businessPkid, currency, zone, today));
     }
 
-    // The money bar over the documents list, in a currency chosen as above:
-    // what is owed now, as here, and the Received of the last 30 days, with
-    // how many payments, receipts and refunds it came from. Documents without
-    // a currency are left out of its choice, as a list's address can't tell
-    // them from all currencies.
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public DocumentSummaryResponse documentSummary(BusinessAccess access, String requested) {
         Long businessPkid = access.businessPkid();
@@ -171,8 +152,6 @@ public class Overview {
                 .single();
     }
 
-    // The period's totals beside those of the period before it, which are
-    // compared only when the currency's records cover all of that one.
     private static OverviewTotals totals(
             MoneyByDay money, ReportQueries.TaxBilled tax, OverviewWindow window, boolean hasPrevious) {
         MoneyByDay.Sums current = money.between(window.from(), window.to());
@@ -186,7 +165,6 @@ public class Overview {
                 hasPrevious);
     }
 
-    // The period's money a day, a week or a month at a time.
     private static List<TrendBucket> trend(MoneyByDay money, OverviewWindow window) {
         return window.buckets().stream()
                 .map(bucket -> {
@@ -204,12 +182,6 @@ public class Overview {
                 .toList();
     }
 
-    // The five clients the period billed most, as its billed total counts
-    // them, largest first and by name when two were billed the same, each
-    // with how many documents billed it and what it owes now on invoices of
-    // any date. A client is the one documents are linked to, named as it is
-    // now, or, for documents linked to none, the name they were saved with.
-    // Clients named alike stay in the order they were added.
     private List<OverviewClient> topClients(Long businessPkid, String currency, OverviewWindow window) {
         return jdbc.sql("""
                         with billed as (
@@ -256,9 +228,6 @@ public class Overview {
                 .toList();
     }
 
-    // Overdue as the documents list has it: due before today began, by days
-    // late as OwedInvoices counts them. The receivables view splits the same
-    // invoices the same way.
     static OverviewOwed owedNow(List<OwedInvoices.Owed> invoices, ZoneId zone, LocalDate today) {
         long[] counts = new long[OWED_BANDS.size()];
         BigDecimal[] amounts = new BigDecimal[OWED_BANDS.size()];

@@ -12,7 +12,7 @@ const expired = token({ sub: "u1", roles: ["User"], exp: 1 });
 
 beforeEach(() => localStorage.clear());
 
-it("keeps who was signed in, but not a token an older version saved", () => {
+it("keeps user, drops old token", () => {
   localStorage.setItem(
     "user",
     JSON.stringify({
@@ -32,7 +32,7 @@ it("keeps who was signed in, but not a token an older version saved", () => {
   expect(tokenRoles(expired)).toEqual(["User"]);
 });
 
-it("drops a saved session that isn't one, so the app starts signed out", () => {
+it("drops an invalid saved session", () => {
   for (const saved of [
     "{not json",
     '"a string"',
@@ -47,7 +47,7 @@ it("drops a saved session that isn't one, so the app starts signed out", () => {
   expect(readSavedUser(localStorage)).toBeNull();
 });
 
-it("reads no roles from a token that can't be read", () => {
+it("no roles from unreadable token", () => {
   expect(tokenRoles("not-a-token")).toEqual([]);
   expect(tokenRoles(undefined)).toEqual([]);
   expect(tokenRoles(token({ sub: "u1" }))).toEqual([]);

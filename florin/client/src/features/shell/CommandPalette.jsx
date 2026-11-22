@@ -54,12 +54,9 @@ const ACTIONS = [
 
 const NO_ROWS = [];
 
-// The shell renders the palette, so it formats amounts itself rather than
-// importing the workspace components, which import the shell.
 const amount = (value, currency) =>
   `${currency ? `${currency} ` : ""}${formatAmount(value, currency)}`;
 
-// The typed text, once typing pauses.
 const useSettled = (value, delay) => {
   const [settled, setSettled] = useState(value);
   useEffect(() => {
@@ -72,9 +69,6 @@ const useSettled = (value, delay) => {
 const matches = (text, query) =>
   text.toLowerCase().includes(query.toLowerCase());
 
-// Search and go anywhere in the workspace: pages, quick actions, clients
-// and documents. A combobox over one list of options, so arrow keys move
-// through every group and Enter opens the highlighted one.
 const Palette = ({ isAdmin, onClose }) => {
   const navigate = useNavigate();
   const inputRef = useRef(null);
@@ -261,18 +255,15 @@ const Palette = ({ isAdmin, onClose }) => {
         role="status"
       >
         {searching
-          ? "Searching…"
+          ? "Searching..."
           : options.length
             ? `${options.length} ${options.length === 1 ? "result" : "results"}. Use the arrow keys, then Enter to open.`
-            : "Nothing matches. Try a client’s name or a document number."}
+            : "Nothing matches. Try a client's name or a document number."}
       </p>
     </div>
   );
 };
 
-// A modal in the browser's top layer, near the top of the window like a
-// spotlight. Esc or a click outside closes it, and focus goes back to where
-// it was. The content mounts fresh each time, so it opens empty.
 const CommandPalette = ({ open, onClose, isAdmin }) => {
   const ref = useRef(null);
   useEffect(() => {

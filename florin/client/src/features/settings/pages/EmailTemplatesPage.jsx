@@ -27,7 +27,6 @@ import {
 import SettingsTabs from "../components/SettingsTabs";
 import { useBusiness } from "../../business/permissions";
 
-// When each kind of email goes out.
 const SENT_WHEN = {
   INVOICE:
     "When you email an invoice, and when a repeating invoice is sent automatically.",
@@ -40,7 +39,6 @@ const SENT_WHEN = {
   STATEMENT: "When you email a client their statement of account.",
 };
 
-// A client named "Fresh Client Co." ends the sentence itself.
 const sentence = (text) => (text.endsWith(".") ? text : `${text}.`);
 
 const Preview = ({ preview }) =>
@@ -73,7 +71,6 @@ const Preview = ({ preview }) =>
 
 const EmailTemplates = ({ templates }) => {
   const [kind, setKind] = useState(templates[0].kind);
-  // Unsaved changes, kept per kind while switching between them.
   const [drafts, setDrafts] = useState({});
   const [preview, setPreview] = useState(null);
   const [save, { isLoading: saving }] = useSaveEmailTemplateMutation();
@@ -103,7 +100,7 @@ const EmailTemplates = ({ templates }) => {
       forget();
       toast.success(result.message || "Your email was saved.");
     } catch (error) {
-      toast.error(errorMessage(error, "Your email could not be saved."));
+      toast.error(errorMessage(error, "Your email couldn't be saved."));
     }
   };
   const standard = async () => {
@@ -113,7 +110,7 @@ const EmailTemplates = ({ templates }) => {
       setPreview(null);
       toast.success(result.message || "Your email is the standard one again.");
     } catch (error) {
-      toast.error(errorMessage(error, "Your email could not be reset."));
+      toast.error(errorMessage(error, "Your email couldn't be reset."));
     }
   };
   const show = async () => {
@@ -121,7 +118,7 @@ const EmailTemplates = ({ templates }) => {
       setPreview(await fill({ kind, ...text }).unwrap());
     } catch (error) {
       setPreview({
-        error: errorMessage(error, "The preview could not be made."),
+        error: errorMessage(error, "The preview couldn't be made."),
       });
     }
   };
@@ -204,7 +201,7 @@ const EmailTemplates = ({ templates }) => {
               title={refusal}
             >
               <FiRotateCcw aria-hidden="true" />
-              {resetting ? "Resetting…" : "Use the standard text"}
+              {resetting ? "Resetting..." : "Use the standard text"}
             </button>
           )}
           <button
@@ -215,7 +212,7 @@ const EmailTemplates = ({ templates }) => {
             title={refusal}
           >
             <FiEye aria-hidden="true" />
-            {previewing ? "Filling in…" : "Preview"}
+            {previewing ? "Filling in..." : "Preview"}
           </button>
           <button
             type="submit"
@@ -224,7 +221,7 @@ const EmailTemplates = ({ templates }) => {
             title={refusal}
           >
             <FiCheck aria-hidden="true" />
-            {saving ? "Saving…" : "Save"}
+            {saving ? "Saving..." : "Save"}
           </button>
         </div>
       </form>
@@ -248,7 +245,7 @@ const EmailTemplates = ({ templates }) => {
 };
 
 const EmailTemplatesPage = () => {
-  useTitle("Emails — Florin");
+  useTitle("Emails - Florin");
   const query = useGetEmailTemplatesQuery();
   return (
     <WorkspacePage section="Settings">

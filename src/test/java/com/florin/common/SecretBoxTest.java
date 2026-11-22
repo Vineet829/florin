@@ -7,7 +7,6 @@ import com.florin.config.EncryptionProperties;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class SecretBoxTest {
@@ -15,7 +14,6 @@ class SecretBoxTest {
     private static final String KEY = Base64.getEncoder().encodeToString(new byte[32]);
 
     @Test
-    @DisplayName("a sealed secret opens again, and sealing twice never gives the same text")
     void roundTrip() {
         SecretBox box = new SecretBox(new EncryptionProperties(KEY));
         byte[] secret = "a secret".getBytes(StandardCharsets.UTF_8);
@@ -28,8 +26,7 @@ class SecretBoxTest {
     }
 
     @Test
-    @DisplayName("a changed value is refused rather than opened")
-    void tampered() {
+    void refusesChangedValue() {
         SecretBox box = new SecretBox(new EncryptionProperties(KEY));
         byte[] sealed = Base64.getDecoder().decode(box.seal(new byte[] {1, 2, 3}));
         sealed[sealed.length - 1] ^= 1;
@@ -39,8 +36,7 @@ class SecretBoxTest {
     }
 
     @Test
-    @DisplayName("a value sealed under another key, cut short or not sealed at all is refused the same way")
-    void unreadable() {
+    void refusesUnreadableValues() {
         SecretBox box = new SecretBox(new EncryptionProperties(KEY));
         byte[] otherKey = new byte[32];
         Arrays.fill(otherKey, (byte) 7);
@@ -54,8 +50,7 @@ class SecretBoxTest {
     }
 
     @Test
-    @DisplayName("without a key the app runs, but nothing can be sealed; a key of the wrong size is refused")
-    void keys() {
+    void checksKeyPresenceAndSize() {
         assertThat(new SecretBox(new EncryptionProperties("")).available()).isFalse();
         assertThat(new SecretBox(new EncryptionProperties(null)).available()).isFalse();
         String shortKey = Base64.getEncoder().encodeToString(new byte[16]);

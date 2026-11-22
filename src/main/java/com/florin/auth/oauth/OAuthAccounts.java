@@ -21,8 +21,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-// The account a provider's account signs in to: the one it is linked to, or
-// else one the provider has vouched for the email of, linked now or made new.
 @Service
 public class OAuthAccounts {
 
@@ -65,8 +63,6 @@ public class OAuthAccounts {
         this.clock = clock;
     }
 
-    // The identity's key. It commits on its own, before the sign-in: the log
-    // writes on its own too, and has to find an account made here.
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Long identityFor(ProviderProfile profile, String via) {
         return identities.findByProviderAndSubject(profile.provider().id(), profile.subject())
@@ -74,8 +70,6 @@ public class OAuthAccounts {
                 .getPkid();
     }
 
-    // A refusal is logged as a wrong password is: for the account with the
-    // email, if there is one.
     private UserIdentity linkOrCreate(ProviderProfile profile, String via) {
         if (profile.email() == null) {
             throw new OAuthSignInException("unverified_email");
@@ -94,12 +88,6 @@ public class OAuthAccounts {
         return account.map(user -> link(user, profile, email, via)).orElseGet(() -> create(profile, email));
     }
 
-    // The account with the email the provider vouched for, when the provider
-    // hosts that email. Any other address it checked only once, and it may
-    // belong to someone else by now: that account opens with its password.
-    // One nobody ever verified may have been registered by someone else, with
-    // a password of their own: that password, its sessions and its email links
-    // stop working, and only the provider's account opens it from now on.
     private UserIdentity link(User user, ProviderProfile profile, String email, String via) {
         if (!user.isActive()) {
             auditLog.signInFailed(email, user, via + ": account deactivated");
@@ -124,8 +112,6 @@ public class OAuthAccounts {
         UserIdentity identity = identities.save(identity(user, profile, email));
         String provider = profile.provider().label();
         auditLog.record(AuditEventType.PROVIDER_LINKED, user, user, null, provider);
-        // A new password wouldn't remove the link, and the app has no way to,
-        // so the advice is to reply: the mail comes from the support address.
         String to = user.getEmail();
         String subject = provider + " sign-in was added to your " + site.name() + " account";
         String body = "Hello " + user.getFirstName() + ",\n\n"
@@ -137,8 +123,6 @@ public class OAuthAccounts {
         return identity;
     }
 
-    // A new account, verified by the provider, with no password and a
-    // business of its own.
     private UserIdentity create(ProviderProfile profile, String email) {
         String handle = profile.handle() == null ? "" : profile.handle();
         User user = new User();
@@ -163,8 +147,6 @@ public class OAuthAccounts {
         return identity;
     }
 
-    // The handle with only letters, digits, dots, dashes and underscores,
-    // made unique with a short suffix when it is taken.
     private String username(String handle) {
         String base = handle.replaceAll("[^A-Za-z0-9._-]", "");
         base = base.isEmpty() ? "user" : base.substring(0, Math.min(base.length(), USERNAME_LENGTH - 5));

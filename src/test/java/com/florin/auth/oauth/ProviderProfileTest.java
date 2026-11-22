@@ -6,15 +6,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.oauth2.core.oidc.OidcIdToken;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
-// Who Google says signed in, read from its claims: whether it verified the
-// email however it says so, and never anyone without Google's ID for them.
 class ProviderProfileTest {
 
     private static OAuth2User google(Map<String, Object> claims) {
@@ -24,7 +21,7 @@ class ProviderProfileTest {
     private static Map<String, Object> claims(Object emailVerified) {
         Map<String, Object> claims = new LinkedHashMap<>();
         claims.put("sub", "google-1");
-        claims.put("email", "ada.lovelace@gmail.test");
+        claims.put("email", "neha.apte@gmail.test");
         if (emailVerified != null) {
             claims.put("email_verified", emailVerified);
         }
@@ -32,14 +29,13 @@ class ProviderProfileTest {
     }
 
     @Test
-    @DisplayName("Google's ID token gives the ID, the email and whether it is verified, the name, and a handle")
     void fromIdToken() {
         OidcIdToken token = OidcIdToken.withTokenValue("id-token")
                 .subject("google-1")
-                .claim("email", "ada.lovelace@gmail.test")
+                .claim("email", "neha.apte@gmail.test")
                 .claim("email_verified", true)
-                .claim("given_name", "Ada")
-                .claim("family_name", "Lovelace")
+                .claim("given_name", "Neha")
+                .claim("family_name", "Apte")
                 .build();
 
         ProviderProfile profile = ProviderProfile.of("google", new DefaultOidcUser(List.of(), token));
@@ -47,34 +43,31 @@ class ProviderProfileTest {
         assertThat(profile).isEqualTo(new ProviderProfile(
                 SignInProvider.GOOGLE,
                 "google-1",
-                "ada.lovelace@gmail.test",
+                "neha.apte@gmail.test",
                 true,
                 false,
-                "Ada",
-                "Lovelace",
-                "ada.lovelace"));
+                "Neha",
+                "Apte",
+                "neha.apte"));
     }
 
     @Test
-    @DisplayName("Google hosts a Gmail address, and a Workspace account's, which carries the hd claim, and no other")
     void emailHosted() {
-        assertThat(hosted("ada@gmail.com", null)).isTrue();
-        assertThat(hosted("Ada@GoogleMail.com", null)).isTrue();
-        assertThat(hosted("ada@example.test", "example.test")).isTrue();
-        // Google's rule is only that hd is set, whatever domain it names.
-        assertThat(hosted("ada@sales.example.test", "example.test")).isTrue();
-        assertThat(hosted("ada@example.test", null)).isFalse();
-        assertThat(hosted("ada@example.test", " ")).isFalse();
-        assertThat(hosted("ada@gmail.com.example.test", null)).isFalse();
-        assertThat(hosted("ada@notgmail.com", null)).isFalse();
+        assertThat(hosted("neha@gmail.com", null)).isTrue();
+        assertThat(hosted("Neha@GoogleMail.com", null)).isTrue();
+        assertThat(hosted("neha@example.test", "example.test")).isTrue();
+        assertThat(hosted("neha@sales.example.test", "example.test")).isTrue();
+        assertThat(hosted("neha@example.test", null)).isFalse();
+        assertThat(hosted("neha@example.test", " ")).isFalse();
+        assertThat(hosted("neha@gmail.com.example.test", null)).isFalse();
+        assertThat(hosted("neha@notgmail.com", null)).isFalse();
     }
 
     @Test
-    @DisplayName("the hd claim in Google's ID token says the email is hosted")
     void hostedDomainFromIdToken() {
         OidcIdToken token = OidcIdToken.withTokenValue("id-token")
                 .subject("google-1")
-                .claim("email", "ada@example.test")
+                .claim("email", "neha@example.test")
                 .claim("email_verified", true)
                 .claim("hd", "example.test")
                 .build();
@@ -92,7 +85,6 @@ class ProviderProfileTest {
     }
 
     @Test
-    @DisplayName("email_verified as the text \"true\" counts as verified; \"false\" or none does not")
     void emailVerifiedAsText() {
         assertThat(ProviderProfile.of("google", google(claims("true"))).emailVerified()).isTrue();
         assertThat(ProviderProfile.of("google", google(claims("false"))).emailVerified()).isFalse();
@@ -100,7 +92,6 @@ class ProviderProfileTest {
     }
 
     @Test
-    @DisplayName("without Google's ID for them, nobody is signed in")
     void missingSubject() {
         Map<String, Object> claims = claims(true);
         claims.remove("sub");

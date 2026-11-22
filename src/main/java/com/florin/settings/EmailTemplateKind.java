@@ -2,9 +2,6 @@ package com.florin.settings;
 
 import java.util.List;
 
-// The kinds of email a business sends, each with its standard subject and
-// message, and the placeholders its emails fill. The standard texts are the
-// ones these emails had before businesses could write their own.
 public enum EmailTemplateKind {
     INVOICE("Invoices", "invoice", Text.SUBJECT, Text.PAY_BODY, List.of(
             Text.CLIENT, Text.DOCUMENT, Text.NUMBER, Text.AMOUNT, Text.BALANCE, Text.DUE, Text.PAY_LINK,
@@ -19,7 +16,7 @@ public enum EmailTemplateKind {
             Text.CLIENT, Text.DOCUMENT, Text.NUMBER, Text.AMOUNT, Text.VIEW_LINK, Text.BUSINESS)),
     REMINDER("Reminders", "reminder", Text.REMINDER_SUBJECT, Text.REMINDER_BODY, List.of(
             Text.CLIENT, Text.DOCUMENT, Text.NUMBER, Text.AMOUNT, Text.BALANCE, Text.DUE,
-            new Placeholder("due_status", "When it is or was due, such as “is due on Oct 15, 2026”"),
+            new Placeholder("due_status", "When it is or was due, such as \"is due on Oct 15, 2026\""),
             Text.PAY_LINK, Text.PAYMENT, Text.BUSINESS)),
     PAYMENT_RECEIPT("Payment receipts", "payment receipt", Text.SUBJECT, Text.BODY, List.of(
             Text.CLIENT,
@@ -31,7 +28,6 @@ public enum EmailTemplateKind {
     STATEMENT("Statements", "statement", Text.SUBJECT, Text.BODY, List.of(
             Text.CLIENT, new Placeholder("document", "The title, Statement of account"), Text.BUSINESS));
 
-    // A placeholder an email of this kind fills, and what it is filled with.
     public record Placeholder(String name, String meaning) {}
 
     private final String label;
@@ -73,8 +69,6 @@ public enum EmailTemplateKind {
         return placeholders.stream().anyMatch(known -> known.name().equals(placeholder));
     }
 
-    // A line whose placeholders come out empty, such as how to pay a paid
-    // invoice, is left out of the email.
     private static final class Text {
         static final String SUBJECT = "{document} from {business}";
         static final String ATTACHED = "Hello {client},\n\nPlease find {document} from {business} attached.\n\n";
@@ -89,7 +83,7 @@ public enum EmailTemplateKind {
         static final Placeholder PAY_LINK = new Placeholder("link", "A link to view and pay it online");
         static final Placeholder VIEW_LINK = new Placeholder("link", "A link to view it online");
         static final Placeholder PAYMENT = new Placeholder(
-                "payment", "How to pay, from Settings → Getting paid, while it is unpaid");
+                "payment", "How to pay, from Settings > Getting paid, while it is unpaid");
         static final Placeholder CLIENT = new Placeholder("client", "The client's name");
         static final Placeholder DOCUMENT = new Placeholder("document", "The title, such as Invoice INV-0042");
         static final Placeholder NUMBER = new Placeholder("number", "The number, such as INV-0042");

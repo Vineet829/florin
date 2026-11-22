@@ -5,13 +5,9 @@ import Tour from "./Tour";
 import { column } from "./layout";
 import { useInterval, useRunning } from "./motion";
 
-// The ends of the headline, one at a time.
 export const ENDINGS = ["without the chase.", "by UPI or bank.", "on time."];
 export const TURN = 2800;
 
-// The end of the headline, sliding up to the next while `running`. It is
-// one line tall and shows one ending at a time; assistive technology reads
-// the first ending, once.
 const Ticker = ({ running }) => {
   const [word, setWord] = useState(0);
   useInterval(
@@ -41,12 +37,6 @@ const Ticker = ({ running }) => {
   );
 };
 
-// The hero on the dark stage: the headline, the sign-up and the demo, and
-// the product tour beside them. Its headline and tour play while it is on
-// screen in a tab that is being looked at. `onDemo` opens the demo; `busy`
-// while it is opening, and `error` if it could not. The headline keeps to
-// the design's size, or less where its column is too narrow for the
-// widest ending, 8.4 of its ems, so no ending is ever cut.
 const Hero = ({ motion, busy, error, onDemo }) => {
   const ref = useRef(null);
   const running = useRunning(ref, motion);
@@ -87,7 +77,7 @@ const Hero = ({ motion, busy, error, onDemo }) => {
             disabled={busy}
             aria-busy={busy}
           >
-            {busy ? "Opening demo…" : "See the live demo"}
+            {busy ? "Opening demo..." : "See the live demo"}
             <FiArrowRight aria-hidden="true" />
           </button>
         </div>

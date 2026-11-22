@@ -7,9 +7,6 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-// An expense to record, or the changes to one: on a change, what is left out
-// stays as it was, and a blank vendor, payment method, reference, note or
-// exchange rate removes it. The amount leaves out the tax.
 public record ExpenseRequest(
         LocalDate date,
         @Size(max = 255, message = "Vendor names can be at most 255 characters") String vendor,

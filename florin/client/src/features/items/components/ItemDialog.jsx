@@ -26,8 +26,6 @@ const ItemForm = ({ item, busy, onSave, onClose }) => {
   });
   const change = (key) => (event) =>
     setValues((current) => ({ ...current, [key]: event.target.value }));
-  // In GST mode an item keeps the HSN or SAC code its lines are taxed
-  // under; outside it the code is left as it is.
   const gstMode =
     useGetSettingsQuery().data?.settings?.taxRegime === "GST_INDIA";
   const code = values.hsnSac.trim();
@@ -120,14 +118,13 @@ const ItemForm = ({ item, busy, onSave, onClose }) => {
         </button>
         <button type="submit" className={primaryButton} disabled={busy}>
           <FiCheck aria-hidden="true" />
-          {busy ? "Saving…" : "Save item"}
+          {busy ? "Saving..." : "Save item"}
         </button>
       </div>
     </form>
   );
 };
 
-// Adds an item, or edits one when `item` is given.
 const ItemDialog = ({ open, item, onClose }) => {
   const [create, { isLoading: creating }] = useCreateItemMutation();
   const [update, { isLoading: updating }] = useUpdateItemMutation();
@@ -140,7 +137,7 @@ const ItemDialog = ({ open, item, onClose }) => {
       toast.success(result.message || "Item saved.");
       onClose();
     } catch (error) {
-      toast.error(errorMessage(error, "The item could not be saved."));
+      toast.error(errorMessage(error, "The item couldn't be saved."));
     }
   };
   return (

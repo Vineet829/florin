@@ -12,7 +12,6 @@ import com.florin.user.User;
 import com.jayway.jsonpath.JsonPath;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -71,7 +70,6 @@ class CustomerListIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("each client shows its number of documents and what its invoices still owe, per currency")
     void documentsAndBalances() throws Exception {
         String northwind = customer("Northwind", email());
         pay(document(northwind, "Invoice", 100, "USD"), 40);
@@ -94,7 +92,6 @@ class CustomerListIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a client's number of documents counts issued ones only, as the client's own page does")
     void issuedDocumentsOnly() throws Exception {
         String fabrikam = customer("Fabrikam", email());
         document(fabrikam, "Invoice", 100, "USD");
@@ -117,8 +114,7 @@ class CustomerListIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("search matches the name, email or account number, and % and _ match themselves")
-    void search() throws Exception {
+    void searchMatchesKeyFields() throws Exception {
         customer("Acme_Co", email());
         customer("AcmeXCo", email());
         customer("Globex", "billing@globex.test");
@@ -131,7 +127,6 @@ class CustomerListIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("clients sort by name, documents or the balance in the business currency, and come in pages")
     void sortingAndPaging() throws Exception {
         String busy = customer("Busy", email());
         document(busy, "Quotation", 10, "USD");
@@ -154,7 +149,6 @@ class CustomerListIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("another user's clients are never listed, and unknown sort fields are refused")
     void ownershipAndBadInput() throws Exception {
         customer("Private", email());
 

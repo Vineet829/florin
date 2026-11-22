@@ -1,9 +1,5 @@
 import { Select } from "../../../components/workspace/Select";
 
-// The one currency a summary's figures are in, offered when the business
-// bills in more than one. `value` is the currency the server answered in.
-// The first currency is the default, so picking it clears the address's
-// currency, as the overview's currency switch does.
 const CurrencyChoice = ({ value, currencies = [], onChange }) => {
   if (currencies.length < 2) return null;
   return (

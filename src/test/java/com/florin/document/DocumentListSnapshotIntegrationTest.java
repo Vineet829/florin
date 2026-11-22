@@ -25,7 +25,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -36,10 +35,6 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
-// The documents list reads which documents a page shows, then the documents
-// themselves. Another transaction deletes a draft and settles an invoice in
-// between: it holds the clients table too, which the list reads only with
-// the documents, and commits once the list waits there.
 class DocumentListSnapshotIntegrationTest extends IntegrationTest {
 
     @Autowired
@@ -87,8 +82,6 @@ class DocumentListSnapshotIntegrationTest extends IntegrationTest {
                 "$.newDocument._id");
     }
 
-    // Reads while the draft is deleted and the invoice settled: the change
-    // is made first, and committed once the read waits for the clients table.
     private <T> T whileChanged(Callable<T> read) throws Exception {
         ExecutorService pool = Executors.newSingleThreadExecutor();
         try (Connection holder = dataSource.getConnection(); Connection watcher = dataSource.getConnection()) {
@@ -144,8 +137,7 @@ class DocumentListSnapshotIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a page shows its documents as they stood when it was asked for, whatever changes meanwhile")
-    void asTheyStood() throws Exception {
+    void pageIgnoresLaterChanges() throws Exception {
         String page = whileChanged(() -> body(mockMvc.perform(get("/api/v1/document/all")
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner)))));
 
@@ -155,7 +147,6 @@ class DocumentListSnapshotIntegrationTest extends IntegrationTest {
         assertThat(total).isEqualTo(2);
         assertThat(ids).containsExactly(invoice, draft);
         assertThat(statuses).containsExactly("Not Paid", "Not Paid");
-        // Read again, the draft is gone and the invoice paid.
         String now = body(send(get("/api/v1/document/all"), "").andExpect(status().isOk()));
         List<String> left = JsonPath.read(now, "$.myDocuments[*]._id");
         List<String> paid = JsonPath.read(now, "$.myDocuments[*].status");
@@ -164,8 +155,7 @@ class DocumentListSnapshotIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("read without one moment's view, a document deleted before it is loaded is left out")
-    void gone() throws Exception {
+    void skipsDocumentsDeletedMeanwhile() throws Exception {
         TransactionTemplate readCommitted = new TransactionTemplate(transactionManager);
         readCommitted.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
         readCommitted.setReadOnly(true);

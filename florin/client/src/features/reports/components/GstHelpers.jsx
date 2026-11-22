@@ -16,7 +16,6 @@ import {
 } from "../reportsApiSlice";
 import { currentMonth, gstFileName, previousMonth } from "../reportModel";
 
-// One file for the months shown, named as the server names it.
 const GstCsvButton = ({ section, label, from, to }) => {
   const [download, busy] = useFileDownload(useGetGstCsvMutation);
   return (
@@ -34,25 +33,19 @@ const GstCsvButton = ({ section, label, from, to }) => {
   );
 };
 
-// A tax that doesn't apply to a GSTR-3B line is left blank.
 const rupeeColumn = (label, key) => ({
   label,
   type: "amount",
   render: (row) =>
-    row[key] == null ? "—" : <Amount value={row[key]} currency="INR" />,
+    row[key] == null ? "-" : <Amount value={row[key]} currency="INR" />,
 });
 
 const plural = (count, one, many) =>
   `${count.toLocaleString("en")} ${count === 1 ? one : many}`;
 
-// Helper files for the GST returns, for the months chosen: each GSTR-1 table
-// in the columns of the GST offline tool, and the GSTR-3B figures, from the
-// documents issued in GST mode. They are a starting point, not a return.
 const GstHelpers = () => {
   const [from, setFrom] = useState(previousMonth);
   const [to, setTo] = useState(previousMonth);
-  // Moving one month past the other takes the other along, so the range
-  // stays the right way round.
   const choose = (first, last, lastChosen = false) => {
     const backwards = first && last && first > last;
     setFrom(backwards && lastChosen ? last : first);
@@ -148,7 +141,7 @@ const GstHelpers = () => {
               rows={data.gstr3b}
               rowKey={(row, index) => `${row.table}-${index}`}
               columns={[
-                { label: "Table", render: (row) => row.table || "—" },
+                { label: "Table", render: (row) => row.table || "-" },
                 {
                   label: "Nature of supplies",
                   type: "main",
@@ -174,8 +167,8 @@ const GstHelpers = () => {
                 <li>
                   {plural(data.missingHsn, "line has", "lines have")} no HSN/SAC
                   code; the HSN files list{" "}
-                  {data.missingHsn === 1 ? "it" : "them"} as “(missing
-                  HSN/SAC)”.
+                  {data.missingHsn === 1 ? "it" : "them"} as "(missing
+                  HSN/SAC)".
                 </li>
               )}
               {data.skipped > 0 && (

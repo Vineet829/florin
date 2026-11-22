@@ -20,12 +20,9 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDResources;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-// Every kind of PDF rendered for real, and read back as text: the pieces its
-// template is built from come together into a PDF that says what it should.
 class PdfRenderingTest {
 
     @TempDir
@@ -41,12 +38,11 @@ class PdfRenderingTest {
     }
 
     @Test
-    @DisplayName("an invoice names both parties and shows its lines, totals, notes and page number")
-    void invoice() {
+    void invoiceShowsPartiesAndLines() {
         String text = PdfText.of(service.render(PdfFixtures.invoice(), seller, PdfFixtures.settings()));
 
         assertThat(text).contains(
-                "Ada Analytics Private Limited",
+                "Apte Analytics Private Limited",
                 "Invoice",
                 "INV-0042",
                 "Beta & <Sons> LLP",
@@ -59,7 +55,6 @@ class PdfRenderingTest {
     }
 
     @Test
-    @DisplayName("PDFs print in the embedded Noto Sans, so the rupee sign and accented names show")
     void notoSans() throws IOException {
         for (String font : List.of("fonts/NotoSans-Regular.ttf", "fonts/NotoSans-Bold.ttf")) {
             try (InputStream in = getClass().getClassLoader().getResourceAsStream(font)) {
@@ -89,8 +84,7 @@ class PdfRenderingTest {
     }
 
     @Test
-    @DisplayName("a draft is marked on every page, with no number or payment status, and is dated on issue")
-    void draft() {
+    void draftMarkedOnEveryPage() {
         Document draft = PdfFixtures.draft();
         for (int line = 2; line <= 40; line++) {
             draft.getBillingItems().add(PdfFixtures.line("Workshop day " + line, "1000", 1, "0"));
@@ -99,13 +93,12 @@ class PdfRenderingTest {
         List<String> pages = PdfText.pages(service.render(draft, seller, PdfFixtures.settings()));
 
         assertThat(pages).hasSizeGreaterThan(1).allSatisfy(page -> assertThat(page).contains("DRAFT"));
-        assertThat(pages.get(0)).contains("Invoice", "On issue", "Ada Analytics").doesNotContain("Unpaid", "INV-");
+        assertThat(pages.get(0)).contains("Invoice", "On issue", "Apte Analytics").doesNotContain("Unpaid", "INV-");
         assertThat(String.join("", pages)).contains("GST (18%)");
     }
 
     @Test
-    @DisplayName("a void invoice keeps its number, is marked void, and says when and why")
-    void voided() {
+    void voidInvoiceSaysWhy() {
         String text = PdfText.of(service.render(PdfFixtures.voided(), seller, PdfFixtures.settings()))
                 .replaceAll("\\s+", " ");
 
@@ -115,7 +108,6 @@ class PdfRenderingTest {
     }
 
     @Test
-    @DisplayName("lines taxed at two rates show each line's rate, a tax row per rate and a table of both")
     void twoRates() {
         String text = PdfText.of(service.render(PdfFixtures.twoRates(), seller, PdfFixtures.settings()))
                 .replaceAll("\\s+", " ");
@@ -132,8 +124,7 @@ class PdfRenderingTest {
     }
 
     @Test
-    @DisplayName("a quotation shows its total and when it is valid until")
-    void quotation() {
+    void quotationShowsValidity() {
         String text = PdfText.of(service.render(PdfFixtures.quotation(), seller, PdfFixtures.settings()));
 
         assertThat(text).contains("Quotation", "QUO-0007", "Valid until", "Oct 30, 2026", "USD 3,504.60");
@@ -141,7 +132,6 @@ class PdfRenderingTest {
     }
 
     @Test
-    @DisplayName("a payment receipt shows the amount received and the balance left")
     void paymentReceipt() {
         Document invoice = PdfFixtures.invoice();
         String text = PdfText.of(service.renderReceipt(
@@ -163,7 +153,6 @@ class PdfRenderingTest {
     }
 
     @Test
-    @DisplayName("a payment receipt sets the balance apart from its label in every template, however long it is")
     void receiptBalanceApart() {
         BigDecimal paid = new BigDecimal("44550.00");
         for (PdfTemplate template : PdfTemplate.values()) {
@@ -182,8 +171,7 @@ class PdfRenderingTest {
     }
 
     @Test
-    @DisplayName("a statement shows each currency's ledger, what is overdue and the amount due")
-    void statement() {
+    void statementShowsLedgers() {
         String text = PdfText.of(service.renderStatement(
                 seller,
                 PdfFixtures.customer(),
@@ -203,16 +191,12 @@ class PdfRenderingTest {
     }
 
     @Test
-    @DisplayName("a statement's headings and amounts never print over one another, however wide, in every template")
     void statementColumns() {
-        // From an everyday amount up to the widest the database holds.
         List<String> amounts = List.of("144550.00", "888888888.88", "888888888888.88", "88888888888888888.88");
         List<String> overprinted = new ArrayList<>();
         for (PdfTemplate template : PdfTemplate.values()) {
             for (String amount : amounts) {
                 BigDecimal charged = new BigDecimal(amount);
-                // A small payment leaves the heading the widest thing in its
-                // column; one as wide as the charge widens every column.
                 for (BigDecimal paid : List.of(
                         new BigDecimal("44550.00"), charged.subtract(new BigDecimal("20000.00")))) {
                     byte[] pdf = service.renderStatement(
@@ -232,8 +216,7 @@ class PdfRenderingTest {
     }
 
     @Test
-    @DisplayName("every template renders invoices, payment receipts and statements, with their page numbers")
-    void templates() {
+    void everyTemplateRenders() {
         for (PdfTemplate template : PdfTemplate.values()) {
             BusinessSettings settings = PdfFixtures.settings();
             settings.setPdfTemplate(template);

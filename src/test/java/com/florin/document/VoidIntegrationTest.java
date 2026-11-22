@@ -20,7 +20,6 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -28,8 +27,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// An issued document voided instead of deleted: it keeps its number and says
-// why, can't be sent, paid or changed any more, and counts for nothing.
 class VoidIntegrationTest extends IntegrationTest {
 
     private static final ZoneId ZONE = ZoneId.of("UTC");
@@ -70,7 +67,6 @@ class VoidIntegrationTest extends IntegrationTest {
                 "$.createdCustomer._id");
     }
 
-    // A document for the given amount, overdue by nine days.
     private String document(String type, String price, boolean draft) throws Exception {
         String due = LocalDate.now(ZONE).minusDays(9).atTime(LocalTime.NOON).atZone(ZONE).toInstant().toString();
         return JsonPath.read(
@@ -93,8 +89,7 @@ class VoidIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a void document keeps its number and says why, and its share link and PDF show it as void")
-    void voiding() throws Exception {
+    void voidKeepsNumberAndReason() throws Exception {
         String id = document("Invoice", "100", false);
         String token = shareToken(id);
 
@@ -126,8 +121,7 @@ class VoidIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a void document can't be changed, sent, shared, paid or reminded about, but can be copied")
-    void refusals() throws Exception {
+    void voidRefusesChanges() throws Exception {
         String id = document("Invoice", "100", false);
         voided(id, "Wrong amount").andExpect(status().isOk());
 
@@ -152,8 +146,7 @@ class VoidIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("only an issued document without payments or a schedule is voided, for a reason, by an owner or admin")
-    void blockers() throws Exception {
+    void refusesVoidWhenBlocked() throws Exception {
         voided(document("Invoice", "100", true), "Not needed")
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("A draft isn't issued, so delete it instead"));
@@ -179,8 +172,7 @@ class VoidIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a void quotation can't be accepted or become an invoice")
-    void quotations() throws Exception {
+    void voidQuotationIsClosed() throws Exception {
         String quotation = document("Quotation", "900", false);
         String token = shareToken(quotation);
         voided(quotation, "Prices changed").andExpect(status().isOk());
@@ -198,8 +190,7 @@ class VoidIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a void document counts for nothing: not in balances, reports, the overview, statements or alerts")
-    void leftOut() throws Exception {
+    void voidDocumentsCountForNothing() throws Exception {
         String kept = document("Invoice", "100", false);
         String voided = document("Invoice", "500", false);
         voided(voided, "Duplicate of INV-0001").andExpect(status().isOk());

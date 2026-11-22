@@ -15,12 +15,9 @@ import { primaryButton, textLink } from "../../../components/workspace/pastel";
 
 const PaymentForm = ({ document }) => {
   const balance = Number(document.ledger?.balanceDue || 0);
-  // A payment is dated today by the business's calendar, the one the server
-  // counts its days by, and no later.
   const today = dateInput(useBusinessToday());
   const [datePaid, setDatePaid] = useState(today);
   const [amountPaid, setAmountPaid] = useState("");
-  // The tax the client withheld, or null while its field is hidden.
   const [tdsAmount, setTdsAmount] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("");
   const [additionalInfo, setAdditionalInfo] = useState("");
@@ -44,7 +41,7 @@ const PaymentForm = ({ document }) => {
       setPaymentMethod("");
       setAdditionalInfo("");
     } catch (error) {
-      toast.error(errorMessage(error, "The payment could not be recorded."));
+      toast.error(errorMessage(error, "The payment couldn't be recorded."));
     }
   };
   return (
@@ -125,7 +122,7 @@ const PaymentForm = ({ document }) => {
           disabled={busy || settles <= 0 || !paymentMethod}
         >
           <FiCheck aria-hidden="true" />
-          {busy ? "Recording…" : "Record payment"}
+          {busy ? "Recording..." : "Record payment"}
         </button>
       </div>
     </form>

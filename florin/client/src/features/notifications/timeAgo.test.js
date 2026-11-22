@@ -12,6 +12,6 @@ it.each([
   ["2026-09-03T12:00:00", "Sep 3"],
   ["2025-12-24T12:00:00", "Dec 24, 2025"],
   ["not a date", ""],
-])("%s reads as %s", (value, words) => {
+])("formats %s as %s", (value, words) => {
   expect(timeAgo(value, now)).toBe(words);
 });

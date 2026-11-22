@@ -10,10 +10,6 @@ import {
   textLink,
 } from "../../../components/workspace/pastel";
 
-// Log in and sign up in the workspace's pastel style: AuthVisual on the left,
-// the form panel on the right. Below 901px only the form remains. From 901px
-// both panels' content is zoomed to 140%, and the page scrolls when it is
-// taller than the window.
 const button =
   "relative inline-flex min-h-11 w-full min-w-0 items-center justify-center gap-2 overflow-hidden rounded-xl px-3.5 py-3 text-[14px] font-medium leading-[1.3] transition-[transform,box-shadow,background-color,border-color,color] duration-200 after:pointer-events-none after:absolute after:inset-0 after:content-[''] after:[translate:-100%_0] hover:enabled:after:animate-auth-sheen disabled:cursor-progress disabled:opacity-60 [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:transition-transform [&>svg]:duration-200";
 const underlinedLinks =
@@ -45,12 +41,9 @@ export const auth = {
   label: "text-[13.5px] leading-[1.2] tracking-[-0.005em] text-spot-body",
   link: `text-[13px] leading-[1.25] ${textLink}`,
   input: `${inputControl} max-[900px]:text-[16px]`,
-  // Room on the right for the show/hide button.
   passwordInput: `${inputControl} pr-11 max-[900px]:text-[16px]`,
   primary: `${button} bg-spot-night tracking-[-0.01em] text-white after:bg-[linear-gradient(90deg,transparent,#ffffff2e,transparent)] hover:enabled:-translate-y-0.5 hover:enabled:bg-[#433369] hover:enabled:shadow-[0_10px_24px_-12px_#30234fb3] active:enabled:translate-y-0`,
   ghost: `${button} border border-spot-violet/15 bg-white/70 text-spot-night after:bg-[linear-gradient(90deg,transparent,#7c62d61f,transparent)] hover:enabled:-translate-y-px hover:enabled:border-spot-violet/30 hover:enabled:bg-white hover:enabled:shadow-[0_8px_18px_-12px_#3c346473] [&>svg]:hover:enabled:scale-110`,
-  // Log in and sign up put the provider buttons, such as Google, beside Guest
-  // in one row; narrow screens tighten them so labels stay on one line.
   tight: "max-[560px]:gap-1.5 max-[560px]:px-2",
   social: "grid grid-cols-2 gap-2.5",
   socialThree:
@@ -67,16 +60,11 @@ export const auth = {
   note: `flex items-center justify-center gap-1.5 text-[13px] leading-[1.4] text-spot-muted max-[560px]:items-start [&>svg]:size-3.5 [&>svg]:shrink-0 max-[560px]:[&>svg]:mt-0.5 ${underlinedLinks}`,
 };
 
-// Content rises in on load; each element sets its delay with --d.
 export const rise = "animate-auth-rise";
 
-// Shared with the password pages.
 export const fieldError = "text-[13px] leading-[1.5] text-overdue-strong";
 export const passwordToggle = `${iconButton} absolute right-1 top-1/2 size-9 -translate-y-1/2`;
 
-// Weak to strong, in the pastel palette: the filled segments take the
-// colour of the current level. The word beside them carries the meaning,
-// so it stays in body text colour.
 const SEGMENTS = ["#e8835f", "#eda16c", "#e3bf66", "#94bf87", "#5f9d70"];
 
 export const PasswordStrength = ({ password, className = "", ...props }) => {

@@ -10,8 +10,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.springframework.http.HttpStatus;
 
-// Checks payment details as they are saved, so documents never show a code
-// or ID a client can't pay to, and puts them in one standard form.
 final class PaymentDetailsValidator {
 
     private static final Pattern UPI = Pattern.compile("^[a-z0-9][a-z0-9._-]{1,63}@[a-z][a-z0-9.]{1,31}$");
@@ -101,8 +99,6 @@ final class PaymentDetailsValidator {
         };
     }
 
-    // ISO 13616: with its first four characters moved to the end and letters
-    // read as 10 to 35, a valid IBAN leaves 1 when divided by 97.
     private static boolean checksumMatches(String iban) {
         StringBuilder digits = new StringBuilder();
         for (char character : (iban.substring(4) + iban.substring(0, 4)).toCharArray()) {

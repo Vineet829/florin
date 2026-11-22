@@ -20,8 +20,6 @@ import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 
-// A payment a client reported on a shared invoice, waiting for someone in the
-// business to confirm it as a payment or dismiss it.
 @Entity
 @Table(name = "payment_claims")
 @Getter

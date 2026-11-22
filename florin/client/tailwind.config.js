@@ -3,11 +3,7 @@ const plugin = require("tailwindcss/plugin");
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ["./index.html", "./src/**/*.{js,jsx}"],
-  // Tailwind's global reset stays off; src/index.css supplies the parts of
-  // it that the pages rely on.
   corePlugins: { preflight: false },
-  // Utilities must win over that reset, which is scoped to .dashboard-app
-  // and so outranks a single class.
   important: "#root",
   theme: {
     extend: {
@@ -23,7 +19,6 @@ module.exports = {
         mono: ["IBM Plex Mono", "monospace"],
       },
       colors: {
-        // Florin's pastel workspace palette.
         spot: {
           ink: "#232735",
           text: "#3d4152",
@@ -43,7 +38,6 @@ module.exports = {
           drawer: "#f0eef8",
           thead: "#f3f2f8",
         },
-        // The financial cards, and the overview's tiles.
         card: {
           blue: {
             DEFAULT: "#cde3f4",
@@ -72,8 +66,6 @@ module.exports = {
             icon: "#a4502f",
             bar: "#c9643f",
           },
-          // The overview's profit tile. A loss is darker as well as
-          // warmer, so colour-blind readers can still tell it apart.
           sage: {
             DEFAULT: "#dcebd6",
             ink: "#1f3320",
@@ -85,20 +77,13 @@ module.exports = {
             loss: "#8c3b1f",
           },
         },
-        // A figure's change against the period before. Each also has an
-        // arrow and words, so colour is never the only sign.
         change: {
           up: "#2f6b2c",
           down: "#a4502f",
         },
-        // Money owed, by whether it is due yet. The lavender is the one
-        // checked against the rust, on the overview and the money bar.
         owed: {
           due: "#9f91dc",
           overdue: "#b5532f",
-          // Overdue by age, light to dark: 1–15, 16–30, 31–45 and over 45
-          // days late. One rust hue in even lightness steps, so the bands
-          // read as an ordered ramp.
           age: {
             1: "#e8835f",
             2: "#c9643f",
@@ -106,13 +91,10 @@ module.exports = {
             4: "#8c3b1f",
           },
         },
-        // The overview's cash flow: money in is spot violet, money out
-        // peach, and what was left the dark net line.
         flow: {
           out: "#d9774f",
           net: "#2d3142",
         },
-        // Initials avatars.
         avatar: {
           lilac: "#e5e1f8",
           "lilac-ink": "#4a3a80",
@@ -128,7 +110,6 @@ module.exports = {
           ink: "#5a2616",
           muted: "#7a4a38",
           icon: "#b0502e",
-          // Small text on peach tints; icon is too light for it.
           strong: "#9c4526",
         },
       },
@@ -142,7 +123,6 @@ module.exports = {
         nav: "0 10px 24px -14px #3c346473, inset 0 0 0 1px #ffffffe6",
         float: "0 18px 40px -20px #3c346473",
         key: "0 6px 14px -8px #3c346480",
-        // The styled dropdown: its trigger's rings, its menu and its sheet.
         focus: "0 0 0 3px #5b47a029",
         invalid: "0 0 0 3px #b5532f24",
         menu: "0 24px 48px -28px #28225080, 0 2px 6px -2px #2822501f",
@@ -158,11 +138,7 @@ module.exports = {
         },
         "ov-pulse": { to: { opacity: "0.4" } },
         "ov-fade": { from: { opacity: "0" } },
-        // A dropdown menu fades in and lifts into place; set --lift to 4px
-        // below a trigger and -4px above it.
         "ov-lift": { from: { opacity: "0", translate: "0 var(--lift, 4px)" } },
-        // Log in and sign up. Entrances move with `translate`, so hover
-        // transforms still apply.
         "auth-rise": {
           from: { opacity: "0", translate: "0 var(--rise, 12px)" },
         },
@@ -223,9 +199,6 @@ module.exports = {
           "12%, 85%": { opacity: "1", translate: "0 0" },
           "100%": { opacity: "0", translate: "0 -4px" },
         },
-        // The homepage. The hero's text and frame lift into place, the
-        // tour's notes pop in, a click ripples out, and the client's phone
-        // floats.
         "home-lift": { from: { transform: "translateY(16px)" } },
         "home-pop": {
           from: { opacity: "0", transform: "translateY(-8px) scale(0.96)" },
@@ -241,7 +214,6 @@ module.exports = {
           "0%, 100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-10px)" },
         },
-        // The sample invoice's stamp lands.
         "home-stamp": {
           from: {
             opacity: "0",
@@ -252,15 +224,12 @@ module.exports = {
             transform: "translate(-50%, -50%) rotate(-12deg) scale(1)",
           },
         },
-        // The step's bar fills over its turn, TURN in GetPaid.jsx.
         "home-progress": { from: { transform: "scaleX(0)" } },
       },
       animation: {
-        // Panels rise in sequence; set --rise-delay per panel.
         "ov-rise":
           "ov-rise 0.7s var(--rise-delay, 0ms) cubic-bezier(0.2, 0.7, 0.2, 1) both",
         "ov-bar": "ov-bar 1.1s 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both",
-        // Chart columns grow from the baseline; set --column-delay per column.
         "ov-column":
           "ov-column 0.9s var(--column-delay, 300ms) cubic-bezier(0.2, 0.7, 0.2, 1) both",
         "ov-roll":
@@ -268,7 +237,6 @@ module.exports = {
         "ov-pulse": "ov-pulse 1.6s ease-in-out infinite alternate",
         "ov-fade": "ov-fade 0.12s ease-out both",
         "ov-lift": "ov-lift 0.12s ease-out both",
-        // Content rises in sequence; set --d (and --rise) per element.
         "auth-rise":
           "auth-rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) var(--d, 0s) backwards",
         "auth-sheen": "auth-sheen 0.7s ease forwards",
@@ -280,13 +248,10 @@ module.exports = {
         "auth-streak": "auth-streak 6s ease-in-out infinite",
         "auth-streak-late": "auth-streak 6s ease-in-out -3s infinite",
         "auth-float": "auth-float var(--dur) ease-in-out infinite",
-        // The loader fills from 0.8s to 2.6s, then its sheen repeats.
         "auth-fill":
           "auth-grow 1.8s cubic-bezier(0.4, 0, 0.2, 1) 0.8s backwards",
         "auth-dot": "auth-dot 1.8s cubic-bezier(0.4, 0, 0.2, 1) 0.8s",
         "auth-loader-wave": "auth-wave 1.8s ease-in-out 2.6s infinite",
-        // The sample window: rows slide in, values grow, then a shimmer
-        // repeats; set --rd, --gd and --sd per element.
         "auth-row": "auth-row 0.45s ease var(--rd, 1.5s) backwards",
         "auth-grow":
           "auth-grow 0.7s cubic-bezier(0.16, 1, 0.3, 1) var(--gd, 1.4s) backwards",
@@ -294,7 +259,6 @@ module.exports = {
           "auth-wave 2.2s ease-in-out calc(1.9s + var(--sd, 0s)) infinite",
         "auth-fade": "ov-fade 0.6s ease 1.8s backwards",
         "auth-toast": "auth-toast 2.6s ease 3.2s",
-        // The homepage; set --lift-delay and --pop-delay per element.
         "home-lift":
           "home-lift 0.9s var(--lift-delay, 0ms) cubic-bezier(0.2, 0.7, 0.2, 1) both",
         "home-pop":
@@ -307,38 +271,24 @@ module.exports = {
     },
   },
   plugins: [
-    // Registered as variants rather than screens: custom screens would switch
-    // off Tailwind's min-[…] and max-[…] breakpoint variants.
     plugin(({ addVariant }) => {
-      // A desktop window below 900px tall (a laptop, or a 1080p screen at
-      // 125% zoom) keeps the desktop layout with tighter spacing.
       addVariant(
         "compact",
         "@media (min-width: 1360px) and (max-height: 900px)",
       );
       addVariant("coarse", "@media (pointer: coarse)");
-      // Workspace tables become labelled cards when their panel is too
-      // narrow for every column, whatever the window size or zoom. Tables
-      // with eight or more columns need more room, and broad ones, with many
-      // long columns, more still; narrow ones, with a few short columns, stay
-      // tables in half-width panels.
       addVariant("stacked", [
         "@container table (max-width: 860px)",
         "@container wide-table (max-width: 960px)",
         "@container broad-table (max-width: 1200px)",
         "@container narrow-table (max-width: 400px)",
       ]);
-      // The other side of stacked: wide enough to be a table. The ranges
-      // meet without a gap, since a container can be a fraction of a pixel
-      // wide.
       addVariant("tabled", [
         "@container table (width > 860px)",
         "@container wide-table (width > 960px)",
         "@container broad-table (width > 1200px)",
         "@container narrow-table (width > 400px)",
       ]);
-      // Document line items: one row each in a wide form, four columns once
-      // the form is too narrow for all eight fields, then two.
       addVariant("items-md", "@container items (max-width: 900px)");
       addVariant("items-sm", "@container items (max-width: 480px)");
     }),

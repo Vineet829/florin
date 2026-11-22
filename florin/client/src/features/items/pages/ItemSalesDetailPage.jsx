@@ -36,15 +36,9 @@ import { panelNote, textLink } from "../../../components/workspace/pastel";
 const NO_ROWS = [];
 const partTitle = "mb-1 text-[14px] font-medium text-spot-ink";
 
-// One item's sales over a period, in one currency: what it brought in, how
-// many were sold and its share of the income, the clients who bought it,
-// largest first, and the latest lines it was sold on, newest first, each
-// opening its document. The item is matched by name, in any case, as Sales
-// by item groups it; other lines are those saved without a name. The name,
-// period and currency are kept in the address.
 const ItemSalesDetailPage = () => {
   const [view, update] = useListState(readItemDetail, itemDetailSearch);
-  useTitle(`${view.name || "Item"} sales — Florin`);
+  useTitle(`${view.name || "Item"} sales - Florin`);
   const query = useGetItemSalesDetailQuery(itemDetailQuery(view), {
     skip: !view.name,
     refetchOnMountOrArgChange: 60,
@@ -58,7 +52,6 @@ const ItemSalesDetailPage = () => {
   const amount = (value) => (
     <Amount value={value} currency={currency} hideCode={!several} />
   );
-  // Other lines are the lines saved without an item name, and say so.
   const days = `Sold ${
     detail?.period?.from && detail?.period?.to
       ? dateSpan(detail.period.from, detail.period.to)
@@ -214,7 +207,7 @@ const ItemSalesDetailPage = () => {
                     label: "Issued",
                     render: (row) => dateLabel(row.issueDate),
                   },
-                  { label: "Client", render: (row) => row.client || "—" },
+                  { label: "Client", render: (row) => row.client || "-" },
                   {
                     label: "Sold",
                     render: (row) => soldCount(row.quantity),

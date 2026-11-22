@@ -17,31 +17,31 @@
       "clients": [
         {
           "clientId": null,
-          "client": "Verdant Farms",
+          "client": "Nisarg Organic Farms",
           "amount": 4346.52,
           "invoices": 1
         },
         {
           "clientId": "00000000-0000-0000-0000-00000000c110",
-          "client": "Oak Street Bakery",
+          "client": "Mehta Bakers",
           "amount": 3217.5,
           "invoices": 1
         },
         {
           "clientId": "00000000-0000-0000-0000-00000000c111",
-          "client": "Lumen Health",
+          "client": "Bhide Nursing Home",
           "amount": 2762.75,
           "invoices": 1
         },
         {
           "clientId": "00000000-0000-0000-0000-00000000c103",
-          "client": "Bluefin Analytics",
+          "client": "Shinde Constructions",
           "amount": 2664.09,
           "invoices": 1
         },
         {
           "clientId": "00000000-0000-0000-0000-00000000c101",
-          "client": "Atlas Robotics",
+          "client": "Pai Electricals",
           "amount": 2550.4,
           "invoices": 1
         }
@@ -59,19 +59,19 @@
       "clients": [
         {
           "clientId": "00000000-0000-0000-0000-00000000c105",
-          "client": "Sable Fitness",
+          "client": "Gadre Mess",
           "amount": 3391.67,
           "invoices": 1
         },
         {
           "clientId": "00000000-0000-0000-0000-00000000c107",
-          "client": "Quill & Co. Publishing",
+          "client": "Deshmukh & Associates",
           "amount": 1969.11,
           "invoices": 1
         },
         {
           "clientId": null,
-          "client": "Verdant Farms",
+          "client": "Nisarg Organic Farms",
           "amount": 965.25,
           "invoices": 1
         }
@@ -90,7 +90,7 @@
       {
         "_id": "00000000-0000-0000-0000-000000001026",
         "customerId": "00000000-0000-0000-0000-00000000c105",
-        "customer": { "name": "Sable Fitness" },
+        "customer": { "name": "Gadre Mess" },
         "documentType": "Invoice",
         "documentNumber": "INV-1026",
         "state": "issued",
@@ -105,7 +105,7 @@
       {
         "_id": "00000000-0000-0000-0000-000000001030",
         "customerId": "00000000-0000-0000-0000-00000000c107",
-        "customer": { "name": "Quill & Co. Publishing" },
+        "customer": { "name": "Deshmukh & Associates" },
         "documentType": "Invoice",
         "documentNumber": "INV-1030",
         "state": "issued",
@@ -120,7 +120,7 @@
       {
         "_id": "00000000-0000-0000-0000-000000001031",
         "customerId": null,
-        "customer": { "name": "Verdant Farms" },
+        "customer": { "name": "Nisarg Organic Farms" },
         "documentType": "Invoice",
         "documentNumber": "INV-1031",
         "state": "issued",
@@ -156,7 +156,7 @@
       {
         "_id": "00000000-0000-0000-0000-000000001032",
         "customerId": "00000000-0000-0000-0000-00000000c103",
-        "customer": { "name": "Bluefin Analytics" },
+        "customer": { "name": "Shinde Constructions" },
         "documentType": "Invoice",
         "documentNumber": "INV-1032",
         "state": "issued",
@@ -171,7 +171,7 @@
       {
         "_id": "00000000-0000-0000-0000-000000001034",
         "customerId": "00000000-0000-0000-0000-00000000c101",
-        "customer": { "name": "Atlas Robotics" },
+        "customer": { "name": "Pai Electricals" },
         "documentType": "Invoice",
         "documentNumber": "INV-1034",
         "state": "issued",
@@ -186,7 +186,7 @@
       {
         "_id": "00000000-0000-0000-0000-000000001035",
         "customerId": "00000000-0000-0000-0000-00000000c110",
-        "customer": { "name": "Oak Street Bakery" },
+        "customer": { "name": "Mehta Bakers" },
         "documentType": "Invoice",
         "documentNumber": "INV-1035",
         "state": "issued",
@@ -201,7 +201,7 @@
       {
         "_id": "00000000-0000-0000-0000-000000001036",
         "customerId": null,
-        "customer": { "name": "Verdant Farms" },
+        "customer": { "name": "Nisarg Organic Farms" },
         "documentType": "Invoice",
         "documentNumber": "INV-1036",
         "state": "issued",
@@ -216,7 +216,7 @@
       {
         "_id": "00000000-0000-0000-0000-000000001037",
         "customerId": "00000000-0000-0000-0000-00000000c112",
-        "customer": { "name": "Juniper Films" },
+        "customer": { "name": "Iyer Dance Academy" },
         "documentType": "Invoice",
         "documentNumber": "INV-1037",
         "state": "issued",
@@ -231,7 +231,7 @@
       {
         "_id": "00000000-0000-0000-0000-000000001038",
         "customerId": "00000000-0000-0000-0000-00000000c104",
-        "customer": { "name": "Harbor & Pine Architects" },
+        "customer": { "name": "Kale & Deshpande Architects" },
         "documentType": "Invoice",
         "documentNumber": "INV-1038",
         "state": "issued",
@@ -246,7 +246,7 @@
       {
         "_id": "00000000-0000-0000-0000-000000001039",
         "customerId": "00000000-0000-0000-0000-00000000c111",
-        "customer": { "name": "Lumen Health" },
+        "customer": { "name": "Bhide Nursing Home" },
         "documentType": "Invoice",
         "documentNumber": "INV-1039",
         "state": "issued",

@@ -3,7 +3,6 @@ import { toast } from "react-toastify";
 import { errorMessage } from "../../components/workspace/Workspace";
 import { useGetDocumentPdfMutation } from "./documentsApiSlice";
 
-// Named as the server names it: a draft has no number yet.
 export const pdfFileName = (document) =>
   document?.state === "draft"
     ? `Draft-${document.documentType.toLowerCase()}.pdf`
@@ -17,8 +16,6 @@ export const saveFile = (url, name) => {
   setTimeout(() => URL.revokeObjectURL(url), 30000);
 };
 
-// Prints from a hidden frame, so no new tab opens. The frame lives outside
-// #root, where no Tailwind classes apply, so it is hidden with inline styles.
 let printFrame;
 const printFile = (url) => {
   if (printFrame) {
@@ -41,7 +38,6 @@ const printFile = (url) => {
   window.document.body.appendChild(printFrame);
 };
 
-// Download and Print for one document. `busy` names the action in progress.
 export const useDocumentPdf = (document) => {
   const [getPdf] = useGetDocumentPdfMutation();
   const [busy, setBusy] = useState(null);
@@ -52,7 +48,7 @@ export const useDocumentPdf = (document) => {
       if (action === "download") saveFile(url, pdfFileName(document));
       else printFile(url);
     } catch (error) {
-      toast.error(errorMessage(error, "The PDF could not be prepared."));
+      toast.error(errorMessage(error, "The PDF couldn't be prepared."));
     } finally {
       setBusy(null);
     }

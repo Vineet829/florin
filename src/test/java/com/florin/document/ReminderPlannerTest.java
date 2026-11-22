@@ -8,7 +8,6 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -37,8 +36,6 @@ class ReminderPlannerTest {
         return invoice;
     }
 
-    // The days the job sends a reminder on, running every day from `first` to
-    // `last` except the days it was down.
     private static List<LocalDate> sent(
             Document invoice, BusinessSettings settings, LocalDate first, LocalDate last, LocalDate... down) {
         List<LocalDate> days = new ArrayList<>();
@@ -54,23 +51,20 @@ class ReminderPlannerTest {
     }
 
     @Test
-    @DisplayName("a reminder goes out before, on and every so often after the due date")
-    void schedule() {
+    void remindsAroundDueDate() {
         assertThat(sent(invoice(0, null), settings(3, true, 7, 5), DUE.minusDays(6), DUE.plusDays(15)))
                 .containsExactly(DUE.minusDays(3), DUE, DUE.plusDays(7), DUE.plusDays(14));
     }
 
     @Test
-    @DisplayName("a reminder missed on a day the job didn't run goes out the next time it does, once")
-    void catchesUp() {
+    void missedReminderSentNextRun() {
         assertThat(sent(invoice(0, null), settings(3, true, 7, 5), DUE.minusDays(6), DUE.plusDays(15),
                         DUE.minusDays(3), DUE.minusDays(2), DUE.plusDays(7)))
                 .containsExactly(DUE.minusDays(1), DUE, DUE.plusDays(8), DUE.plusDays(14));
     }
 
     @Test
-    @DisplayName("no catching up on days before the invoice was issued, or before the due date once it has passed")
-    void notTooLate() {
+    void limitsCatchUpWindow() {
         Document backdated = invoice(0, null);
         backdated.setIssueDate(DUE.plusDays(2));
         assertThat(sent(backdated, settings(3, true, 7, 5), DUE.plusDays(2), DUE.plusDays(8)))
@@ -84,8 +78,7 @@ class ReminderPlannerTest {
     }
 
     @Test
-    @DisplayName("a reminder sent by hand since the missed day counts for it")
-    void sentByHand() {
+    void manualReminderFillsMissedDay() {
         assertThat(sent(invoice(1, DUE.minusDays(2)), settings(3, true, 7, 5), DUE.minusDays(2), DUE.plusDays(1),
                         DUE.minusDays(3)))
                 .containsExactly(DUE);
@@ -93,12 +86,11 @@ class ReminderPlannerTest {
 
     @ParameterizedTest(name = "{0}")
     @CsvSource({
-        "turned-off steps send nothing, 0, false, 0, 5, 0, , 2026-10-01",
-        "the most allowed were sent, 3, true, 7, 3, 3, , 2026-10-01",
-        "already reminded today, 3, true, 7, 5, 1, 2026-10-01, 2026-10-01",
+        "steps off, 0, false, 0, 5, 0, , 2026-10-01",
+        "limit reached, 3, true, 7, 3, 3, , 2026-10-01",
+        "reminded today, 3, true, 7, 5, 1, 2026-10-01, 2026-10-01",
     })
-    @DisplayName("no reminder when a step is off, the most allowed went out, or one went out today")
-    void none(
+    void noReminderDue(
             String reason, int before, boolean onDue, int every, int most, int sent, LocalDate last, LocalDate today) {
         assertThat(ReminderPlanner.isDue(invoice(sent, last), settings(before, onDue, every, most), today, ZONE))
                 .isFalse();

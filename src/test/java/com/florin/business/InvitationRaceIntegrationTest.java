@@ -20,7 +20,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,11 +32,6 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-// Inviting, resending, withdrawing and deleting the business all lock the
-// business first, and so does an acceptance, so an acceptance that arrives
-// while one of those is under way waits its turn instead of deadlocking. Each
-// test makes one of those changes in a transaction of its own, held open until
-// the acceptance is waiting on a lock.
 class InvitationRaceIntegrationTest extends IntegrationTest {
 
     private static final Pattern LINK = Pattern.compile("/invite/([A-Za-z0-9_-]{43})");
@@ -83,7 +77,6 @@ class InvitationRaceIntegrationTest extends IntegrationTest {
                 .content(json));
     }
 
-    // The links in the invitation emails sent so far, oldest first.
     private List<String> links(int count) {
         ArgumentCaptor<SimpleMailMessage> mail = ArgumentCaptor.forClass(SimpleMailMessage.class);
         verify(mailSender, timeout(5000).times(count)).send(mail.capture());
@@ -94,8 +87,6 @@ class InvitationRaceIntegrationTest extends IntegrationTest {
         }).toList();
     }
 
-    // Accepts the link while `meanwhile` runs in a transaction held open
-    // until the acceptance waits on a lock, and gives the acceptance's status.
     private int acceptWhile(String link, Runnable meanwhile) throws Exception {
         CountDownLatch ran = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
@@ -130,7 +121,6 @@ class InvitationRaceIntegrationTest extends IntegrationTest {
         }
     }
 
-    // Until the request waits on a lock, or has ended.
     private void awaitLockWait(Future<?> request) throws InterruptedException {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
         while (System.nanoTime() < deadline && !request.isDone()) {
@@ -146,7 +136,6 @@ class InvitationRaceIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an acceptance that waits while the invitation is resent finds its link replaced; the new one works")
     void acceptWhileResent() throws Exception {
         int accepted = acceptWhile(token, () -> invitationService.resend(access, id));
 
@@ -156,7 +145,6 @@ class InvitationRaceIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an acceptance that waits while the invitation is withdrawn is refused")
     void acceptWhileRevoked() throws Exception {
         int accepted = acceptWhile(token, () -> invitationService.revoke(access, id));
 
@@ -166,7 +154,6 @@ class InvitationRaceIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an acceptance that waits while the business is deleted finds the link gone")
     void acceptWhileBusinessDeleted() throws Exception {
         int accepted = acceptWhile(
                 token, () -> teamService.delete(access, new ConfirmIdentityRequest(ACCOUNT_PASSWORD, null)));

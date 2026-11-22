@@ -10,19 +10,15 @@ import com.florin.IntegrationTest;
 import com.florin.user.User;
 import com.jayway.jsonpath.JsonPath;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
 
-// A server started without its encryption key still shares documents, but
-// keeps only the link's hash, so each link is shown once, when it is made.
 @TestPropertySource(properties = "app.encryption.key=")
 class ShareWithoutKeyIntegrationTest extends IntegrationTest {
 
     @Test
-    @DisplayName("a link is shown when it is made and works, but can't be shown again")
     void shownOnce() throws Exception {
         User owner = createUser();
         String customer = mockMvc.perform(post("/api/v1/customer/create")

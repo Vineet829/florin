@@ -7,7 +7,6 @@ import { Select } from "./Select";
 
 window.IS_REACT_ACT_ENVIRONMENT = true;
 
-// jsdom has no modal dialogs; these stand in for the browser's.
 HTMLDialogElement.prototype.showModal = function showModal() {
   this.open = true;
 };
@@ -45,7 +44,6 @@ const ZONES = Array.from({ length: 20 }, (_, index) => ({
 }));
 ZONES[7] = { value: "Asia/Kolkata", label: "Asia/Kolkata", meta: "UTC+5:30" };
 
-// The control with its own value, as a form holds it.
 const Harness = ({ initial = "new", onChange, ...props }) => {
   const [value, setValue] = useState(initial);
   return (
@@ -63,7 +61,6 @@ const Harness = ({ initial = "new", onChange, ...props }) => {
   );
 };
 const render = (element) => act(async () => root.render(element));
-// Each shows a fresh control, whatever was rendered before.
 let shown = 0;
 const show = (props) => render(<Harness key={(shown += 1)} {...props} />);
 
@@ -71,7 +68,6 @@ const trigger = () => container.querySelector('[role="combobox"]');
 const listbox = () => document.querySelector('[role="listbox"]');
 const options = () => [...document.querySelectorAll('[role="option"]')];
 const searchBox = () => document.querySelector('input[role="combobox"]');
-// An option's accessible name: the words its aria-labelledby points at.
 const nameOf = (option) =>
   option
     .getAttribute("aria-labelledby")
@@ -105,7 +101,7 @@ const type = (element, text) =>
     element.dispatchEvent(new Event("input", { bubbles: true }));
   });
 
-it("opens on a click, lists the options with the chosen one ticked, and closes on the next click", async () => {
+it("toggles on click", async () => {
   await show();
   const button = trigger();
   expect(button.getAttribute("aria-haspopup")).toBe("listbox");
@@ -124,8 +120,6 @@ it("opens on a click, lists the options with the chosen one ticked, and closes o
   expect(next.getAttribute("aria-selected")).toBe("false");
   expect(next.querySelector("svg")).toBeNull();
   expect(activeLabel()).toBe("Newest first");
-  // The menu is drawn at the app's root, in the workspace's styles, and
-  // lifts into place.
   expect(listbox().closest(".dashboard-app").parentElement).toBe(document.body);
   expect(listbox().parentElement.className).toContain("animate-ov-lift");
   await click(button);
@@ -133,7 +127,7 @@ it("opens on a click, lists the options with the chosen one ticked, and closes o
   expect(listbox()).toBeNull();
 });
 
-it("chooses an option with the mouse, reports its value and gives focus back to the trigger", async () => {
+it("chooses with the mouse", async () => {
   const onChange = vi.fn();
   await show({ onChange });
   await click(trigger());
@@ -147,13 +141,12 @@ it("chooses an option with the mouse, reports its value and gives focus back to 
   expect(trigger().textContent).toContain("Due soonest");
   expect(trigger().value).toBe("due");
   expect(document.activeElement).toBe(trigger());
-  // Choosing the option already chosen reports nothing.
   await click(trigger());
   await click(options()[2]);
   expect(onChange).toHaveBeenCalledTimes(1);
 });
 
-it("opens on Enter, Space, the arrows, Home and End, with the arrows also moving", async () => {
+it("opens from the keyboard", async () => {
   await show({ initial: "due" });
   const button = trigger();
   for (const [key, expected] of [
@@ -172,7 +165,7 @@ it("opens on Enter, Space, the arrows, Home and End, with the arrows also moving
   }
 });
 
-it("moves with the arrows, Home, End, PageUp and PageDown, skipping disabled options, and Enter chooses", async () => {
+it("keyboard skips disabled options", async () => {
   const onChange = vi.fn();
   const sorts = SORTS.map((option) =>
     option.value === "late" ? { ...option, disabled: true } : option,
@@ -204,7 +197,6 @@ it("moves with the arrows, Home, End, PageUp and PageDown, skipping disabled opt
   await press(button, "Enter");
   expect(onChange).toHaveBeenCalledWith("due");
   expect(listbox()).toBeNull();
-  // A disabled option can't be chosen with the mouse either.
   await click(button);
   expect(options()[3].getAttribute("aria-disabled")).toBe("true");
   await click(options()[3]);
@@ -212,7 +204,7 @@ it("moves with the arrows, Home, End, PageUp and PageDown, skipping disabled opt
   expect(onChange).toHaveBeenCalledTimes(1);
 });
 
-it("keeps the old value on Esc and lets Tab move on, closing either way", async () => {
+it("Esc and Tab close it", async () => {
   const onChange = vi.fn();
   await render(
     <>
@@ -240,7 +232,7 @@ it("keeps the old value on Esc and lets Tab move on, closing either way", async 
   expect(onChange).not.toHaveBeenCalled();
 });
 
-it("closes on a click outside without taking focus, and does not open when disabled", async () => {
+it("handles outside click and disabled", async () => {
   await render(
     <>
       <Harness />
@@ -262,22 +254,18 @@ it("closes on a click outside without taking focus, and does not open when disab
   expect(listbox()).toBeNull();
 });
 
-it("jumps to the option starting with the letters typed within half a second", async () => {
+it("typeahead jumps to matches", async () => {
   let now = 1000;
   vi.spyOn(Date, "now").mockImplementation(() => now);
   await show();
   const button = trigger();
-  // Typing with the menu closed opens it at the match.
   await press(button, "o");
   expect(listbox()).not.toBeNull();
   expect(activeLabel()).toBe("Oldest first");
-  // The letter that opened the menu is still in the word for half a
-  // second; after that, a new word starts.
   now += 600;
   await press(button, "d");
   expect(activeLabel()).toBe("Due soonest");
   now += 100;
-  // The same letter again goes on to the next option with it.
   await press(button, "d");
   expect(activeLabel()).toBe("Due latest");
   now += 600;
@@ -289,13 +277,12 @@ it("jumps to the option starting with the letters typed within half a second", a
   now += 600;
   await press(button, "h");
   expect(activeLabel()).toBe("Highest amount");
-  // The trigger's value only changes on Enter.
   expect(button.value).toBe("new");
   await press(button, "Enter");
   expect(button.value).toBe("high");
 });
 
-it("keeps the letters typed on the closed trigger together", async () => {
+it("typeahead on closed trigger", async () => {
   let now = 1000;
   vi.spyOn(Date, "now").mockImplementation(() => now);
   await show({ options: [...SORTS, { value: "30d", label: "Last 30 days" }] });
@@ -307,7 +294,7 @@ it("keeps the letters typed on the closed trigger together", async () => {
   expect(activeLabel()).toBe("Last 30 days");
 });
 
-it("moves ten at a time with PageDown and PageUp, stopping at the ends", async () => {
+it("PageUp and PageDown move ten", async () => {
   await show({ options: ZONES, searchable: false, initial: "Zone/3" });
   const button = trigger();
   await press(button, "Enter");
@@ -322,7 +309,7 @@ it("moves ten at a time with PageDown and PageUp, stopping at the ends", async (
   expect(activeLabel()).toBe("Zone 0");
 });
 
-it("searches a long list on label, description and meta, counts the matches, and says when nothing matches", async () => {
+it("searches long lists", async () => {
   const onChange = vi.fn();
   await show({ initial: "Zone/3", options: ZONES, onChange });
   const button = trigger();
@@ -330,7 +317,6 @@ it("searches a long list on label, description and meta, counts the matches, and
   const search = searchBox();
   expect(document.activeElement).toBe(search);
   expect(button.getAttribute("aria-expanded")).toBe("true");
-  // While the search has focus it is the combobox, with the active option.
   expect(search.getAttribute("aria-expanded")).toBe("true");
   expect(search.getAttribute("aria-haspopup")).toBe("listbox");
   expect(search.getAttribute("aria-controls")).toBe(listbox().id);
@@ -373,8 +359,6 @@ it("searches a long list on label, description and meta, counts the matches, and
   expect(onChange).toHaveBeenCalledWith("Zone/10");
   expect(listbox()).toBeNull();
   expect(document.activeElement).toBe(button);
-  // A letter typed on the closed trigger opens the search with it, and
-  // its first match active, so Enter chooses it.
   await press(button, "k");
   expect(searchBox().value).toBe("k");
   expect(labels()).toEqual(["Asia/Kolkata"]);
@@ -383,7 +367,7 @@ it("searches a long list on label, description and meta, counts the matches, and
   expect(onChange).toHaveBeenLastCalledWith("Asia/Kolkata");
 });
 
-it("closes on Tab from the search and lets focus go on from the trigger", async () => {
+it("Tab from search closes it", async () => {
   await show({ options: ZONES, initial: "Zone/3" });
   await click(trigger());
   expect(document.activeElement).toBe(searchBox());
@@ -398,7 +382,7 @@ it("closes on Tab from the search and lets focus go on from the trigger", async 
   expect(document.activeElement).toBe(trigger());
 });
 
-it("can be told to search a short list or not to search a long one", async () => {
+it("search follows the searchable prop", async () => {
   await show({ searchable: true });
   await click(trigger());
   expect(searchBox()).not.toBeNull();
@@ -408,7 +392,7 @@ it("can be told to search a short list or not to search a long one", async () =>
   expect(document.querySelector('[role="status"]')).toBeNull();
 });
 
-it("scrolls the chosen option into view when it opens and the active one as it moves", async () => {
+it("scrolls options into view", async () => {
   const scrolled = [];
   Element.prototype.scrollIntoView = vi.fn(function scrollIntoView(where) {
     scrolled.push([this.dataset.value, where.block]);
@@ -421,8 +405,7 @@ it("scrolls the chosen option into view when it opens and the active one as it m
   delete Element.prototype.scrollIntoView;
 });
 
-it("hangs under the trigger as wide as it, and flips above when there is more room there", async () => {
-  // The menu measures 200 by 300; the trigger's box is set per case.
+it("positions menu below or above", async () => {
   vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue({
     width: 199.6,
     height: 299.5,
@@ -443,16 +426,14 @@ it("hangs under the trigger as wide as it, and flips above when there is more ro
   menu = listbox().parentElement;
   expect(menu.style.top).toBe("396px");
   expect(menu.style.width).toBe("260px");
-  // Kept clear of the window's right edge.
   expect(menu.style.left).toBe("756px");
   expect(menu.style.getPropertyValue("--lift")).toBe("-4px");
-  // It follows the trigger as the page scrolls.
   rect = { top: 600, bottom: 644, left: 900, width: 260, height: 44 };
   await act(async () => window.dispatchEvent(new Event("scroll")));
   expect(menu.style.top).toBe("296px");
 });
 
-it("keeps a hidden input with the value when it has a name, and the form's required check", async () => {
+it("keeps a hidden form input", async () => {
   await render(
     <form>
       <Harness name="sort" />
@@ -471,12 +452,10 @@ it("keeps a hidden input with the value when it has a name, and the form's requi
   );
   const button = trigger();
   expect(button.getAttribute("aria-required")).toBe("true");
-  expect(button.textContent).toContain("Choose…");
+  expect(button.textContent).toContain("Choose...");
   expect(container.querySelector("form").checkValidity()).toBe(false);
   expect(button.getAttribute("aria-invalid")).toBeNull();
   const checked = container.querySelector('input[name="sort"]');
-  // The browser's message focuses this input, so it is named like the
-  // control and not hidden from a screen reader.
   expect(checked.getAttribute("aria-label")).toBe("Sort");
   expect(checked.hasAttribute("aria-hidden")).toBe(false);
   expect(checked.tabIndex).toBe(-1);
@@ -505,7 +484,7 @@ it("keeps a hidden input with the value when it has a name, and the form's requi
   expect(named.hasAttribute("aria-label")).toBe(false);
 });
 
-it("sends a key pressed on the required input on to the trigger, which opens", async () => {
+it("required input forwards keys", async () => {
   await render(
     <form>
       <Harness name="sort" initial="" required />
@@ -520,7 +499,7 @@ it("sends a key pressed on the required input on to the trigger, which opens", a
   expect(activeLabel()).toBe("Newest first");
 });
 
-it("draws its menu inside the open dialog it sits in, and a press on the backdrop closes the menu alone", async () => {
+it("renders inside open dialogs", async () => {
   await render(
     <dialog open>
       <Harness />
@@ -543,14 +522,13 @@ it("draws its menu inside the open dialog it sits in, and a press on the backdro
   });
   expect(listbox()).toBeNull();
   expect(onClose).not.toHaveBeenCalled();
-  // With the menu closed, the backdrop closes the dialog as before.
   await act(async () =>
     dialog.dispatchEvent(new MouseEvent("click", { bubbles: true })),
   );
   expect(onClose).toHaveBeenCalledTimes(1);
 });
 
-it("ends closed when its label is clicked while it is open", async () => {
+it("label click closes it", async () => {
   await render(
     <label>
       <span>Sort documents</span>
@@ -560,8 +538,6 @@ it("ends closed when its label is clicked while it is open", async () => {
   const words = container.querySelector("label > span");
   await click(trigger());
   expect(listbox()).not.toBeNull();
-  // The press lands on the label, then the label passes a click to the
-  // trigger.
   await act(async () =>
     words.dispatchEvent(new MouseEvent("mousedown", { bubbles: true })),
   );
@@ -571,7 +547,7 @@ it("ends closed when its label is clicked while it is open", async () => {
   expect(trigger().getAttribute("aria-expanded")).toBe("false");
 });
 
-it("works the same under StrictMode", async () => {
+it("works under StrictMode", async () => {
   const onChange = vi.fn();
   await render(
     <StrictMode>
@@ -586,7 +562,7 @@ it("works the same under StrictMode", async () => {
   expect(document.activeElement).toBe(trigger());
 });
 
-it("opens as a sheet on a coarse pointer, titled by its label, and gives focus back when done", async () => {
+it("opens as a sheet on touch", async () => {
   vi.stubGlobal(
     "matchMedia",
     vi.fn((query) => ({ matches: query === "(pointer: coarse)" })),
@@ -624,7 +600,6 @@ it("opens as a sheet on a coarse pointer, titled by its label, and gives focus b
   expect(document.querySelector("dialog")).toBeNull();
   expect(onChange).toHaveBeenCalledTimes(1);
   expect(document.activeElement).toBe(button);
-  // A narrow window gets the sheet too, with the search at the top.
   vi.unstubAllGlobals();
   window.innerWidth = 390;
   await show({ options: ZONES, initial: "Zone/1" });
@@ -636,7 +611,7 @@ it("opens as a sheet on a coarse pointer, titled by its label, and gives focus b
   expect(document.querySelector("dialog")).toBeNull();
 });
 
-it("appears without the lift under reduced motion", async () => {
+it("no animation with reduced motion", async () => {
   vi.stubGlobal(
     "matchMedia",
     vi.fn((query) => ({
@@ -648,7 +623,7 @@ it("appears without the lift under reduced motion", async () => {
   expect(listbox().parentElement.className).not.toContain("animate-");
 });
 
-it("takes option and optgroup children, with group headings, and shows a muted placeholder", async () => {
+it("supports option and optgroup children", async () => {
   await render(
     <Select aria-label="Period" value="" onChange={() => {}}>
       <option value="">All dates</option>
@@ -693,7 +668,7 @@ it("takes option and optgroup children, with group headings, and shows a muted p
   expect(shown.className).toContain("text-spot-muted");
 });
 
-it("describes options inside the menu and shows their meta at the right", async () => {
+it("shows option descriptions and meta", async () => {
   await render(
     <Select
       aria-label="Template"
@@ -727,7 +702,7 @@ it("describes options inside the menu and shows their meta at the right", async 
   expect(modern.className).toContain("font-medium");
 });
 
-it("is as wide as its longest option in a toolbar unless told to fit the chosen one", async () => {
+it("toolbar width fits longest option", async () => {
   await show();
   const sizer = trigger().querySelector('[aria-hidden="true"].invisible');
   expect(sizer.textContent).toBe(SORTS.map((option) => option.label).join(""));

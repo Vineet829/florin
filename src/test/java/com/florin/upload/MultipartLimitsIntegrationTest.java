@@ -20,7 +20,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -32,10 +31,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-// Tomcat parses a multipart body when Spring asks for its parts before
-// picking a controller (after the app's security filters), which is why
-// these tests go over a real connection: MockMvc, which the other upload
-// tests use, never reaches Tomcat's parser.
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
@@ -77,14 +72,12 @@ class MultipartLimitsIntegrationTest {
     @Autowired
     private SessionService sessionService;
 
-    // Nothing here sends an email, and none could reach a real mail server.
     @MockBean
     private JavaMailSender mailSender;
 
     private final HttpClient http = HttpClient.newHttpClient();
 
     @Test
-    @DisplayName("a logo sent as the settings page sends it, in a part of its own, is kept")
     void keepsALogo() throws Exception {
         HttpResponse<String> response = upload(token(), body(0));
 
@@ -92,14 +85,10 @@ class MultipartLimitsIntegrationTest {
         assertThat(response.body()).startsWith("/uploads/");
         Path logo = Path.of(properties.upload().dir()).resolve(response.body().substring("/uploads/".length()));
         assertThat(logo).exists();
-        // Tests share the folder a local run of the app keeps logos in.
         Files.delete(logo);
     }
 
-    // No form here sends more than one part; a body cut into many is only a
-    // way to make the server hold on to them all (CVE-2025-48988).
     @Test
-    @DisplayName("a logo sent among more parts than the server takes is refused, and nothing is kept")
     void refusesTooManyParts() throws Exception {
         String token = token();
         Set<Path> before = uploads();
@@ -111,10 +100,7 @@ class MultipartLimitsIntegrationTest {
         assertThat(uploads()).isEqualTo(before);
     }
 
-    // Parts are read before the route is, so a route anyone can reach takes
-    // them too; one cut short is the sender's to fix.
     @Test
-    @DisplayName("a multipart body cut short is a 400, even sent without signing in")
     void refusesABodyCutShort() throws Exception {
         byte[] body = ("--" + BOUNDARY + "\r\n"
                         + "Content-Disposition: form-data; name=\"email\"\r\n\r\nsomeone@example.test")
@@ -143,7 +129,6 @@ class MultipartLimitsIntegrationTest {
         return jwtService.issueAccessToken(user, sessionService.start(user).session().getId());
     }
 
-    // The logo's part, as a browser sends it, then the given number of others.
     private static byte[] body(int others) throws Exception {
         ByteArrayOutputStream body = new ByteArrayOutputStream();
         body.write(("--" + BOUNDARY + "\r\n"

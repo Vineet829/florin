@@ -26,8 +26,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-// Inviting people by email to join a business with a role. Only a token's
-// hash is kept; the link in the email carries the token itself.
 @Service
 public class InvitationService {
 
@@ -108,8 +106,6 @@ public class InvitationService {
             waiting.setRevokedAt(now);
             invitationRepository.saveAndFlush(waiting);
         });
-        // Only invitations that can still be accepted count: one that has
-        // expired is waiting for nothing.
         if (invitationRepository.findWaiting(business.getPkid()).stream()
                         .filter(waiting -> !waiting.isExpiredAt(now))
                         .count()
@@ -133,8 +129,6 @@ public class InvitationService {
         return InvitationResponse.from(invitation, now);
     }
 
-    // A new link replaces the old one, which stops working, and the
-    // invitation runs for another week.
     @Transactional
     public InvitationResponse resend(BusinessAccess access, String id) {
         Business business = lock(access);
@@ -173,17 +167,12 @@ public class InvitationService {
                 status(invitation, clock.instant()));
     }
 
-    // Only the account the invitation was sent to accepts it, once its email
-    // is verified. The session then works in the business joined.
     @Transactional
     public BusinessAccess accept(User user, UUID sessionId, String token) {
         if (token == null || token.isBlank() || token.length() > 100) {
             throw invitationGone();
         }
         String tokenHash = SecretTokens.hash(token);
-        // The business is locked before the invitation, as a resend, a
-        // withdrawal or a deletion locks them, so one of those at the same
-        // time takes turns with this instead of deadlocking.
         Business business = invitationRepository.findBusinessPkidByTokenHash(tokenHash)
                 .flatMap(businessRepository::findForUpdate)
                 .orElseThrow(InvitationService::invitationGone);
@@ -227,8 +216,6 @@ public class InvitationService {
         return token;
     }
 
-    // Sent once the invitation is saved, so no email goes out for one that
-    // wasn't.
     private void send(Invitation invitation, Business business, User inviter, String token) {
         String name = (inviter.getFirstName() + " " + inviter.getLastName()).trim();
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {

@@ -11,9 +11,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-// Previews an email being written in Settings on the business's own
-// documents, which is why it lives with them. Only those who can change the
-// emails preview them.
 @RestController
 public class EmailPreviewController {
 

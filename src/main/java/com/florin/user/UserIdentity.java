@@ -13,9 +13,6 @@ import java.time.Instant;
 import lombok.Getter;
 import lombok.Setter;
 
-// An account at a sign-in provider, such as Google, that signs in to a user.
-// The subject is the provider's own lasting ID for it; the email is the one
-// it had when it was linked.
 @Entity
 @Table(name = "user_identities")
 @Getter

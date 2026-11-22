@@ -15,16 +15,12 @@ import java.nio.file.Path;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.mock.web.MockMultipartFile;
 
-// Logos are served from /uploads to anyone, so only images are: a page that
-// found its way into the folder isn't served, and what is served carries a
-// sandbox in case a browser ever reads it as a page.
 class UploadServingIntegrationTest extends IntegrationTest {
 
     private static final byte[] PNG = {(byte) 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 13};
@@ -50,7 +46,6 @@ class UploadServingIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an image is served as one, in a sandbox; anything else in the folder is not served")
     void servesImagesOnly() throws Exception {
         mockMvc.perform(get("/uploads/{name}", image.getFileName().toString()))
                 .andExpect(status().isOk())
@@ -61,7 +56,6 @@ class UploadServingIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an image is kept by browsers for a year, as an upload's name is never reused; a missing one isn't")
     void imagesAreKept() throws Exception {
         mockMvc.perform(get("/uploads/{name}", image.getFileName().toString()))
                 .andExpect(status().isOk())
@@ -74,7 +68,6 @@ class UploadServingIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an upload is refused when its bytes aren't a PNG, JPEG or GIF image")
     void refusesPagesSentAsImages() throws Exception {
         MockMultipartFile page = new MockMultipartFile(
                 "logo", "page.html", "image/png", "<p>Not an image</p>".getBytes());

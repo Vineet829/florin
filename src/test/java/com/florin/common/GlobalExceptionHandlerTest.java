@@ -14,7 +14,6 @@ import jakarta.validation.constraints.NotBlank;
 import java.io.IOException;
 import java.sql.SQLException;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.system.CapturedOutput;
@@ -50,7 +49,6 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("an ApiException is rendered as the standard error envelope")
     void apiException() throws Exception {
         mockMvc.perform(get("/probe/conflict"))
                 .andExpect(status().isConflict())
@@ -61,7 +59,6 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("a bean validation failure becomes a 400 with the field message")
     void validationFailure() throws Exception {
         mockMvc.perform(post("/probe/validate")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -73,7 +70,6 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("a missing route returns the not-found error body")
     void missingRoute() throws Exception {
         mockMvc.perform(get("/probe/missing"))
                 .andExpect(status().isNotFound())
@@ -83,7 +79,6 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("an unexpected error is masked as a 500 without leaking internals, and logged with its request")
     void unexpectedError(CapturedOutput output) throws Exception {
         mockMvc.perform(get("/probe/boom"))
                 .andExpect(status().isInternalServerError())
@@ -96,7 +91,6 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("a method the route doesn't take is a 405 that says so, not a 500")
     void methodNotAllowed(CapturedOutput output) throws Exception {
         mockMvc.perform(post("/probe/boom"))
                 .andExpect(status().isMethodNotAllowed())
@@ -105,7 +99,6 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("an upload over the size limit is a 413 with the limit in the message")
     void uploadTooLarge() throws Exception {
         mockMvc.perform(get("/probe/too-large"))
                 .andExpect(status().isPayloadTooLarge())
@@ -114,7 +107,6 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("a multipart body that can't be read is a 400, not a 500 logged as an error")
     void malformedMultipart(CapturedOutput output) throws Exception {
         mockMvc.perform(get("/probe/malformed-multipart"))
                 .andExpect(status().isBadRequest())
@@ -123,10 +115,7 @@ class GlobalExceptionHandlerTest {
         assertThat(output.getOut() + output.getErr()).doesNotContain("Unexpected error");
     }
 
-    // Tomcat failing on its own side lands in the same handler, such as when
-    // it can't write a part to its temp folder, so each one is logged too.
     @Test
-    @DisplayName("a part Tomcat can't write to disk is a 400 too, logged as one warning line without a stack trace")
     void partNotWritten(CapturedOutput output) throws Exception {
         mockMvc.perform(get("/probe/part-not-written"))
                 .andExpect(status().isBadRequest())
@@ -142,7 +131,6 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("a number too large for its column is a 400 that says so, not a clash with a saved record")
     void amountTooLarge() throws Exception {
         mockMvc.perform(get("/probe/out-of-range"))
                 .andExpect(status().isBadRequest())
@@ -151,7 +139,6 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("text with a NUL character in it is a 400 that says so, not a clash with a saved record")
     void nulCharacter() throws Exception {
         mockMvc.perform(get("/probe/nul-character"))
                 .andExpect(status().isBadRequest())
@@ -160,7 +147,6 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("a clash with a record already saved is still a 409")
     void duplicateRecord() throws Exception {
         mockMvc.perform(get("/probe/duplicate"))
                 .andExpect(status().isConflict())

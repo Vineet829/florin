@@ -10,19 +10,11 @@ import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-// Documents in the shapes the first versions left behind: text tax rates over
-// 100 or not numbers at all, lines without a quantity, no lines, no number, no
-// currency, and payments of nothing. They are written into the first schema
-// and carried through every migration since. On the way their numbers, money
-// and payments never change. Their businesses' time zones are saved as Java
-// names, including ones the database doesn't know or reads differently, and
-// one owner has a business name, a city and a logo while the others don't.
 class LegacyDocumentsMigrationIntegrationTest extends IntegrationTest {
 
     @Autowired
@@ -37,8 +29,6 @@ class LegacyDocumentsMigrationIntegrationTest extends IntegrationTest {
         database.migrateTo("1");
         jdbc = database.jdbc();
 
-        // One owner later chose India's time zone under the name Chrome gives
-        // it, one chose an offset, and one never chose a time zone.
         long kolkata = user("kolkata");
         long utc = user("utc");
         long offset = user("offset");
@@ -48,7 +38,6 @@ class LegacyDocumentsMigrationIntegrationTest extends IntegrationTest {
         customer(utc, "zenith@clients.test");
         customer(offset, "orbit@clients.test");
 
-        // Made at 20:00 UTC, already the next morning in Kolkata.
         long partPaid = document(kolkata, "acme@clients.test", "Invoice", "INV-0001", "18", "INR",
                 "2025-03-31T20:00:00Z");
         line(partPaid, 1, "Design", "1000", 1, "10");
@@ -73,7 +62,6 @@ class LegacyDocumentsMigrationIntegrationTest extends IntegrationTest {
                 "2025-08-15T09:00:00Z");
         line(quotation, 1, "Retainer", "1200", 1, "0");
 
-        // 20:00 UTC is already 01:30 the next day at UTC+05:30.
         long ahead = document(offset, "orbit@clients.test", "Invoice", "INV-0100", "5", "EUR", "2025-01-31T20:00:00Z");
         line(ahead, 1, "Audit", "300", 1, "0");
 
@@ -141,7 +129,6 @@ class LegacyDocumentsMigrationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("old documents keep their numbers, amounts and payments, payments of nothing included")
     void recordsKept() {
         String before = database.recordsFingerprint();
 
@@ -153,7 +140,6 @@ class LegacyDocumentsMigrationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("each old payment keeps the receipt number it showed, by date, and the next comes after")
     void receiptNumbersKept() {
         database.migrateToLatest();
 
@@ -168,8 +154,6 @@ class LegacyDocumentsMigrationIntegrationTest extends IntegrationTest {
                         where exists (select 1 from payments p where p.document_pkid = d.pkid) order by d.pkid
                         """, Integer.class))
                 .containsExactly(1, 2);
-        // The payments of nothing stay, and the amount check still holds for
-        // what comes after them.
         assertThat(jdbc.queryForObject("""
                         select convalidated from pg_constraint where conname = 'chk_payments_amount'
                         """, Boolean.class))
@@ -177,7 +161,6 @@ class LegacyDocumentsMigrationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("each old document is dated on the day it was made, in its business's time zone")
     void datedAsMade() {
         database.migrateToLatest();
 
@@ -192,7 +175,6 @@ class LegacyDocumentsMigrationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("each old document keeps the business's details and the name of its tax as it shows them today")
     void sellerKept() {
         database.migrateToLatest();
 
@@ -211,7 +193,6 @@ class LegacyDocumentsMigrationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("every old document counts as issued, when it was made")
     void issuedAsMade() {
         database.migrateToLatest();
 
@@ -222,7 +203,6 @@ class LegacyDocumentsMigrationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("each old line keeps its quantity, and one saved without a quantity counts 0, as it always did")
     void quantitiesKept() {
         database.migrateToLatest();
 
@@ -240,7 +220,6 @@ class LegacyDocumentsMigrationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("each old line keeps its document's rate, and each document's tax at it is what it showed")
     void ratesKept() {
         String before = database.recordsFingerprint();
 

@@ -11,9 +11,6 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.stereotype.Component;
 
-// The providers this server signs people in with: each whose client ID and
-// secret are both set. With none, the sign-in buttons stay hidden and a
-// sign-in URL finds nothing.
 @Component
 public class ConfiguredProviders implements ClientRegistrationRepository, Iterable<ClientRegistration> {
 

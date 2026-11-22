@@ -22,13 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-// The people who work in a business. Every change locks the business first,
-// so two admins changing the team at once take turns, and the business always
-// keeps exactly one owner.
 @Service
 public class TeamService {
 
-    // How the app names each role, in the audit log as on screen.
     static final Map<BusinessRole, String> LABELS = Map.of(
             BusinessRole.OWNER, "Owner",
             BusinessRole.ADMIN, "Admin",
@@ -66,7 +62,6 @@ public class TeamService {
         this.identityCheck = identityCheck;
     }
 
-    // The owner first, then by role and name.
     @Transactional(readOnly = true)
     public List<MemberResponse> members(BusinessAccess access) {
         return memberRepository.findTeam(access.businessPkid()).stream()
@@ -130,8 +125,6 @@ public class TeamService {
                 AuditEventType.MEMBER_LEFT, access.businessPkid(), access.user(), access.user(), null);
     }
 
-    // The old owner stays on as an admin. They are demoted before the new
-    // owner is promoted, since a business may never have two.
     @Transactional
     public MemberResponse transfer(BusinessAccess access, String userId) {
         Business business = lock(access);
@@ -159,8 +152,6 @@ public class TeamService {
         String body = "Hello " + newOwner.getFirstName() + ",\n\n" + fullName(access.user()) + " handed "
                 + business.getName() + " over to you on " + site.name() + ". As its owner, you manage its"
                 + " team and can hand it over or delete it.\n\n" + site.clientUrl() + "/settings/team";
-        // Sent once the hand-over commits, so no email goes out for one that
-        // rolled back.
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
@@ -170,8 +161,6 @@ public class TeamService {
         return MemberResponse.from(target, access.userPkid());
     }
 
-    // Everything the business keeps goes with it; the event survives, with
-    // the business's name. The owner confirms it with their password.
     @Transactional
     public void delete(BusinessAccess access, ConfirmIdentityRequest confirmation) {
         demoAccountGuard.requireNotDemo(access.user(), "deleting the business");
@@ -201,8 +190,6 @@ public class TeamService {
                 .orElseThrow(TeamService::notAMember);
     }
 
-    // A member who goes loses the business at once: their sessions in it start
-    // over elsewhere, and its news about the business goes too.
     private void detach(BusinessMember member) {
         Long businessPkid = member.getBusiness().getPkid();
         Long userPkid = member.getUser().getPkid();

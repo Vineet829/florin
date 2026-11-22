@@ -26,7 +26,7 @@ const ENDS = [
 ];
 
 const EACH = [
-  { value: true, label: "Issue it as it is made" },
+  { value: true, label: "Issue it as it's made" },
   { value: false, label: "Leave it as a draft to review and issue" },
 ];
 
@@ -63,8 +63,6 @@ const ScheduleForm = ({
   demo,
   onClose,
 }) => {
-  // The next invoice comes no earlier than today by the business's
-  // calendar, which the server checks it against.
   const today = dateInput(useBusinessToday());
   const [values, setValues] = useState(() => initial(schedule, today));
   const [create, { isLoading: creating }] = useCreateScheduleMutation();
@@ -93,15 +91,14 @@ const ScheduleForm = ({
       toast.success(result.message || "The schedule was saved.");
       onClose();
     } catch (error) {
-      toast.error(errorMessage(error, "The schedule could not be saved."));
+      toast.error(errorMessage(error, "The schedule couldn't be saved."));
     }
   };
   return (
     <form className="mt-5 flex flex-col gap-5" onSubmit={submit}>
       <p className="text-[14px] leading-[1.6] text-spot-body">
         Each new invoice copies {documentNumber || "this draft"}, with a due
-        date from your payment terms, and takes its own number when it is
-        issued.
+        date from your payment terms, and takes its own number when it's issued.
       </p>
       <div className="grid grid-cols-2 gap-4 max-[560px]:grid-cols-1">
         <Field
@@ -219,7 +216,7 @@ const ScheduleForm = ({
               ? "Emailing is turned off for the shared demo account."
               : values.issueAutomatically
                 ? "With your usual email message and the PDF attached."
-                : "A draft is emailed once you have issued it."}
+                : "A draft is emailed once you've issued it."}
           </span>
         </span>
       </label>
@@ -234,14 +231,13 @@ const ScheduleForm = ({
         </button>
         <button type="submit" className={primaryButton} disabled={busy}>
           <FiCheck aria-hidden="true" />
-          {busy ? "Saving…" : schedule ? "Save schedule" : "Make recurring"}
+          {busy ? "Saving..." : schedule ? "Save schedule" : "Make recurring"}
         </button>
       </div>
     </form>
   );
 };
 
-// Makes an invoice repeat, or changes how it repeats.
 const ScheduleDialog = ({
   open,
   onClose,

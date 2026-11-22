@@ -51,8 +51,6 @@ import RecurringPage from "./features/recurring/pages/RecurringPage";
 import ReportsPage from "./features/reports/pages/ReportsPage";
 
 const App = () => {
-  // Nothing draws while a reload gets its access token back, so no page sees
-  // someone signed in without one.
   const restoring = useSelector((state) => state.auth.restoring);
   if (restoring) return null;
   return (
@@ -75,13 +73,11 @@ const App = () => {
           <Route path="c/:token" element={<ClientPortalPage />} />
           <Route path="c/:token/doc" element={<PortalDocumentPage />} />
           <Route path="invite/:token" element={<AcceptInvitePage />} />
-          {/* Private Routes - Users */}
           <Route element={<AuthRequired allowedRoles={[ROLES.User]} />}>
             <Route path="profile" element={<ProfilePage />} />
             <Route path="edit-profile" element={<EditProfileForm />} />
             <Route path="settings/security" element={<SecurityPage />} />
             <Route path="welcome" element={<WelcomePage />} />
-            {/* Pages that work in the session's business */}
             <Route element={<BusinessGate />}>
               <Route path="settings" element={<SettingsPage />} />
               <Route

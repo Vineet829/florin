@@ -44,8 +44,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    // The token's session must still be open and belong to its user, so a
-    // session that is signed out stops its access tokens at once.
     private void authenticate(HttpServletRequest request, String token) {
         Optional<JwtService.TokenClaims> claims = jwtService.readAccessClaims(token);
         Optional<UserSession> session = claims.flatMap(found -> sessionService

@@ -45,18 +45,10 @@ public class PdfService {
 
     static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH);
 
-    // Noto Sans, embedded in every PDF, so the rupee sign and names with
-    // accents print however the reader's machine is set up. The templates ask
-    // for it by this name.
     private static final String FONT = "Noto Sans";
     private static final byte[] REGULAR = font("fonts/NotoSans-Regular.ttf");
     private static final byte[] BOLD = font("fonts/NotoSans-Bold.ttf");
 
-    // Characters a PDF's page can't hold, as XML 1.0 has no place for them:
-    // control characters other than tabs and line breaks, and halves of
-    // characters cut in two. Word puts a vertical tab where Shift+Enter
-    // breaks a line, so one pasted into a client's name or a note would
-    // otherwise stop every PDF of the document.
     private static final Pattern LINE_BREAK_CONTROLS = Pattern.compile("[\\x0B\\x0C]");
     private static final Pattern UNPRINTABLE = Pattern.compile("[\\x00-\\x08\\x0E-\\x1F\\x{FFFE}\\x{FFFF}\\p{Cs}]");
 
@@ -88,9 +80,6 @@ public class PdfService {
         return toPdf(receiptHtml(document, payment, number, paidToDate, seller, template));
     }
 
-    // A payment receipt: what was received, how, any tax the client withheld
-    // from it, and what the document still owed once this payment had been
-    // made.
     String receiptHtml(
             Document document,
             Payment payment,
@@ -100,8 +89,6 @@ public class PdfService {
             PdfTemplate template) {
         CustomerSnapshot client = Optional.ofNullable(document.getCustomerSnapshot()).orElseGet(CustomerSnapshot::new);
         BigDecimal total = orZero(document.getTotal());
-        // Credit notes issued by the day of the payment, so the receipt stays
-        // as it was on that day.
         BigDecimal creditedToDate = document.getCreditNotes().stream()
                 .filter(note -> note.state() == DocumentState.ISSUED
                         && !note.getIssueDate().isAfter(payment.getDatePaid()))
@@ -184,15 +171,8 @@ public class PdfService {
         return value(seller.getName());
     }
 
-    // Someone a PDF names, the business or its client: a logo, a name and the
-    // lines under it.
     public record Party(String logo, String name, List<String> lines) {}
 
-    // A draft has no number yet, and is marked as one on every page; a void
-    // document is marked void, and says when and why. Lines taxed at more
-    // than one rate show each line's rate and a table of what each rate
-    // charged. An unpaid invoice says how to pay it, and in rupees with a UPI
-    // ID carries a QR code to pay its balance.
     public record View(
             String watermark,
             String voidNote,
@@ -221,13 +201,8 @@ public class PdfService {
             PaymentSection payment,
             Upi upi) {}
 
-    // A UPI QR code as a PNG data URI, and what it asks the payer to do.
     public record Upi(String image, String caption) {}
 
-    // What a GST invoice adds: each rate's CGST and SGST (UTGST in a union
-    // territory without a legislature) or IGST, whether the recipient pays
-    // the tax, the amount in words, an export's endorsement, the exchange
-    // rate a foreign-currency invoice was valued at, and who signs it.
     public record Gst(
             String sgstLabel,
             List<GstRate> rates,
@@ -255,7 +230,6 @@ public class PdfService {
 
     public record Rate(String rate, String taxable, String tax) {}
 
-    // A row of amounts; the tone, when there is one, is its CSS class.
     public record Total(String label, String value, String tone) {
 
         public Total(String label, String value) {
@@ -316,8 +290,6 @@ public class PdfService {
         return new Party(logo(seller.getLogo()), senderName(seller), senderLines(seller));
     }
 
-    // A document shows the business as it went out with it. Until it keeps its
-    // own copy, it shows the business as it is now.
     private Party seller(Document document, Business business) {
         SellerSnapshot kept = document.getSeller();
         return kept == null
@@ -376,8 +348,6 @@ public class PdfService {
             if (orZero(document.getTotalTds()).signum() > 0) {
                 totals.add(new Total("Tax withheld", money(document.getTotalTds(), currency)));
             }
-            // Each issued credit note takes its total off, and money paid back
-            // is owed again.
             for (Document note : document.getCreditNotes()) {
                 if (note.state() == DocumentState.ISSUED) {
                     totals.add(new Total(
@@ -445,8 +415,6 @@ public class PdfService {
                         : "Scan with any UPI app and enter the amount. UPI limits apply");
     }
 
-    // A GST invoice is a tax invoice, or a bill of supply when nothing on it
-    // is taxed and it isn't an export.
     private static String gstTitle(Document document) {
         String title = switch (document.getDocumentType()) {
             case CREDIT_NOTE -> "Credit Note";
@@ -459,9 +427,6 @@ public class PdfService {
         return document.isDraft() ? "Draft " + title : title;
     }
 
-    // Each rate's GST: CGST and SGST (or UTGST) at half the rate within the
-    // state, IGST at the full rate otherwise. Under reverse charge the
-    // recipient pays it, so it isn't in the total.
     private static List<Total> gstRows(Document document, TaxSummary summary, String currency) {
         if (summary.getRate().signum() == 0) {
             return List.of();
@@ -484,7 +449,7 @@ public class PdfService {
         String place = document.getPlaceOfSupply();
         return GstStates.OUTSIDE_INDIA.equals(place)
                 ? "Place of supply: Outside India (96)"
-                : "Place of supply: " + place + " – " + GstStates.name(place);
+                : "Place of supply: " + place + "-" + GstStates.name(place);
     }
 
     private Gst gst(Document document, Business business, String currency) {
@@ -501,11 +466,10 @@ public class PdfService {
                                 money(summary.getIgst(), currency),
                                 money(summary.getTax(), currency)))
                         .toList(),
-                // By HSN or SAC code, once any line has one.
                 document.getBillingItems().stream().anyMatch(item -> item.getHsnSac() != null)
                         ? HsnSummary.of(document).stream()
                                 .map(row -> new HsnRate(
-                                        row.hsnSac() == null ? "—" : row.hsnSac(),
+                                        row.hsnSac() == null ? "-" : row.hsnSac(),
                                         percent(row.rate()),
                                         money(row.taxable(), currency),
                                         money(row.cgst(), currency),
@@ -526,7 +490,6 @@ public class PdfService {
                 "For " + legal);
     }
 
-    // "1 USD = ₹83.2500; taxable value ₹1,00,000.00".
     private static String exchangeNote(Document document) {
         if (document.getExchangeRate() == null || !"INR".equals(document.getExchangeBase())) {
             return null;
@@ -538,14 +501,11 @@ public class PdfService {
                 + "; taxable value ₹" + money(taxable, "INR");
     }
 
-    // The seller as GST asks: its GSTIN, and the state it is registered in.
     private Party gstSeller(Document document, Business business) {
         SellerSnapshot kept = Objects.requireNonNullElseGet(document.getSeller(), () -> SellerSnapshot.of(business));
         return new Party(logo(kept.getLogo()), value(kept.getName()), senderLines(document, kept));
     }
 
-    // The seller's lines as a document shows them; under GST, its tax ID is
-    // its GSTIN, followed by the state it is registered in.
     static List<String> senderLines(Document document, SellerSnapshot kept) {
         if (document.getTaxRegime() != TaxRegime.GST_INDIA || document.getSupplyType() == null) {
             return senderLines(kept);
@@ -564,8 +524,6 @@ public class PdfService {
         return senderLines(SellerSnapshot.of(seller));
     }
 
-    // The legal name shows when it differs from the name the business trades
-    // under.
     static List<String> senderLines(SellerSnapshot seller) {
         return lines(
                 legalName(seller),
@@ -614,15 +572,12 @@ public class PdfService {
         }
     }
 
-    // Every PDF starts from the business's template: Classic, or a theme
-    // laid over it.
     private static Context context(PdfTemplate template) {
         Context context = new Context(Locale.ENGLISH);
         context.setVariable("theme", template.theme());
         return context;
     }
 
-    // The page as a PDF can hold it.
     static String printable(String html) {
         return UNPRINTABLE.matcher(LINE_BREAK_CONTROLS.matcher(html).replaceAll(" ")).replaceAll("");
     }
@@ -654,7 +609,6 @@ public class PdfService {
         }
     }
 
-    // A quantity as it was typed, with what it counts: "1.5 hours", "2".
     private static String quantity(BillingItem item) {
         String amount = BillingItemResponse.plain(item.getQuantity()).toPlainString();
         return item.getUnit() == null ? amount : amount + " " + item.getUnit();
@@ -668,14 +622,12 @@ public class PdfService {
         return value == null || value.isBlank() || value.trim().equals("0") ? null : "VAT / TIN " + value;
     }
 
-    // "Against invoice INV-0012 dated Sep 1, 2026".
     private static String reference(Document credited) {
         return "Against " + credited.getDocumentType().getValue().toLowerCase(Locale.ROOT) + " "
                 + value(credited.getDocumentNumber())
                 + (credited.getIssueDate() == null ? "" : " dated " + DATE.format(credited.getIssueDate()));
     }
 
-    // A document settled by credit notes alone reads as credited.
     private static String statusLabel(Document document) {
         return document.getStatus() == DocumentStatus.PAID
                         && orZero(document.getTotalAmountReceived()).signum() == 0

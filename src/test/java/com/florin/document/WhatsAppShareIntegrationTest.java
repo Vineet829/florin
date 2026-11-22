@@ -16,7 +16,6 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -68,7 +67,6 @@ class WhatsAppShareIntegrationTest extends IntegrationTest {
                 .getContentAsString();
     }
 
-    // The share link's token in a wa.me link's message.
     private static String token(String whatsAppUrl) {
         Matcher link = LINK.matcher(URLDecoder.decode(whatsAppUrl, StandardCharsets.UTF_8));
         assertThat(link.find()).isTrue();
@@ -76,8 +74,7 @@ class WhatsAppShareIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a WhatsApp message goes to the client's number with the document's link, the same link each time")
-    void message() throws Exception {
+    void messageCarriesStableLink() throws Exception {
         String id = invoice("+1 415 555 0100", false);
 
         String first = whatsApp(id);
@@ -93,8 +90,7 @@ class WhatsAppShareIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("without a usable number WhatsApp asks whom to send it to, and a link that can't be shown is replaced")
-    void otherwise() throws Exception {
+    void fallsBackWithoutNumber() throws Exception {
         String id = invoice("555 0100", false);
         String old = JsonPath.read(
                 mockMvc.perform(post("/api/v1/document/{id}/share", id)

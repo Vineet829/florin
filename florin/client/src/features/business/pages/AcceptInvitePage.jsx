@@ -26,7 +26,6 @@ import useEnterBusiness from "../useEnterBusiness";
 
 const AS_A = { ADMIN: "an admin", MEMBER: "a member", VIEWER: "a viewer" };
 
-// Why an invitation can't be accepted any more.
 const CLOSED = {
   ACCEPTED: {
     title: "This invitation was already accepted",
@@ -42,10 +41,8 @@ const CLOSED = {
   },
 };
 
-// Where an emailed invitation link leads. Anyone holding it sees which
-// business it is for; only the account it was sent to can accept it.
 const AcceptInvitePage = () => {
-  useTitle("Invitation — Florin");
+  useTitle("Invitation - Florin");
   const { token } = useParams();
   const navigate = useNavigate();
   const signedIn = Boolean(useSelector((state) => state.auth.user));
@@ -61,8 +58,6 @@ const AcceptInvitePage = () => {
     (query.isError && query.error?.status === 404) ||
     (invitation && invitation.status !== "PENDING");
 
-  // A link that can't be accepted any more shouldn't bring anyone back here
-  // after they log in.
   useEffect(() => {
     if (closed) forgetInvite();
   }, [closed]);
@@ -74,7 +69,7 @@ const AcceptInvitePage = () => {
       toast.success(`You joined ${business.name}.`);
       enter(business._id);
     } catch (error) {
-      toast.error(errorMessage(error, "The invitation could not be accepted."));
+      toast.error(errorMessage(error, "The invitation couldn't be accepted."));
     }
   };
   const logIn = () => {
@@ -94,7 +89,7 @@ const AcceptInvitePage = () => {
     return (
       <PublicPage>
         <p className={panelNote} role="status">
-          Opening the invitation…
+          Opening the invitation...
         </p>
       </PublicPage>
     );
@@ -103,13 +98,13 @@ const AcceptInvitePage = () => {
     return (
       <PublicPage>
         {query.error?.status === 404 ? (
-          <CardHeading icon={FiLink} title="This invitation link doesn’t work">
+          <CardHeading icon={FiLink} title="This invitation link doesn't work">
             A newer invitation may have replaced it. Ask whoever invited you to
             send it again.
           </CardHeading>
         ) : (
           <>
-            <CardHeading icon={FiLink} title="We couldn’t open this invitation">
+            <CardHeading icon={FiLink} title="We couldn't open this invitation">
               {errorMessage(query.error)}
             </CardHeading>
             <button
@@ -172,7 +167,7 @@ const AcceptInvitePage = () => {
       ) : someoneElse ? (
         <div className="mt-7 flex flex-col gap-2.5">
           <p className="text-[14px] leading-[1.6] text-spot-body" role="note">
-            You’re logged in as {profile.email}. Only {invitation.email} can
+            You're logged in as {profile.email}. Only {invitation.email} can
             accept this invitation.
           </p>
           <button
@@ -182,7 +177,7 @@ const AcceptInvitePage = () => {
             disabled={signingOut}
           >
             <FiLogIn aria-hidden="true" />
-            {signingOut ? "Logging out…" : "Log in with another account"}
+            {signingOut ? "Logging out..." : "Log in with another account"}
           </button>
         </div>
       ) : (
@@ -193,7 +188,7 @@ const AcceptInvitePage = () => {
           disabled={accepting || profileQuery.isLoading}
         >
           <FiUsers aria-hidden="true" />
-          {accepting ? "Joining…" : `Join ${invitation.businessName}`}
+          {accepting ? "Joining..." : `Join ${invitation.businessName}`}
         </button>
       )}
     </PublicPage>

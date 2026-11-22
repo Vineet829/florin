@@ -10,7 +10,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -44,8 +43,6 @@ class TokenCleanupIntegrationTest extends IntegrationTest {
                 "select id from user_sessions where user_pkid = ?", UUID.class, user.getPkid());
     }
 
-    // An invitation sent some days ago and open for a week, then accepted or
-    // revoked some days ago when a column is given.
     private void invitation(Business business, String name, int sentDaysAgo, String ended, int endedDaysAgo) {
         Instant now = Instant.now();
         Instant sent = now.minus(Duration.ofDays(sentDaysAgo));
@@ -75,7 +72,6 @@ class TokenCleanupIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("expired email links, and sessions that were signed out or ran out, are removed; the rest stay")
     void removesExpired() {
         User user = createUser();
         emailToken(user, "expired-link", Duration.ofMinutes(-5));
@@ -93,7 +89,6 @@ class TokenCleanupIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("invitations are removed a month after they were accepted, withdrawn or ran out")
     void removesFinishedInvitations() {
         Business business = businessOf(createUser());
         invitation(business, "waiting", 1, null, 0);

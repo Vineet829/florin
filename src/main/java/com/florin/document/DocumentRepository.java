@@ -18,7 +18,6 @@ import org.springframework.data.repository.query.Param;
 
 public interface DocumentRepository extends JpaRepository<Document, Long> {
 
-    // The documents a list found, with their clients.
     @EntityGraph(attributePaths = {"customer"})
     List<Document> findByPkidIn(Collection<Long> pkids);
 
@@ -43,8 +42,6 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
 
     List<Document> findBySourceOrderByCreatedAtAscPkidAsc(Document source);
 
-    // A business's issued documents of some types dated in a period, made in
-    // India GST mode.
     @Query("""
             select d from Document d
             where d.business.pkid = :businessPkid and d.documentType in :types
@@ -59,7 +56,6 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
             @Param("from") LocalDate from,
             @Param("to") LocalDate to);
 
-    // How many of them were made outside GST mode.
     @Query("""
             select count(d) from Document d
             where d.business.pkid = :businessPkid and d.documentType in :types
@@ -73,10 +69,6 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
             @Param("from") LocalDate from,
             @Param("to") LocalDate to);
 
-    // Unpaid issued invoices due before a moment that nobody was yet told about.
-    // Locked, in a fixed order, so a run alongside another waits for it, then
-    // finds the invoices it alerted already alerted. Their businesses aren't
-    // fetched with them, which would lock those rows too.
     @Query("""
             select d.pkid from Document d
             where d.documentType = :invoice and d.issuedAt is not null and d.voidedAt is null
@@ -89,7 +81,6 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
             @Param("paid") DocumentStatus paid,
             @Param("before") Instant before);
 
-    // One of those, locked, while it still is one.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             select d from Document d
@@ -104,7 +95,6 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
             @Param("paid") DocumentStatus paid,
             @Param("before") Instant before);
 
-    // Unpaid issued invoices that may still get an automatic reminder.
     @Query("""
             select d from Document d
             where d.business.pkid = :businessPkid and d.documentType = :invoice
@@ -119,8 +109,6 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
 
     Optional<Document> findFirstBySourceAndDocumentType(Document source, DocumentType documentType);
 
-    // A client's issued documents for their portal, void ones too, newest
-    // first. Drafts never show.
     @Query(
             value = """
                     select d from Document d
@@ -146,8 +134,6 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
             @Param("customerPkid") Long customerPkid,
             @Param("number") String number);
 
-    // The same, locked until the transaction ends, for a client's answer or
-    // report of a payment.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             select d from Document d
@@ -159,8 +145,6 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
             @Param("customerPkid") Long customerPkid,
             @Param("number") String number);
 
-    // The business's latest issued documents of a type, newest first, to
-    // preview its emails with.
     @Query("""
             select d from Document d
             where d.business.pkid = :businessPkid and d.documentType = :type
@@ -189,7 +173,6 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
             """)
     List<Payment> findLatestPayments(@Param("businessPkid") Long businessPkid, Pageable pageable);
 
-    // Clients of the business's latest issued invoices, newest first.
     @Query("""
             select d.customer from Document d
             where d.business.pkid = :businessPkid and d.documentType = :invoice
@@ -209,8 +192,6 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
     @Query("select d from Document d where d.pkid = :pkid")
     Optional<Document> findForUpdateByPkid(@Param("pkid") Long pkid);
 
-    // The document a credit note credits, read without loading the note, so
-    // that the invoice can be locked first.
     @Query(value = "select credited_pkid from documents where id = :externalId", nativeQuery = true)
     Optional<Long> findCreditedPkid(@Param("externalId") UUID externalId);
 }

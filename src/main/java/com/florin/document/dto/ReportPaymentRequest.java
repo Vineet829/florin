@@ -7,8 +7,6 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-// A client's report of a payment: how much, when, how, and the reference
-// their bank or UPI app gave it.
 public record ReportPaymentRequest(
         @NotNull(message = "Enter the amount you paid")
                 @DecimalMin(value = "0.01", message = "Enter the amount you paid")

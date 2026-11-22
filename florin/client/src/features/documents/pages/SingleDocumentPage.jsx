@@ -86,9 +86,6 @@ const SingleDocumentPage = () => {
   const document = query.data?.document;
   const profile = profileQuery.data?.userProfile;
   const business = useGetBusinessQuery().data?.business;
-  // The business as the document went out with it, whatever has changed since.
-  // A draft keeps nothing yet, so it shows the business and its tax name as
-  // they are now.
   const seller = document?.seller || business;
   const liveSettings = useGetSettingsQuery(undefined, {
     skip: !isDraft(document),
@@ -97,23 +94,18 @@ const SingleDocumentPage = () => {
   const { reason } = useBusiness();
   const editRefusal = reason("EDIT_RECORDS");
   const voidRefusal = reason("DELETE_RECORDS");
-  // Sending is refused to viewers, and turned off for the demo account.
   const sendNote = editRefusal || (profile?.demo ? DEMO_EMAIL_NOTE : undefined);
   const sendNoteId = editRefusal ? "document-edit-refusal" : "demo-email-note";
-  // Shown only when it differs from the name the business trades under.
   const legalName =
     seller?.legalName &&
     seller.legalName.trim().toLowerCase() !== seller.name?.trim().toLowerCase()
       ? seller.legalName
       : null;
   const draft = isDraft(document);
-  // A void document stays to be read, downloaded or copied, and nothing more.
   const voided = isVoid(document);
   const [issuing, setIssuing] = useState(false);
   const [voiding, setVoiding] = useState(false);
   const [editingDetails, setEditingDetails] = useState(false);
-  // A draft is edited in full; an issued document only has its due date,
-  // notes and terms changed, and an accepted quotation nothing.
   const detailsLocked = voided || Boolean(document?.acceptedAt);
   const [emailing, setEmailing] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -128,17 +120,13 @@ const SingleDocumentPage = () => {
   const [duplicateDoc, { isLoading: duplicating }] = useDuplicateDocMutation();
   const [convertDoc, { isLoading: converting }] = useConvertDocMutation();
   const [creditDoc, { isLoading: crediting }] = useCreditDocMutation();
-  // A credit note takes an amount off an issued invoice or receipt; it has
-  // no payments, due date or copies of its own.
   const creditNote = document?.documentType === "Credit Note";
   const creditable =
     ["Invoice", "Receipt"].includes(document?.documentType) &&
     !draft &&
     !voided &&
     Number(document?.ledger?.creditable) > 0;
-  useTitle(`${documentName(document)} — Florin`);
-  // A quotation turned into an invoice lists it as "Invoiced as"; any other
-  // copy as "Copied to".
+  useTitle(`${documentName(document)} - Florin`);
   const copies = document?.copies || [];
   const invoicedAs = copies.filter(
     (link) =>
@@ -151,7 +139,7 @@ const SingleDocumentPage = () => {
       toast.success("Copied as a draft. Review it, then issue it.");
       navigate(`/edit-doc/${newDocument._id}`);
     } catch (error) {
-      toast.error(errorMessage(error, "The document could not be copied."));
+      toast.error(errorMessage(error, "The document couldn't be copied."));
     }
   };
   const credit = async () => {
@@ -162,7 +150,7 @@ const SingleDocumentPage = () => {
       );
       navigate(`/edit-doc/${newDocument._id}`);
     } catch (error) {
-      toast.error(errorMessage(error, "The credit note could not be made."));
+      toast.error(errorMessage(error, "The credit note couldn't be made."));
     }
   };
   const convert = async () => {
@@ -174,7 +162,7 @@ const SingleDocumentPage = () => {
       navigate(`/document/${newDocument._id}`);
     } catch (error) {
       toast.error(
-        errorMessage(error, "The quotation could not become an invoice."),
+        errorMessage(error, "The quotation couldn't become an invoice."),
       );
     }
   };
@@ -208,7 +196,6 @@ const SingleDocumentPage = () => {
       type: "number",
       render: (item) => item.discount || "0",
     },
-    // Each line's rate shows when the lines are taxed at more than one.
     ...(document?.taxes?.length > 1
       ? [{ label: `${taxLabel} %`, render: (item) => item.taxRate }]
       : []),
@@ -341,7 +328,7 @@ const SingleDocumentPage = () => {
                     }
                   >
                     <FiRepeat aria-hidden="true" />
-                    {converting ? "Converting…" : "Convert to invoice"}
+                    {converting ? "Converting..." : "Convert to invoice"}
                   </button>
                 )}
               {creditable && (
@@ -357,7 +344,7 @@ const SingleDocumentPage = () => {
                   }
                 >
                   <FiFileMinus aria-hidden="true" />
-                  {crediting ? "Making…" : "Credit note"}
+                  {crediting ? "Making..." : "Credit note"}
                 </button>
               )}
               {document.documentType === "Invoice" &&
@@ -468,8 +455,6 @@ const SingleDocumentPage = () => {
                       .filter(Boolean)
                       .join(" "),
                     seller?.country,
-                    // Under GST the tax ID is the GSTIN, and the state it is
-                    // registered in follows, as on the PDF.
                     seller?.taxId &&
                       `${document.gst?.supplyType ? "GSTIN" : "Tax ID"} ${seller.taxId}`,
                     document.gst?.supplyType &&
@@ -498,10 +483,10 @@ const SingleDocumentPage = () => {
                     )}
                   </strong>
                   <p className={partyLine}>
-                    Customer no. {document.customer?.accountNo || "—"}
+                    Customer no. {document.customer?.accountNo || "-"}
                   </p>
                   <p className={partyLine}>
-                    VAT / TIN: {document.customer?.vatTinNo || "—"}
+                    VAT / TIN: {document.customer?.vatTinNo || "-"}
                   </p>
                   {document.customer?.gstin && (
                     <p className={partyLine}>
@@ -559,7 +544,7 @@ const SingleDocumentPage = () => {
                         ? [
                             [
                               "Place of supply",
-                              `${document.gst.placeOfSupply} – ${document.gst.placeOfSupplyName}`,
+                              `${document.gst.placeOfSupply}-${document.gst.placeOfSupplyName}`,
                             ],
                             ...(document.gst.reverseCharge
                               ? [["Reverse charge", "Yes, the recipient pays"]]
@@ -697,8 +682,6 @@ const SingleDocumentPage = () => {
                   </p>
                 </Panel>
               </div>
-              {/* A quotation is an offer: nothing is paid or owed on it, so
-                  it ends at its total, as its PDF does. */}
               <Panel title="Cost summary">
                 <dl className="m-0">
                   {[

@@ -67,8 +67,6 @@ const ROLES = ["ADMIN", "MEMBER", "VIEWER"];
 const nameOf = (member) =>
   [member.firstName, member.lastName].filter(Boolean).join(" ") || member.email;
 
-// Deleting a business can't be undone, so its name is typed to confirm, and
-// the owner's password asked for again.
 const DeleteBusinessDialog = ({ open, name, busy, onConfirm, onClose }) => {
   const [typed, setTyped] = useState("");
   const [identity, setIdentity] = useState(emptyIdentity);
@@ -86,7 +84,7 @@ const DeleteBusinessDialog = ({ open, name, busy, onConfirm, onClose }) => {
     >
       <p className="text-[14px] leading-[1.6] text-spot-body">
         {name} and everything in it are deleted for everyone: its documents,
-        clients, items, payments and settings. This can’t be undone.
+        clients, items, payments and settings. This can't be undone.
       </p>
       <label className={`${fieldLabel} mt-5 block`} htmlFor="confirm-business">
         Type <strong>{name}</strong> to confirm
@@ -121,15 +119,13 @@ const DeleteBusinessDialog = ({ open, name, busy, onConfirm, onClose }) => {
           disabled={busy || typed.trim() !== name || !identity.password}
         >
           <FiTrash2 aria-hidden="true" />
-          {busy ? "Deleting…" : "Delete business"}
+          {busy ? "Deleting..." : "Delete business"}
         </button>
       </div>
     </Dialog>
   );
 };
 
-// An invitation goes by email; whoever accepts it with that address joins in
-// the role chosen here.
 const InviteDialog = ({ open, business, onClose }) => {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("MEMBER");
@@ -146,7 +142,7 @@ const InviteDialog = ({ open, business, onClose }) => {
       toast.success(`Invitation sent to ${invitation.email}.`);
       close();
     } catch (error) {
-      toast.error(errorMessage(error, "The invitation could not be sent."));
+      toast.error(errorMessage(error, "The invitation couldn't be sent."));
     }
   };
   return (
@@ -196,7 +192,7 @@ const InviteDialog = ({ open, business, onClose }) => {
           </button>
           <button type="submit" className={primaryButton} disabled={isLoading}>
             <FiSend aria-hidden="true" />
-            {isLoading ? "Sending…" : "Send invitation"}
+            {isLoading ? "Sending..." : "Send invitation"}
           </button>
         </div>
       </form>
@@ -204,8 +200,6 @@ const InviteDialog = ({ open, business, onClose }) => {
   );
 };
 
-// Invitations no one has answered yet. Resending mails a new link and the
-// old one stops working; an expired invitation can be resent too.
 const Invitations = ({ business }) => {
   const query = useGetInvitationsQuery();
   const invitations = query.data?.invitations || [];
@@ -258,7 +252,7 @@ const Invitations = ({ business }) => {
             act(
               () => resend(invitation._id).unwrap(),
               `A new link was sent to ${invitation.email}.`,
-              "The invitation could not be sent again.",
+              "The invitation couldn't be sent again.",
             )
           }
           disabled={resending || revoking}
@@ -280,7 +274,7 @@ const Invitations = ({ business }) => {
             act(
               () => revoke(invitation._id).unwrap(),
               `The invitation to ${invitation.email} was withdrawn.`,
-              "The invitation could not be withdrawn.",
+              "The invitation couldn't be withdrawn.",
             )
           }
           disabled={resending || revoking}
@@ -307,10 +301,8 @@ const Invitations = ({ business }) => {
   );
 };
 
-// The people who work in the business, their roles, and the ways out: leaving
-// it, handing it over, or deleting it.
 const TeamPage = () => {
-  useTitle("Team — Florin");
+  useTitle("Team - Florin");
   const { business, reason, can } = useBusiness();
   const query = useGetMembersQuery();
   const members = query.data?.members || [];
@@ -356,7 +348,7 @@ const TeamPage = () => {
         await run(
           () => removeMember(member._id).unwrap(),
           `${nameOf(member)} is no longer part of ${business.name}.`,
-          "They could not be removed.",
+          "They couldn't be removed.",
         )
       ) {
         setConfirming(null);
@@ -366,7 +358,7 @@ const TeamPage = () => {
         await run(
           () => leave().unwrap(),
           `You left ${business.name}.`,
-          "You could not leave the business.",
+          "You couldn't leave the business.",
         )
       ) {
         setConfirming(null);
@@ -376,8 +368,8 @@ const TeamPage = () => {
       if (
         await run(
           () => transfer(member._id).unwrap(),
-          `${nameOf(member)} now owns ${business.name}. You’re an admin.`,
-          "The business could not be handed over.",
+          `${nameOf(member)} now owns ${business.name}. You're an admin.`,
+          "The business couldn't be handed over.",
         )
       ) {
         setConfirming(null);
@@ -390,7 +382,7 @@ const TeamPage = () => {
       await run(
         () => deleteBusiness(identity).unwrap(),
         `${business.name} was deleted.`,
-        "The business could not be deleted.",
+        "The business couldn't be deleted.",
       )
     ) {
       setConfirming(null);
@@ -430,7 +422,7 @@ const TeamPage = () => {
                     role,
                   }).unwrap(),
                 `${nameOf(member)} is now ${ROLE_LABELS[role].toLowerCase()}.`,
-                "The role could not be changed.",
+                "The role couldn't be changed.",
               )
             }
             disabled={changing}

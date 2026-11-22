@@ -35,9 +35,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// Each client's portal: one link to all their issued documents, what they owe
-// in each currency, and their statement. It shows only what their share links
-// would, and from it they answer quotations and report payments the same way.
 @Service
 public class PortalService {
 
@@ -80,8 +77,6 @@ public class PortalService {
     }
 
     @Transactional(readOnly = true)
-    // As with a document's link, only members who can send the portal link
-    // see its address.
     public ShareStatusResponse status(BusinessAccess access, String customerId) {
         return linkRepository.findByCustomerAndRevokedAtIsNull(requireInBusiness(access, customerId))
                 .map(link -> new ShareStatusResponse(
@@ -94,8 +89,6 @@ public class PortalService {
                 .orElseGet(() -> new ShareStatusResponse(true, false, null, null, 0, null));
     }
 
-    // A new link replaces the client's current one. The client is locked, as
-    // when a link is sent, so links made at once take turns.
     @Transactional
     public ShareLinkResponse create(BusinessAccess access, String customerId) {
         return newLink(requireInBusiness(access, customerId, true), access);
@@ -124,9 +117,6 @@ public class PortalService {
         return new ShareLinkResponse(true, address(token), now, link.getTokenSealed() != null);
     }
 
-    // What an email draft can say about the client's portal link: the link
-    // itself when it can be shown again, or, when it can't, the day it was
-    // made, as sending will replace it.
     @Transactional(readOnly = true)
     public ShareService.EmailLink peekForEmail(BusinessAccess access, String customerId) {
         Customer customer = requireInBusiness(access, customerId);
@@ -139,17 +129,11 @@ public class PortalService {
                 .orElseGet(() -> new ShareService.EmailLink(null, null));
     }
 
-    // The link an email to a client carries: their current one when it can
-    // be shown again, or a new one. A new one that replaces a link that can't
-    // be shown again is made only once the email has gone (keep), so an email
-    // that fails leaves the old link working.
     @Transactional
     public ShareService.SentLink linkForEmail(BusinessAccess access, String customerId) {
         return linkToSend(access, customerId, true);
     }
 
-    // Makes the link an email that has gone carries, when it waited to
-    // replace the client's current one.
     @Transactional
     public void keep(BusinessAccess access, String customerId, ShareService.SentLink link) {
         if (link.token() != null) {
@@ -157,9 +141,6 @@ public class PortalService {
         }
     }
 
-    // The link to send a client: their current one when it can be shown
-    // again, or a new one. The client is locked, so two messages at once
-    // share one new link, unless each waits for its email to replace one.
     private ShareService.SentLink linkToSend(BusinessAccess access, String customerId, boolean later) {
         Customer customer = requireInBusiness(access, customerId, true);
         Optional<PortalLink> active = linkRepository.findByCustomerAndRevokedAtIsNull(customer);
@@ -174,8 +155,6 @@ public class PortalService {
         return new ShareService.SentLink(newLink(customer, access).url(), active.isPresent(), null);
     }
 
-    // A WhatsApp message with the client's portal link, to their number when
-    // there is one WhatsApp can use.
     @Transactional
     public WhatsAppShareResponse whatsApp(BusinessAccess access, String customerId) {
         ShareService.SentLink link = linkToSend(access, customerId, false);
@@ -194,7 +173,6 @@ public class PortalService {
                 link.replaced());
     }
 
-    // The client a portal email goes to.
     @Transactional(readOnly = true)
     public Customer client(BusinessAccess access, String customerId) {
         return requireInBusiness(access, customerId);
@@ -207,7 +185,6 @@ public class PortalService {
         link.setRevokedAt(Instant.now(clock));
     }
 
-    // The portal's front page; each visit is counted.
     @Transactional
     public PortalResponse view(String token, int page, int size) {
         PortalLink link = requireLink(token);
@@ -293,8 +270,6 @@ public class PortalService {
         return requireDocument(token, number, false);
     }
 
-    // Locked as it is first read when the client answers it or reports a
-    // payment, so that and any other change to it take turns.
     private Document requireDocument(String token, String number, boolean lock) {
         Customer customer = requireLink(token).getCustomer();
         Long business = customer.getBusiness().getPkid();
@@ -332,8 +307,6 @@ public class PortalService {
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Customer not found"));
     }
 
-    // A link's address again, when its token was kept sealed and the key in
-    // use opens it.
     private Optional<String> recovered(PortalLink link) {
         if (link.getTokenSealed() == null || !secretBox.available()) {
             return Optional.empty();

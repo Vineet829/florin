@@ -28,10 +28,6 @@ const moment = (value) =>
 
 const actions = "mt-6 flex flex-wrap justify-end gap-2.5";
 
-// Shares a read-only copy of a document by link; a new link replaces the old
-// one. The server keeps the link sealed when it has an encryption key, so it
-// can be shown again. Otherwise, as with links made before, it is shown once,
-// right after it is made.
 const ShareDialog = ({ document, open, onClose }) => {
   const status = useGetShareStatusQuery(document._id, { skip: !open });
   const [create, { isLoading: creating }] = useCreateShareLinkMutation();
@@ -47,7 +43,7 @@ const ShareDialog = ({ document, open, onClose }) => {
     try {
       setMade(await create(document._id).unwrap());
     } catch (error) {
-      toast.error(errorMessage(error, "The link could not be created."));
+      toast.error(errorMessage(error, "The link couldn't be created."));
     }
   };
   const turnOff = async () => {
@@ -56,11 +52,9 @@ const ShareDialog = ({ document, open, onClose }) => {
       setMade(null);
       toast.success(result.message || "The share link was turned off.");
     } catch (error) {
-      toast.error(errorMessage(error, "The link could not be turned off."));
+      toast.error(errorMessage(error, "The link couldn't be turned off."));
     }
   };
-  // The tab opens at once, while the click still counts, so no pop-up
-  // blocker stops it; it goes to WhatsApp once the server has the link.
   const sendOnWhatsApp = async () => {
     const tab = window.open("", "_blank");
     if (tab) tab.opener = null;
@@ -71,13 +65,13 @@ const ShareDialog = ({ document, open, onClose }) => {
       else window.location.assign(result.url);
       if (result.linkReplaced) {
         toast.info(
-          "This replaced the document’s earlier link, which no longer works.",
+          "This replaced the document's earlier link, which no longer works.",
         );
       }
     } catch (error) {
       tab?.close();
       toast.error(
-        errorMessage(error, "The WhatsApp message could not be prepared."),
+        errorMessage(error, "The WhatsApp message couldn't be prepared."),
       );
     }
   };
@@ -86,7 +80,7 @@ const ShareDialog = ({ document, open, onClose }) => {
       await navigator.clipboard.writeText(url);
       toast.success("Link copied.");
     } catch {
-      toast.error("The link couldn’t be copied. Select it in the box instead.");
+      toast.error("The link couldn't be copied. Select it in the box instead.");
     }
   };
   const quotation = document.documentType === "Quotation";
@@ -135,7 +129,7 @@ const ShareDialog = ({ document, open, onClose }) => {
             made.url,
             made.kept
               ? "You can come back here for the link at any time."
-              : "Copy it now. For security the link can’t be shown again, but you can make a new one at any time.",
+              : "Copy it now. For security the link can't be shown again, but you can make a new one at any time.",
           )}
           <div className={actions}>
             {turnOffButton}
@@ -150,7 +144,7 @@ const ShareDialog = ({ document, open, onClose }) => {
         </>
       ) : status.isError ? (
         <div className="mt-5 flex flex-wrap items-center gap-3">
-          <p className={panelNote}>The link’s status couldn’t be loaded.</p>
+          <p className={panelNote}>The link's status couldn't be loaded.</p>
           <button
             type="button"
             className={retryButton}
@@ -161,7 +155,7 @@ const ShareDialog = ({ document, open, onClose }) => {
         </div>
       ) : status.isFetching || !link ? (
         <p className={`mt-5 ${panelNote}`} role="status">
-          Checking the link…
+          Checking the link...
         </p>
       ) : link.active ? (
         <>
@@ -174,11 +168,11 @@ const ShareDialog = ({ document, open, onClose }) => {
           {link.url ? (
             shownLink(
               link.url,
-              "If it reached someone it shouldn’t have, make a new one and this one stops working.",
+              "If it reached someone it shouldn't have, make a new one and this one stops working.",
             )
           ) : (
             <p className={`mt-2.5 ${panelNote}`}>
-              This link can’t be shown again. Lost it? Make a new one, and the
+              This link can't be shown again. Lost it? Make a new one, and the
               old one stops working.
             </p>
           )}
@@ -192,7 +186,7 @@ const ShareDialog = ({ document, open, onClose }) => {
               autoFocus={!link.url}
             >
               <FiRefreshCw aria-hidden="true" />
-              {creating ? "Making the link…" : "Make a new link"}
+              {creating ? "Making the link..." : "Make a new link"}
             </button>
             {link.url && (
               <button
@@ -215,7 +209,7 @@ const ShareDialog = ({ document, open, onClose }) => {
             autoFocus
           >
             <FiLink aria-hidden="true" />
-            {creating ? "Making the link…" : "Create link"}
+            {creating ? "Making the link..." : "Create link"}
           </button>
         </div>
       )}
@@ -232,7 +226,7 @@ const ShareDialog = ({ document, open, onClose }) => {
             disabled={busy}
           >
             <FiMessageCircle aria-hidden="true" />
-            {messaging ? "Opening WhatsApp…" : "Share on WhatsApp"}
+            {messaging ? "Opening WhatsApp..." : "Share on WhatsApp"}
           </button>
         </div>
       )}

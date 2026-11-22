@@ -5,18 +5,10 @@ import java.time.LocalDate;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
-// What one currency billed, received, earned and spent each day of the
-// overview's period and the period before it, totalled as the reports total
-// them: billed and received as ReportService counts them, income and
-// expenses as ProfitReport does. What went out for expenses is what was paid,
-// as the expenses list adds it up.
 final class MoneyByDay {
 
     private static final BigDecimal ZERO = BigDecimal.ZERO.setScale(2);
 
-    // What came to over some days. Money in is receipts and payments, and
-    // money out is what was paid for expenses, tax that can be claimed back
-    // and all, and refunds: received is money in less refunds.
     record Sums(
             BigDecimal billed,
             BigDecimal received,
@@ -31,7 +23,6 @@ final class MoneyByDay {
     }
 
     private final NavigableMap<LocalDate, BigDecimal> billed = new TreeMap<>();
-    // Receipts on the day they are dated, and payments on invoices.
     private final NavigableMap<LocalDate, BigDecimal> moneyIn = new TreeMap<>();
     private final NavigableMap<LocalDate, BigDecimal> refunded = new TreeMap<>();
     private final NavigableMap<LocalDate, BigDecimal> income = new TreeMap<>();
@@ -60,7 +51,6 @@ final class MoneyByDay {
         return money;
     }
 
-    // Money paid back comes off what was received, on the day it went.
     Sums between(LocalDate from, LocalDate to) {
         BigDecimal in = sum(moneyIn, from, to);
         BigDecimal paidBack = sum(refunded, from, to);

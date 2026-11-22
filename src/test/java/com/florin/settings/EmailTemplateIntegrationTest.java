@@ -26,7 +26,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -78,7 +77,6 @@ class EmailTemplateIntegrationTest extends IntegrationTest {
                 get("/api/v1/document/{id}/email", id).header(HttpHeaders.AUTHORIZATION, bearer(owner)));
     }
 
-    // An issued invoice of 200, due at the end of 2099, for Beta LLC.
     private String invoice() throws Exception {
         String customer = mockMvc.perform(post("/api/v1/customer/create")
                         .header(HttpHeaders.AUTHORIZATION, bearer(owner))
@@ -104,8 +102,7 @@ class EmailTemplateIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("every kind of email starts with the standard subject and message, and the placeholders it fills")
-    void standard() throws Exception {
+    void startsWithStandardTemplates() throws Exception {
         mockMvc.perform(get(TEMPLATES).header(HttpHeaders.AUTHORIZATION, bearer(owner)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.templates", hasSize(7)))
@@ -125,8 +122,7 @@ class EmailTemplateIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a business's own email is used until it goes back to the standard one, and only admins change it")
-    void own() throws Exception {
+    void usesOwnTemplateUntilReset() throws Exception {
         Business business = businessOf(owner);
         User member = createMember(business, BusinessRole.MEMBER);
         String id = invoice();
@@ -159,8 +155,7 @@ class EmailTemplateIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a placeholder its kind of email can't fill is refused, naming the ones it can")
-    void refused() throws Exception {
+    void refusesUnknownPlaceholders() throws Exception {
         save(bearer(owner), "RECEIPT", "{\"subject\": \"{document}\", \"body\": \"Due {due}\"}")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(
@@ -177,8 +172,7 @@ class EmailTemplateIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a preview fills the email being written from the business's latest documents, payments and clients")
-    void previews() throws Exception {
+    void previewFillsLatestRecords() throws Exception {
         preview(bearer(owner), "INVOICE", "{\"subject\": \"{document}\", \"body\": \"{amount}\"}")
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("There's no issued invoice to preview this email with yet"));
@@ -214,7 +208,6 @@ class EmailTemplateIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("two first saves of a kind of email at once both save, the later one last")
     void firstSavesTakeTurns() throws Exception {
         BusinessAccess access = access();
 
@@ -227,7 +220,6 @@ class EmailTemplateIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a kind of email saved while it is reset is saved")
     void saveWhileReset() throws Exception {
         BusinessAccess access = access();
         save(bearer(owner), "INVOICE", "{\"subject\": \"First\", \"body\": \"A note\"}")
@@ -256,8 +248,6 @@ class EmailTemplateIntegrationTest extends IntegrationTest {
                 access.businessPkid());
     }
 
-    // Sends the request while a transaction of the test's own does `holding`
-    // and stays open, and lets it commit once something waits for it.
     private ResultActions whileHeld(Runnable holding, Callable<ResultActions> request) throws Exception {
         CountDownLatch held = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
@@ -291,7 +281,6 @@ class EmailTemplateIntegrationTest extends IntegrationTest {
         }
     }
 
-    // How many connections to the test's database wait for a lock.
     private int waitingForLocks() {
         return jdbc.queryForObject(
                 "select count(*) from pg_stat_activity"

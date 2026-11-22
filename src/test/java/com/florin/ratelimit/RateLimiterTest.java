@@ -15,7 +15,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 
@@ -50,7 +49,6 @@ class RateLimiterTest {
     private final RateLimiter limiter = new RateLimiter(new LocalBucketStore(clock), new AppMetrics(registry));
 
     @Test
-    @DisplayName("requests beyond the limit are refused with how long to wait, then allowed as tokens refill")
     void limitsAndRefills() {
         for (int attempt = 0; attempt < 5; attempt++) {
             limiter.consume(RateLimit.SIGN_UP, "10.0.0.1");
@@ -70,30 +68,26 @@ class RateLimiterTest {
     }
 
     @Test
-    @DisplayName("only recorded failures count toward the sign-in limit, and a reset clears them")
-    void failures() {
+    void onlyFailuresCount() {
         for (int attempt = 0; attempt < 5; attempt++) {
-            limiter.requireAvailable(RateLimit.FAILED_SIGN_IN, "ip|ada");
-            limiter.recordFailure(RateLimit.FAILED_SIGN_IN, "ip|ada");
+            limiter.requireAvailable(RateLimit.FAILED_SIGN_IN, "ip|neha");
+            limiter.recordFailure(RateLimit.FAILED_SIGN_IN, "ip|neha");
         }
-        assertThatThrownBy(() -> limiter.requireAvailable(RateLimit.FAILED_SIGN_IN, "ip|ada"))
+        assertThatThrownBy(() -> limiter.requireAvailable(RateLimit.FAILED_SIGN_IN, "ip|neha"))
                 .isInstanceOf(RateLimitedException.class)
                 .hasMessageStartingWith("Too many sign-in attempts. Please try again in 3 minutes");
 
-        limiter.reset(RateLimit.FAILED_SIGN_IN, "ip|ada");
-        assertThatCode(() -> limiter.requireAvailable(RateLimit.FAILED_SIGN_IN, "ip|ada")).doesNotThrowAnyException();
+        limiter.reset(RateLimit.FAILED_SIGN_IN, "ip|neha");
+        assertThatCode(() -> limiter.requireAvailable(RateLimit.FAILED_SIGN_IN, "ip|neha")).doesNotThrowAnyException();
     }
 
     @Test
-    @DisplayName("waits under a minute are counted in seconds")
-    void seconds() {
+    void shortWaitsInSeconds() {
         assertThat(new RateLimitedException("Slow down", 1).getMessage()).isEqualTo("Slow down. Please try again in 1 second.");
         assertThat(new RateLimitedException("Slow down", 42).getMessage()).isEqualTo("Slow down. Please try again in 42 seconds.");
         assertThat(new RateLimitedException("Slow down", 61).getMessage()).isEqualTo("Slow down. Please try again in 2 minutes.");
     }
 
-    // A store whose every call fails as the database store's does: bucket4j
-    // wraps what the connection pool or driver threw.
     private static BucketStore failing(SQLException cause) {
         return new BucketStore() {
             @Override
@@ -114,17 +108,16 @@ class RateLimiterTest {
     }
 
     @Test
-    @DisplayName("when no connection to the limits frees up in time, every check is refused with a 503 to retry")
-    void busy() {
+    void busyPoolAsksToRetry() {
         RateLimiter busy = new RateLimiter(
                 failing(new SQLTransientConnectionException("rate-limits - Connection is not available")),
                 new AppMetrics(registry));
 
         for (Runnable check : new Runnable[] {
                 () -> busy.consume(RateLimit.SIGN_UP, "10.0.0.1"),
-                () -> busy.requireAvailable(RateLimit.FAILED_SIGN_IN, "ip|ada"),
-                () -> busy.recordFailure(RateLimit.FAILED_SIGN_IN, "ip|ada"),
-                () -> busy.reset(RateLimit.FAILED_SIGN_IN, "ip|ada")}) {
+                () -> busy.requireAvailable(RateLimit.FAILED_SIGN_IN, "ip|neha"),
+                () -> busy.recordFailure(RateLimit.FAILED_SIGN_IN, "ip|neha"),
+                () -> busy.reset(RateLimit.FAILED_SIGN_IN, "ip|neha")}) {
             assertThatThrownBy(check::run)
                     .isInstanceOfSatisfying(RateLimitedException.class, refusal -> {
                         assertThat(refusal.getStatus()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
@@ -135,8 +128,7 @@ class RateLimiterTest {
     }
 
     @Test
-    @DisplayName("any other failure of the limits stays an error")
-    void broken() {
+    void otherFailuresStayErrors() {
         RateLimiter broken = new RateLimiter(
                 failing(new SQLException("relation \"rate_limit_buckets\" does not exist")), new AppMetrics(registry));
 

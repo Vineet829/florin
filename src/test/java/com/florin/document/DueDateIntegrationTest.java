@@ -15,7 +15,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -24,9 +23,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// A due date is a day in the business's calendar. It is sent and read as
-// that day, whatever time zone the person typing or reading it is in, and
-// kept as noon that day in the business's time zone.
 class DueDateIntegrationTest extends IntegrationTest {
 
     private static final String MALFORMED = "Enter the due date as YYYY-MM-DD";
@@ -48,7 +44,6 @@ class DueDateIntegrationTest extends IntegrationTest {
         return result.andReturn().getResponse().getContentAsString();
     }
 
-    // A new business in the given time zone, with one client.
     private void business(String timeZone) throws Exception {
         session = bearer(createUser());
         send(put("/api/v1/settings"), """
@@ -62,7 +57,6 @@ class DueDateIntegrationTest extends IntegrationTest {
                 "$.createdCustomer._id");
     }
 
-    // Dated in January, so the only day in October its PDF names is the due date.
     private ResultActions invoice(boolean draft, String dueDate) throws Exception {
         return send(post("/api/v1/document/create"), """
                 {"customerId": "%s", "documentType": "Invoice", "currency": "USD", "issueDate": "2026-01-15",
@@ -90,8 +84,6 @@ class DueDateIntegrationTest extends IntegrationTest {
                 .getContentAsByteArray());
     }
 
-    // A share link or portal as its client opens it, from a network of its
-    // own, so the visit counts against no other test's.
     private ResultActions open(String kind, String url) throws Exception {
         return mockMvc.perform(get("/api/v1/public/" + kind + "/{token}", url.substring(url.lastIndexOf('/') + 1))
                 .with(request -> {
@@ -101,8 +93,7 @@ class DueDateIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a due date sent as a day is that day in the business's calendar, kept as noon there")
-    void day() throws Exception {
+    void dayKeptAsLocalNoon() throws Exception {
         business("Asia/Kolkata");
 
         String id = JsonPath.read(
@@ -124,17 +115,11 @@ class DueDateIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("every view of a document sends its due date as its day in the business's calendar")
-    void views() throws Exception {
-        // Noon in Los Angeles, as the issuer, schedules and the demo keep a
-        // due date: already the 16th in India.
+    void viewsSendLocalDay() throws Exception {
         seenAs("America/Los_Angeles", "2026-10-15T19:00:00Z");
-        // Noon in Auckland is still the 14th in UTC.
         seenAs("Pacific/Auckland", "2026-10-15");
     }
 
-    // A business in the given zone with an invoice due on 15 October, sent as
-    // given and shared: each view sends that day.
     private void seenAs(String timeZone, String dueDate) throws Exception {
         business(timeZone);
         String id = made(false, dueDate);
@@ -150,12 +135,10 @@ class DueDateIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a moment sent by an older client keeps the day it falls on in the business's calendar")
-    void moment() throws Exception {
+    void timestampKeepsLocalDay() throws Exception {
         business("Asia/Kolkata");
         String id = made(false, "2026-10-10T06:30:00Z");
 
-        // 19:00 UTC is half past midnight on the 16th in India.
         send(patch("/api/v1/document/{id}", id), "{\"dueDate\": \"2026-10-15T19:00:00Z\"}")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.updatedDocument.dueDate").value("2026-10-16"));
@@ -164,8 +147,7 @@ class DueDateIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a blank due date is no due date: a receipt takes it, and an invoice keeps the one it has")
-    void blank() throws Exception {
+    void blankMeansNoDueDate() throws Exception {
         business("Asia/Kolkata");
         String receipt = JsonPath.read(
                 body(send(post("/api/v1/document/create"), """
@@ -185,8 +167,7 @@ class DueDateIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a due date that is neither a day nor a moment is refused, however it is sent")
-    void malformed() throws Exception {
+    void refusesMalformedDueDates() throws Exception {
         business("Asia/Kolkata");
         String draft = made(true, "2026-10-10T06:30:00Z");
 
@@ -202,18 +183,15 @@ class DueDateIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an invoice is due, and a quotation valid, no earlier than its issue date, however they are set")
     void notBeforeIssue() throws Exception {
         business("Asia/Kolkata");
 
-        // Dated 15 January, made and issued at once, or saved as a draft.
         invoice(false, "2026-01-14")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(BEFORE_ISSUE));
         invoice(true, "2026-01-14")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(BEFORE_ISSUE));
-        // Left undated, as the editor leaves it, so dated today.
         send(post("/api/v1/document/create"), """
                 {"customerId": "%s", "documentType": "Invoice", "currency": "USD", "dueDate": "%s",
                  "billingItems": [{"itemName": "Work", "unitPrice": 100, "quantity": 1}]}
@@ -227,7 +205,6 @@ class DueDateIntegrationTest extends IntegrationTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("A quotation can't expire before its issue date"));
 
-        // A draft dated, or issued, later than its due date, until it is due later.
         String draft = made(true, "2026-01-20");
         send(patch("/api/v1/document/{id}", draft), "{\"issueDate\": \"2026-01-21\"}")
                 .andExpect(status().isBadRequest())
@@ -239,7 +216,6 @@ class DueDateIntegrationTest extends IntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.updatedDocument.dueDate").value("2026-01-21"));
 
-        // Issued, its due date still moves, but not before its issue date.
         send(patch("/api/v1/document/{id}", draft), "{\"dueDate\": \"2026-01-20\"}")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(BEFORE_ISSUE));
@@ -249,20 +225,16 @@ class DueDateIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a document saved due before its issue date keeps that due date through other changes")
-    void keptAsItWas() throws Exception {
+    void earlyDueDateKept() throws Exception {
         business("Asia/Kolkata");
         String issued = made(false, "2026-02-14");
         String draft = made(true, "2026-02-14");
-        // Due on 10 January, as an older document could be saved.
         jdbc.update(
                 "update documents set due_date = ? where id in (?, ?)",
                 Timestamp.from(Instant.parse("2026-01-10T06:30:00Z")),
                 UUID.fromString(issued),
                 UUID.fromString(draft));
 
-        // Edit details sends the due date back with the notes, and the editor
-        // sends both of a draft's dates back.
         send(patch("/api/v1/document/{id}", issued), "{\"dueDate\": \"2026-01-10\", \"additionalInfo\": \"Thanks\"}")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.updatedDocument.dueDate").value("2026-01-10"))
@@ -273,11 +245,9 @@ class DueDateIntegrationTest extends IntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.updatedDocument.additionalInfo").value("Thanks"));
 
-        // A due date that moves is checked, even when it moves later.
         send(patch("/api/v1/document/{id}", issued), "{\"dueDate\": \"2026-01-12\"}")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(BEFORE_ISSUE));
-        // So is a draft as it is issued.
         send(post("/api/v1/document/{id}/issue", draft), "")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(BEFORE_ISSUE));

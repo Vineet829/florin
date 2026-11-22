@@ -4,7 +4,6 @@ import QrPattern from "./QrPattern";
 import { column } from "./layout";
 import { useReveal, useRunning } from "./motion";
 
-// How an invoice gets paid, in three steps.
 const STEPS = [
   ["Send", "A GST tax invoice with a UPI QR for the balance."],
   ["They pay", "By UPI or bank, and they tell you from the invoice."],
@@ -12,15 +11,11 @@ const STEPS = [
 ];
 const TURN = 2800;
 
-// The sample invoice's lines.
 const LINES = [
   ["Brand identity design", "SAC 998391", "40,000.00"],
   ["Website design, 5 pages", "SAC 998314", "10,000.00"],
 ];
 
-// The PDF templates, and how each dresses the sample invoice: Classic keeps
-// to rules, Modern opens with a band of colour, and Compact fits more on a
-// page.
 const paper =
   "relative bg-white text-spot-ink shadow-[0_50px_100px_-55px_#28225080]";
 const head = "flex flex-wrap justify-between";
@@ -61,10 +56,6 @@ const templateButton =
   "min-h-8 bg-transparent p-0 underline-offset-[6px] transition-colors";
 const chosen = "font-medium text-spot-night underline decoration-2";
 
-// The sample invoice in a template, with the step's overlay over it: the
-// pill that says it was sent, the client's reported payment to confirm, or
-// the stamp. The overlays are pictures; the steps beside the invoice say
-// what they show.
 const SampleInvoice = ({ look, step, motion }) => (
   <div className={look.invoice} data-template={look.key}>
     <div className={look.head}>
@@ -79,8 +70,8 @@ const SampleInvoice = ({ look, step, motion }) => (
         </p>
       </div>
       <div className="text-right">
-        <p className="font-medium">Tester Studio</p>
-        <p className={`mt-[3px] ${look.headLabel}`}>GSTIN 27ABCFT1234F1ZH</p>
+        <p className="font-medium">Apte Design Studio</p>
+        <p className={`mt-[3px] ${look.headLabel}`}>GSTIN 27AFQRA4826M1ZY</p>
       </div>
     </div>
     <p className={`text-spot-muted ${look.block}`}>
@@ -166,21 +157,12 @@ const SampleInvoice = ({ look, step, motion }) => (
   </div>
 );
 
-// From invoice to paid: the three steps, one at a time, beside the sample
-// invoice that shows each, in the PDF template of the visitor's choice. The
-// steps move on by themselves while the section is on screen in a tab
-// being looked at; a click picks one, which then has its full turn. Every
-// step keeps its full colour; the one playing has a filled number and a
-// bar under its line that runs out with its turn.
 const GetPaid = ({ motion }) => {
   const [ref, reveal] = useReveal(motion);
   const running = useRunning(ref, motion);
   const [step, setStep] = useState(0);
-  // Counted so that a click on the step already shown starts its turn,
-  // and its bar, over as well.
   const [picks, setPicks] = useState(0);
   const [template, setTemplate] = useState("classic");
-  // Each step has its turn, from when it appeared or was picked.
   useEffect(() => {
     if (!running) return undefined;
     const id = setTimeout(
@@ -230,8 +212,6 @@ const GetPaid = ({ motion }) => {
                     <span className="mt-1 block text-[15.5px] leading-[1.55] text-spot-body">
                       {line}
                     </span>
-                    {/* The step's turn, running out under its line. It starts
-                        over with the step, and with a click. */}
                     {active && (
                       <span
                         className="absolute inset-x-0 -bottom-2.5 h-0.5 overflow-hidden rounded-full bg-spot-night/10"

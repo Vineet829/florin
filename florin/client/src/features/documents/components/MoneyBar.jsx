@@ -10,8 +10,6 @@ import { countOf, invoiceCount } from "../../../utils/counts";
 import { formatAmount } from "../../../utils/money";
 import { outstandingLink, overdueLink, paymentsLink } from "../listLinks";
 
-// The bar's cards sit on the panel surface, with a ring on the part whose
-// list is the one shown.
 const card =
   "min-w-0 rounded-[22px] border border-white/90 bg-white/[.66] px-[22px] py-4 shadow-panel backdrop-blur-[16px] max-[700px]:rounded-[20px] max-[700px]:px-[18px]";
 const ring = "ring-2 ring-spot-night ring-offset-2 ring-offset-white";
@@ -28,9 +26,6 @@ const Swatch = ({ color }) => (
   />
 );
 
-// While the figures load, empty cards keep the bar's room, so the list
-// below stays where it is when they arrive. The hint is there unseen, so
-// the first card wraps as it will.
 const Placeholder = () => (
   <div className={bar} aria-hidden="true">
     <div className={`${card} flex flex-col gap-2.5`}>
@@ -50,14 +45,6 @@ const Placeholder = () => (
   </div>
 );
 
-// What is outstanding now, split into what is overdue and what is not due
-// yet, and what came in over the last 30 days, as the overview counts them,
-// from the summary `query`. The figures are in the list's currency, or the
-// default one; with several currencies the amounts name theirs, and the
-// links keep it. The whole bar opens every invoice owed, soonest due first;
-// Overdue opens the late ones, and the card the payments behind its figure.
-// `shows` says whether the page shows exactly a link's list. A business with
-// nothing issued has no bar.
 const MoneyBar = ({ query, shows = () => false }) => {
   const summary = query.currentData;
   if (!summary) {
@@ -67,7 +54,7 @@ const MoneyBar = ({ query, shows = () => false }) => {
         role="alert"
       >
         <FiAlertCircle aria-hidden="true" />
-        We couldn’t load what is owed and what came in.
+        We couldn't load what's owed and what came in.
         <button
           type="button"
           className={`${textLink} bg-transparent p-0 text-[13px] coarse:min-h-11`}
@@ -94,7 +81,7 @@ const MoneyBar = ({ query, shows = () => false }) => {
     ["notDue", "bg-owed-due"],
   ].filter(([key]) => Number(outstanding[key]) > 0);
   return (
-    <section aria-label="What is owed and what came in" className={bar}>
+    <section aria-label="What's owed and what came in" className={bar}>
       <div className={`${card} flex flex-col gap-2.5`}>
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
           <p className="flex flex-wrap items-baseline gap-x-2.5 text-[13px] text-spot-body">

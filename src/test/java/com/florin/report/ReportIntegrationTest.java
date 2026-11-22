@@ -18,7 +18,6 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -101,16 +100,12 @@ class ReportIntegrationTest extends IntegrationTest {
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner)));
     }
 
-    // Where this month is among the months the last 3 months touch: they go
-    // back to the same day, so they touch 4 calendar months unless they begin
-    // on a 1st.
     private static int thisMonth(LocalDate today) {
         return today.minusMonths(3).plusDays(1).getDayOfMonth() == 1 ? 2 : 3;
     }
 
     @Test
-    @DisplayName("billed and received are summed per month and currency; receipts count as received when issued")
-    void months() throws Exception {
+    void sumsPerMonthAndCurrency() throws Exception {
         LocalDate thisMonth = today.withDayOfMonth(1);
         LocalDate lastMonth = thisMonth.minusMonths(1);
         String client = client(owner, "Acme");
@@ -123,7 +118,6 @@ class ReportIntegrationTest extends IntegrationTest {
         document(owner, client, "Quotation", "USD", "500", today.plusDays(10));
         document(owner, client, "Invoice", "EUR", "80", today.plusDays(10));
 
-        // The last 3 months go back to the same day.
         LocalDate from = today.minusMonths(3).plusDays(1);
         int last = thisMonth(today);
         report("3m")
@@ -158,7 +152,6 @@ class ReportIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("documents count in the month they are dated, and today is the owner's today")
     void timeZone() throws Exception {
         ZoneId zone = ZoneId.of("Pacific/Kiritimati");
         mockMvc.perform(put("/api/v1/settings")
@@ -183,8 +176,7 @@ class ReportIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("unpaid invoices are grouped by how many days they are overdue today")
-    void ageing() throws Exception {
+    void groupsUnpaidByAge() throws Exception {
         String client = client(owner, "Acme");
         invoice(client, "100", today.plusDays(5));
         invoice(client, "10", today);
@@ -216,7 +208,6 @@ class ReportIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the five clients billed the most are listed, and the rest are summed together")
     void topClients() throws Exception {
         String first = client(owner, "Client 7");
         invoice(first, "350", today.plusDays(10));
@@ -243,8 +234,7 @@ class ReportIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an owner sees only their own figures, and can pick any earlier year since their first")
-    void periods() throws Exception {
+    void ownFiguresAndEarlierYears() throws Exception {
         User other = createUser();
         document(other, client(other, "Someone"), "Invoice", "USD", "999", today);
         report("12m").andExpect(jsonPath("$.currencies").isEmpty()).andExpect(jsonPath("$.years").isEmpty());
@@ -264,8 +254,7 @@ class ReportIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("each section downloads as CSV for every currency, with every client ranked")
-    void csv() throws Exception {
+    void sectionsDownloadAsCsv() throws Exception {
         for (int number = 1; number <= 6; number++) {
             invoice(client(owner, "Client " + number), String.valueOf(number * 10), today.plusDays(10));
         }
@@ -286,9 +275,6 @@ class ReportIntegrationTest extends IntegrationTest {
                 .andReturn()
                 .getResponse()
                 .getContentAsString(StandardCharsets.UTF_8);
-        // A row for each currency in each month the period touches, with the
-        // days of it the period covers: the first month from the period's
-        // first day, and this one to today.
         assertThat(income.lines().toList())
                 .startsWith(
                         "\uFEFFCurrency,Month,From,To,Billed,Received",

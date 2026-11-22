@@ -21,7 +21,6 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -32,9 +31,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// The overview's top items: the five its period's lines sold most of in its
-// currency, by what they came to before tax, net of discounts and of credit
-// notes, with every item adding up to the period's income.
 class OverviewTopItemsIntegrationTest extends IntegrationTest {
 
     @Autowired
@@ -55,7 +51,6 @@ class OverviewTopItemsIntegrationTest extends IntegrationTest {
                 "$.createdCustomer._id");
     }
 
-    // Puts the business in the time zone, and dates what follows from its today.
     private void inZone(ZoneId zone) throws Exception {
         send(put("/api/v1/settings"), """
                 {"defaultCurrency": "USD", "paymentTermsDays": 15, "defaultTaxRate": 0,
@@ -75,8 +70,6 @@ class OverviewTopItemsIntegrationTest extends IntegrationTest {
         return result.andReturn().getResponse().getContentAsString();
     }
 
-    // A line: what it sells, at what unit price, how many, with a discount and
-    // a tax rate, each a percentage.
     private static String line(String name, String price, String quantity, String discount, String rate) {
         return """
                 {"itemName": "%s", "unitPrice": %s, "quantity": %s, "discount": "%s", "taxRate": "%s"}"""
@@ -87,7 +80,6 @@ class OverviewTopItemsIntegrationTest extends IntegrationTest {
         return line(name, price, quantity, "0", "0");
     }
 
-    // A document with the lines, dated the day; a draft is only planned for it.
     private String create(String type, String currency, LocalDate issued, boolean draft, String... lines)
             throws Exception {
         return JsonPath.read(
@@ -103,7 +95,6 @@ class OverviewTopItemsIntegrationTest extends IntegrationTest {
         return create(type, "USD", issued, false, lines);
     }
 
-    // A credit note dated the day, taking the lines off the document.
     private void credit(String document, LocalDate issued, String... lines) throws Exception {
         String note = JsonPath.read(
                 body(send(post("/api/v1/document/{id}/credit-note", document), "").andExpect(status().isCreated())),
@@ -119,8 +110,6 @@ class OverviewTopItemsIntegrationTest extends IntegrationTest {
                 .andExpect(status().isOk());
     }
 
-    // Names one of the document's lines as lines could be named before a name
-    // was required.
     private void rename(String document, int position, String name) {
         jdbcTemplate.update(
                 """
@@ -140,7 +129,6 @@ class OverviewTopItemsIntegrationTest extends IntegrationTest {
         return send(request, "");
     }
 
-    // The amounts at the path added up.
     private static BigDecimal sum(String body, String path) {
         List<Object> amounts = JsonPath.read(body, path);
         return amounts.stream()
@@ -150,11 +138,8 @@ class OverviewTopItemsIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("the five items the period sold most of come first, net of discounts and credit notes and before"
-            + " tax, with how many were sold and on how many documents")
     void topFive(ZoneId zone) throws Exception {
         inZone(zone);
-        // An invoice with a line taxed 10%, and a fraction of a line at a 10% discount.
         String invoice = issue(
                 "Invoice",
                 today.minusDays(1),
@@ -165,9 +150,7 @@ class OverviewTopItemsIntegrationTest extends IntegrationTest {
         issue("Invoice", today.minusDays(89), line("Consulting", "140", "10"));
         credit(invoice, today, line("Website design", "450", "1", "0", "10"));
         issue("Invoice", today, line("Photography", "900", "1"), line("Social kit", "700", "1"));
-        // The day before the period.
         issue("Invoice", today.minusDays(90), line("Logo", "3200", "1"));
-        // Never counted: a quotation, a draft, a void invoice, and lines in euros.
         issue("Quotation", today, line("Logo", "9999", "1"));
         create("Invoice", "USD", today, true, line("Logo", "8888", "1"));
         voided(issue("Invoice", today, line("Logo", "7777", "1")));
@@ -184,7 +167,6 @@ class OverviewTopItemsIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.itemsTotal").value(8397.5))
                 .andExpect(content().string(containsString(
                         "{\"item\":\"Logo\",\"quantity\":1,\"amount\":3200.00,\"documents\":1}")));
-        // The last 30 days leave out the consulting, and keep the fraction sold.
         overview("period", "30d")
                 .andExpect(jsonPath(
                         "$.topItems[*].item",
@@ -204,14 +186,10 @@ class OverviewTopItemsIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("in every period the items add up to its income, each line rounded to the cent as its document's"
-            + " total rounds it")
     void addsUpToIncome(ZoneId zone) throws Exception {
         inZone(zone);
         LocalDate year = today.minusMonths(12).plusDays(1);
         LocalDate january = today.withDayOfYear(1);
-        // Documents on the first day of each period and the day before it,
-        // with fractions of a cent to round, discounts and tax.
         List<LocalDate> days = List.of(
                 today,
                 today.minusDays(29),
@@ -235,7 +213,6 @@ class OverviewTopItemsIntegrationTest extends IntegrationTest {
                 credit(invoice, day, line("Hours", "19.99", "1.111", "7.25", "5"));
             }
         }
-        // Lines saved without a name, before a name was required.
         String unnamed = issue("Invoice", today, line("Kept", "60.125", "1"), line("Gone", "15.0049", "3"));
         rename(unnamed, 0, null);
         rename(unnamed, 1, " ");
@@ -247,11 +224,9 @@ class OverviewTopItemsIntegrationTest extends IntegrationTest {
             assertThat(new BigDecimal(JsonPath.read(overview, "$.itemsTotal").toString()))
                     .as(period)
                     .isEqualByComparingTo(income);
-            // With nothing spent, the income behind profit is the same.
             assertThat(new BigDecimal(JsonPath.read(overview, "$.totals.profit.current").toString()))
                     .as(period)
                     .isEqualByComparingTo(income);
-            // Every period sold all five items, so each is listed.
             assertThat(JsonPath.<List<String>>read(overview, "$.topItems[*].item"))
                     .as(period)
                     .containsExactlyInAnyOrder("Kit", "Hours", "Design", "Support", "Other lines");
@@ -260,8 +235,6 @@ class OverviewTopItemsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an item in several spellings is one row, spelled as first used; unnamed lines are other lines; and"
-            + " items that came to the same go by name, whatever its case")
     void spellingsAndTies() throws Exception {
         issue("Invoice", today, line("Consulting", "100", "1"), line("beta", "100", "1"));
         issue("Invoice", today, line("CONSULTING", "100", "2"), line("Alpha", "100", "1"));
@@ -286,7 +259,6 @@ class OverviewTopItemsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a line saved without a unit price sold its quantity for nothing, as its document counts it")
     void noPrice() throws Exception {
         String invoice = JsonPath.read(
                 body(send(post("/api/v1/document/create"), """
@@ -309,7 +281,6 @@ class OverviewTopItemsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("items are sold in the overview's currency, and a period that sold nothing lists none")
     void currencyAndEmpty() throws Exception {
         overview().andExpect(content().string(containsString("\"topItems\":[],\"itemsTotal\":0.00")));
 
@@ -330,7 +301,6 @@ class OverviewTopItemsIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.topItems[*].item", contains("Design")))
                 .andExpect(jsonPath("$.itemsTotal").value(500.0));
 
-        // A business whose only sale is older than the period.
         owner = createUser();
         client = JsonPath.read(
                 body(send(post("/api/v1/customer/create"), """

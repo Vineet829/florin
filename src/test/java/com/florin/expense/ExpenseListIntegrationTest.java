@@ -22,7 +22,6 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -31,10 +30,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// The expenses list narrowed to the overview's periods, the last 30 or 90 days
-// or 12 months by the business's calendar, in place of dates, and to one
-// currency, with what the listed expenses cost in each currency, as profit
-// counts it.
 class ExpenseListIntegrationTest extends IntegrationTest {
 
     private User owner;
@@ -46,7 +41,6 @@ class ExpenseListIntegrationTest extends IntegrationTest {
         today = LocalDate.now(ZoneOffset.UTC);
     }
 
-    // Puts the business in the time zone, and dates what follows from its today.
     private void inZone(ZoneId zone) throws Exception {
         send(put("/api/v1/settings"), """
                 {"defaultCurrency": "USD", "paymentTermsDays": 15, "defaultTaxRate": 0,
@@ -66,7 +60,6 @@ class ExpenseListIntegrationTest extends IntegrationTest {
         return result.andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
     }
 
-    // An expense paid on the day to the vendor, in the business's currency.
     private void expense(LocalDate date, String vendor, String category, String amount) throws Exception {
         send(post("/api/v1/expense"), """
                 {"date": "%s", "vendor": "%s", "category": "%s", "amount": %s}
@@ -74,8 +67,6 @@ class ExpenseListIntegrationTest extends IntegrationTest {
                 .andExpect(status().isCreated());
     }
 
-    // An expense in the currency: what it cost before tax, and the tax paid
-    // on it, which can be claimed back or not.
     private void expense(
             LocalDate date, String vendor, String category, String currency, String amount, String tax,
             boolean reclaimable) throws Exception {
@@ -86,13 +77,11 @@ class ExpenseListIntegrationTest extends IntegrationTest {
                 .andExpect(status().isCreated());
     }
 
-    // The first amount the path finds.
     private static BigDecimal amount(String body, String path) {
         Object found = JsonPath.read(body, path);
         return new BigDecimal((found instanceof List<?> list ? list.get(0) : found).toString());
     }
 
-    // The amounts the path finds added up, or nothing when it finds none.
     private static BigDecimal sum(String body, String path) {
         List<Object> amounts = JsonPath.read(body, path);
         return amounts.stream()
@@ -100,7 +89,6 @@ class ExpenseListIntegrationTest extends IntegrationTest {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    // The expenses list, every match on one page, with the given filters.
     private ResultActions list(String... params) throws Exception {
         return send(with(get("/api/v1/expense").param("size", "100"), params), "");
     }
@@ -109,7 +97,6 @@ class ExpenseListIntegrationTest extends IntegrationTest {
         return send(with(get("/api/v1/expense/csv"), params), "");
     }
 
-    // The vendors in the CSV file, in its order.
     private List<String> csv(String... params) throws Exception {
         return body(csvFile(params).andExpect(status().isOk()))
                 .lines()
@@ -127,11 +114,9 @@ class ExpenseListIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("a period is the overview's last 30 or 90 days or 12 months, by the business's calendar")
-    void periods(ZoneId zone) throws Exception {
+    void periodsFollowBusinessCalendar(ZoneId zone) throws Exception {
         inZone(zone);
         LocalDate year = today.minusMonths(12).plusDays(1);
-        // Paid today, and on the first day of each period and the day before it.
         expense(today, "Today", "Office", "10");
         expense(today.minusDays(29), "Day 29", "Office", "20");
         expense(today.minusDays(30), "Day 30", "Travel", "30");
@@ -140,7 +125,6 @@ class ExpenseListIntegrationTest extends IntegrationTest {
         expense(year, "First of the year", "Office", "60");
         expense(year.minusDays(1), "Before the year", "Office", "70");
 
-        // The list says which days it covered, by the business's calendar.
         list("period", "30d")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.from").value(today.minusDays(29).toString()))
@@ -157,13 +141,11 @@ class ExpenseListIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath(
                         "$.expenses[*].vendor",
                         contains("Today", "Day 29", "Day 30", "Day 89", "Day 90", "First of the year")));
-        // With the other filters.
         list("period", "90d", "category", "travel")
                 .andExpect(jsonPath("$.expenses[*].vendor", contains("Day 30", "Day 89")));
         list("period", "12m", "q", "day 9")
                 .andExpect(jsonPath("$.totalExpenses").value(1))
                 .andExpect(jsonPath("$.expenses[*].vendor", contains("Day 90")));
-        // Dates are sent back as they were asked for, and none when none were.
         list("from", today.minusDays(30).toString())
                 .andExpect(jsonPath("$.from").value(today.minusDays(30).toString()))
                 .andExpect(jsonPath("$.to").value(nullValue()))
@@ -176,11 +158,9 @@ class ExpenseListIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.from").value(nullValue()))
                 .andExpect(jsonPath("$.to").value(nullValue()))
                 .andExpect(jsonPath("$.totalExpenses").value(7));
-        // The CSV file covers the same days.
         assertThat(csv("period", "30d")).containsExactly("Today", "Day 29");
         assertThat(csv("period", "12m", "category", "OFFICE"))
                 .containsExactly("Today", "Day 29", "Day 90", "First of the year");
-        // Each begins on the day the overview's own period does.
         for (String period : List.of("30d", "90d", "12m")) {
             String from = JsonPath.read(
                     body(send(get("/api/v1/report/overview").param("period", period), "")), "$.period.from");
@@ -189,8 +169,7 @@ class ExpenseListIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("currency keeps the expenses in one currency, written as it is stored, and a blank one keeps them all")
-    void currency() throws Exception {
+    void filtersByCurrency() throws Exception {
         expense(today, "Uber", "Travel", "USD", "8", "0", false);
         expense(today.minusDays(1), "Lufthansa", "Travel", "EUR", "200", "0", false);
         expense(today.minusDays(40), "Fnac", "Office", "EUR", "30", "0", false);
@@ -203,24 +182,18 @@ class ExpenseListIntegrationTest extends IntegrationTest {
         list("currency", "USD").andExpect(jsonPath("$.expenses[*].vendor", contains("Uber")));
         list("currency", "eur").andExpect(jsonPath("$.totalExpenses").value(0));
         list("currency", " ").andExpect(jsonPath("$.totalExpenses").value(4));
-        // With the other filters.
         list("currency", "EUR", "period", "30d")
                 .andExpect(jsonPath("$.from").value(today.minusDays(29).toString()))
                 .andExpect(jsonPath("$.expenses[*].vendor", contains("Lufthansa")));
         list("currency", "EUR", "category", "OFFICE").andExpect(jsonPath("$.expenses[*].vendor", contains("Fnac")));
         list("currency", "EUR", "q", "luft", "from", today.minusDays(1).toString(), "to", today.toString())
                 .andExpect(jsonPath("$.expenses[*].vendor", contains("Lufthansa")));
-        // The CSV file takes it too.
         assertThat(csv("currency", "EUR")).containsExactly("Lufthansa", "Fnac");
         assertThat(csv("currency", "EUR", "period", "30d")).containsExactly("Lufthansa");
     }
 
     @Test
-    @DisplayName("the totals add up what was paid for every listed expense in each currency, on every page, tax that"
-            + " can be claimed back and all")
-    void totals() throws Exception {
-        // Tax that can't be claimed back is part of what an expense cost, and
-        // tax that can isn't, but both were paid.
+    void totalsPerCurrencyAddUp() throws Exception {
         expense(today, "Staples", "Office", "USD", "100", "18", false);
         expense(today.minusDays(1), "Hostinger", "Software", "USD", "50", "9", true);
         expense(today.minusDays(2), "Uber", "Travel", "USD", "20.50", "0", false);
@@ -234,16 +207,13 @@ class ExpenseListIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.totals[*].currency", contains("EUR", "GBP", "USD")))
                 .andExpect(jsonPath("$.totals[*].expenses", contains(1, 1, 3)))
                 .andExpect(jsonPath("$.totals[*].spent", contains(238.0, 14.4, 197.5)))
-                // Written to the cent.
                 .andExpect(content().string(containsString(
                         "\"totals\":[{\"currency\":\"EUR\",\"expenses\":1,\"spent\":238.00},"))));
-        // Every page carries the totals of the whole list.
         String paged = body(send(get("/api/v1/expense").param("size", "2").param("page", "3"), "")
                 .andExpect(jsonPath("$.expenses[*].vendor", contains("Lufthansa")))
                 .andExpect(jsonPath("$.totalExpenses").value(5))
                 .andExpect(jsonPath("$.numberOfPages").value(3)));
         assertThat((Object) JsonPath.read(paged, "$.totals")).isEqualTo(JsonPath.read(all, "$.totals"));
-        // They add up only what the filters list.
         list("category", "travel")
                 .andExpect(jsonPath("$.totals[*].currency", contains("EUR", "USD")))
                 .andExpect(jsonPath("$.totals[*].expenses", contains(1, 1)))
@@ -258,9 +228,6 @@ class ExpenseListIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.totals").isEmpty())
                 .andExpect(jsonPath("$.totalExpenses").value(0))
                 .andExpect(jsonPath("$.numberOfPages").value(0));
-        // What was paid in each currency is what its rows' totals add up to,
-        // and less the tax that can be claimed back, what profit takes off its
-        // income for the same days.
         String profit = body(send(get("/api/v1/report/profit").param("period", "90d"), "")
                 .andExpect(status().isOk()));
         for (String currency : List.of("USD", "EUR", "GBP")) {
@@ -275,7 +242,6 @@ class ExpenseListIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("another business's expenses are never listed, added up or exported")
     void otherBusinesses() throws Exception {
         expense(today, "Uber", "Travel", "USD", "8", "0", false);
         User mine = owner;
@@ -296,7 +262,6 @@ class ExpenseListIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a period with dates is refused, and so is one the overview doesn't have, by the CSV file too")
     void badInput() throws Exception {
         list("period", "30d", "from", today.minusDays(5).toString())
                 .andExpect(status().isBadRequest())

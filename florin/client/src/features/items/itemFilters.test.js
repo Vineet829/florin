@@ -8,8 +8,8 @@ const items = [
   { _id: "i-4", name: "Front-end build", unit: "page" },
 ];
 
-describe("the Items list's address", () => {
-  it("reads the search, and nothing without one", () => {
+describe("items URL state", () => {
+  it("reads the search", () => {
     expect(readItemList(new URLSearchParams("q=Consulting"))).toEqual({
       q: "Consulting",
     });
@@ -19,14 +19,14 @@ describe("the Items list's address", () => {
     expect(readItemList(new URLSearchParams(""))).toEqual({ q: "" });
   });
 
-  it("keeps the search, and leaves an empty one out", () => {
+  it("omits an empty search", () => {
     expect(
       itemListSearch({ q: "Motion graphics (per 15 seconds)" }).toString(),
     ).toBe("q=Motion+graphics+%28per+15+seconds%29");
     expect(itemListSearch({ q: "" }).toString()).toBe("");
   });
 
-  it("reads back what it writes", () => {
+  it("round-trips the search", () => {
     const q = "Rock & roll: 50% off";
     expect(readItemList(itemListSearch({ q }))).toEqual({ q });
   });
@@ -35,7 +35,7 @@ describe("the Items list's address", () => {
 describe("searching items", () => {
   const names = (found) => found.map((item) => item.name);
 
-  it("finds an item by any part of its name, in any case", () => {
+  it("matches name case-insensitively", () => {
     expect(names(matchingItems(items, "motion GRAPHICS"))).toEqual([
       "Motion graphics (per 15 seconds)",
     ]);
@@ -47,12 +47,12 @@ describe("searching items", () => {
     ]);
   });
 
-  it("finds an item by its unit", () => {
+  it("matches the unit", () => {
     expect(names(matchingItems(items, "hour"))).toEqual(["Consulting"]);
     expect(names(matchingItems(items, "Page"))).toEqual(["Front-end build"]);
   });
 
-  it("finds nothing that doesn't match, and every item without a search", () => {
+  it("handles no match and empty search", () => {
     expect(matchingItems(items, "photography")).toEqual([]);
     expect(matchingItems(items, "")).toBe(items);
     expect(matchingItems(items, "   ")).toBe(items);

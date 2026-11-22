@@ -14,10 +14,6 @@ import java.util.Base64;
 import java.util.Map;
 import javax.imageio.ImageIO;
 
-// A QR code as a PNG data URI: medium error correction, a quiet zone of four
-// modules, 5 pixels a module, black on white. The text goes in as it is, with
-// no character set marker, which some scanners trip on, so it should be
-// plain ASCII.
 public final class QrCode {
 
     private static final int MODULE_PIXELS = 5;

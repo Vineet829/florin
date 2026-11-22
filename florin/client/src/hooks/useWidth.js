@@ -1,7 +1,5 @@
 import { useLayoutEffect, useRef, useState } from "react";
 
-// An element's width, kept current as it resizes, so a chart can be drawn at
-// its real size. Until the element is measured, `fallback` stands in.
 const useWidth = (fallback) => {
   const ref = useRef(null);
   const [width, setWidth] = useState(0);

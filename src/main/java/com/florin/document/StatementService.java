@@ -52,7 +52,6 @@ public class StatementService {
         return render(requireInBusiness(access, customerId));
     }
 
-    // A client's statement as of today in the business's time zone.
     DocumentPdf render(Customer customer) {
         BusinessSettings settings = settingsService.forBusiness(customer.getBusiness().getPkid());
         ZoneId zone = ZoneId.of(settings.getTimeZone());
@@ -67,9 +66,6 @@ public class StatementService {
                 envelope(customer));
     }
 
-    // The statement of the client invoiced last, for previewing what a
-    // statement's email would say.
-    // A client's balances in each currency, as their statement shows them.
     List<Statements.Account> accounts(Customer customer) {
         ZoneId zone = ZoneId.of(settingsService.forBusiness(customer.getBusiness().getPkid()).getTimeZone());
         return Statements.accounts(

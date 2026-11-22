@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 
 import com.florin.common.ApiException;
 import com.florin.settings.dto.PaymentDetailsRequest;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class PaymentDetailsValidatorTest {
@@ -21,25 +20,23 @@ class PaymentDetailsValidatorTest {
     }
 
     @Test
-    @DisplayName("details are trimmed, blank ones are left out, and a UPI ID is lower-cased")
-    void normalises() {
+    void normalisesEnteredDetails() {
         PaymentDetails details = PaymentDetailsValidator.validate(new PaymentDetailsRequest(
-                "  Ada & Co ", " ", "5010 0123 4567", null, null, "ignored", " Ada.Co@OKHDFCBANK ",
-                "https://pay.example.com/ada", "  "));
+                "  Apte & Co ", " ", "5010 0123 4567", null, null, "ignored", " Apte.Co@OKHDFCBANK ",
+                "https://pay.example.com/apte", "  "));
 
-        assertThat(details.getAccountHolder()).isEqualTo("Ada & Co");
+        assertThat(details.getAccountHolder()).isEqualTo("Apte & Co");
         assertThat(details.getBankName()).isNull();
         assertThat(details.getAccountNumber()).isEqualTo("5010 0123 4567");
         assertThat(details.getBankCodeType()).isNull();
         assertThat(details.getBankCodeLabel()).isNull();
-        assertThat(details.getUpiId()).isEqualTo("ada.co@okhdfcbank");
-        assertThat(details.getLink()).isEqualTo("https://pay.example.com/ada");
+        assertThat(details.getUpiId()).isEqualTo("apte.co@okhdfcbank");
+        assertThat(details.getLink()).isEqualTo("https://pay.example.com/apte");
         assertThat(details.getInstructions()).isNull();
         assertThat(PaymentDetailsValidator.validate(code(null, null)).isEmpty()).isTrue();
     }
 
     @Test
-    @DisplayName("each kind of bank code is checked and written the standard way")
     void bankCodes() {
         assertThat(PaymentDetailsValidator.validate(code("IFSC", "hdfc0001234")).getBankCode())
                 .isEqualTo("HDFC0001234");
@@ -59,7 +56,6 @@ class PaymentDetailsValidatorTest {
     }
 
     @Test
-    @DisplayName("a code that can't be right is refused with what it should look like")
     void refusesBadCodes() {
         assertThat(refusal(code("IFSC", "HDFC1001234"))).startsWith("Enter an IFSC such as HDFC0001234");
         assertThat(refusal(code("SWIFT", "HDFCIN"))).startsWith("Enter a SWIFT / BIC code");
@@ -73,15 +69,14 @@ class PaymentDetailsValidatorTest {
     }
 
     @Test
-    @DisplayName("an account number, UPI ID or payment link that can't be paid to is refused")
     void refusesBadDetails() {
         assertThat(refusal(new PaymentDetailsRequest(null, null, "12", null, null, null, null, null, null)))
                 .startsWith("Enter the account number");
         assertThat(refusal(new PaymentDetailsRequest(null, null, "1234#5678", null, null, null, null, null, null)))
                 .startsWith("Enter the account number");
-        assertThat(refusal(new PaymentDetailsRequest(null, null, null, null, null, null, "ada", null, null)))
+        assertThat(refusal(new PaymentDetailsRequest(null, null, null, null, null, null, "apte", null, null)))
                 .isEqualTo("Enter a UPI ID such as yourname@okhdfcbank");
-        assertThat(refusal(new PaymentDetailsRequest(null, null, null, null, null, null, "ada@1bank", null, null)))
+        assertThat(refusal(new PaymentDetailsRequest(null, null, null, null, null, null, "apte@1bank", null, null)))
                 .isEqualTo("Enter a UPI ID such as yourname@okhdfcbank");
         for (String link : new String[] {"http://pay.example.com", "https://", "pay.example.com", "javascript:x"}) {
             assertThat(refusal(new PaymentDetailsRequest(null, null, null, null, null, null, null, link, null)))

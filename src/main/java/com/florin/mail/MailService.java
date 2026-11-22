@@ -19,8 +19,6 @@ public class MailService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MailService.class);
 
-    // What each email is, for counting: to someone about their account, or
-    // from a business, alone or with a document attached.
     private static final String ACCOUNT = "account";
     private static final String BUSINESS = "business";
     private static final String DOCUMENT = "document";
@@ -51,8 +49,6 @@ public class MailService {
         }
     }
 
-    // An email from a business with nothing attached, sent at once, so a
-    // failure reaches the person sending.
     public void sendFromBusiness(String to, String replyTo, String subject, String body) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message);
@@ -87,7 +83,6 @@ public class MailService {
         deliver(DOCUMENT, message);
     }
 
-    // Sends the email, counted as sent, or as failed when the server refuses it.
     private void deliver(String kind, MimeMessage message) {
         try {
             mailSender.send(message);
@@ -98,9 +93,6 @@ public class MailService {
         metrics.emailSent(kind);
     }
 
-    // A subject is one line. A line break in a name it carries, a business's
-    // or a person's, becomes a space, so it can't start a header of its own
-    // or a line in the log.
     private static String oneLine(String subject) {
         return subject == null ? null : subject.replaceAll("[\\r\\n]+", " ").trim();
     }

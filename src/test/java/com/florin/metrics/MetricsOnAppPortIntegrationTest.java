@@ -12,7 +12,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.actuate.observability.AutoConfigureObservability;
@@ -25,10 +24,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-// With no management port of its own, as in development, everything is on
-// the app's port, which the public reaches. Spring then reports that port as
-// the management port too, so this runs on a real port: the metrics must
-// still be refused there, while health answers as before.
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
@@ -65,15 +60,13 @@ class MetricsOnAppPortIntegrationTest {
     @Autowired
     private SessionService sessionService;
 
-    // Nothing here sends an email, and none could reach a real mail server.
     @MockBean
     private JavaMailSender mailSender;
 
     private final HttpClient http = HttpClient.newHttpClient();
 
     @Test
-    @DisplayName("on the app's own port the metrics are refused, even to someone signed in")
-    void refused() throws Exception {
+    void refusedEvenWhenSignedIn() throws Exception {
         String handle = "metrics-" + UUID.randomUUID().toString().substring(0, 8);
         User user = new User();
         user.setEmail(handle + "@example.test");

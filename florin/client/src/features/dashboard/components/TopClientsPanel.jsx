@@ -11,23 +11,13 @@ import {
 } from "../dashboardModel";
 import { overviewPanel, panelLink } from "./DashboardPanels";
 
-// A row: the client's name, its bar, and what it owes then its count of
-// documents, which starts a new line with its dot when the row is narrow;
-// then what was billed, which can widen the column.
 const row =
   "relative -mx-2 grid grid-cols-[minmax(0,1fr)_minmax(96px,auto)] items-baseline gap-2.5 rounded-xl px-2 py-[7px]";
-// A client's name is a link that covers the whole row, and the row shows the
-// link's focus. The name reads the whole row, so the words beside it are
-// hidden from screen readers rather than read twice.
 const nameLink =
   "truncate text-spot-night underline decoration-spot-night/30 underline-offset-[3px] after:absolute after:inset-0 after:rounded-xl after:content-[''] hover:decoration-current focus-visible:outline-none";
 const linkedRow =
   "transition-colors hover:bg-white/50 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[#5b47a0]";
 
-// The clients billed the most in the period shown, in the overview's
-// currency, with what each owes now, in that currency too. A name opens the
-// client; Sales by customer opens every client's sales on the Clients tab,
-// for the same period, in the same currency when one was chosen.
 const TopClientsPanel = ({ snapshot, currencyChosen }) => {
   const { currency } = snapshot;
   const period = findPeriod(snapshot.period.key);

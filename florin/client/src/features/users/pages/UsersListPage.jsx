@@ -54,7 +54,6 @@ const STATS = [
   ["signedInLast30Days", "Signed in, last 30 days"],
 ];
 
-// What each confirmed action does, and how it is worded.
 const CONFIRMATIONS = {
   promote: {
     title: "Make this account an admin?",
@@ -84,7 +83,7 @@ const CONFIRMATIONS = {
 const isAdmin = (row) => (row.roles || []).includes("Admin");
 
 const UsersListPage = () => {
-  useTitle("Administration — Florin");
+  useTitle("Administration - Florin");
   const me = useSelector((state) => state.auth.user?.username);
   const [q, setQ] = useState("");
   const [page, setPage] = useState(0);
@@ -131,33 +130,32 @@ const UsersListPage = () => {
         run(
           () => setAdmin({ id: row._id, admin: true }),
           `${row.username} is now an admin.`,
-          "The account could not be made an admin.",
+          "The account couldn't be made an admin.",
         ),
       demote: () =>
         run(
           () => setAdmin({ id: row._id, admin: false }),
           `${row.username} is no longer an admin.`,
-          "The admin role could not be removed.",
+          "The admin role couldn't be removed.",
         ),
       deactivate: () =>
         run(
           () => deactivate(row._id),
           `${row.username} was deactivated.`,
-          "The account could not be deactivated.",
+          "The account couldn't be deactivated.",
         ),
       delete: () =>
         run(
           () => remove(row._id),
           `${row.username} was deleted.`,
-          "The account could not be deleted.",
+          "The account couldn't be deleted.",
         ),
     }[kind]();
     if (done) setConfirming(null);
   };
-  // Why an action can't be taken on this row, if it can't.
   const blocked = (row) =>
     row.username === me
-      ? "That’s your own account"
+      ? "That's your own account"
       : row.demo
         ? "The shared demo account"
         : null;
@@ -182,7 +180,6 @@ const UsersListPage = () => {
     },
     {
       label: "Status",
-      // The badges keep to one line while the list is a table.
       nowrap: true,
       render: (row) => (
         <span className="flex flex-wrap gap-1.5 tabled:flex-nowrap">
@@ -211,7 +208,7 @@ const UsersListPage = () => {
             disabled={busy || Boolean(reason) || (!admin && !row.active)}
             aria-label={
               reason
-                ? `${reason} can’t change role`
+                ? `${reason} can't change role`
                 : `${admin ? "Remove admin role from" : "Make admin"} ${row.username}`
             }
           >
@@ -238,7 +235,7 @@ const UsersListPage = () => {
             disabled={busy || Boolean(reason)}
             aria-label={
               reason
-                ? `${reason} can’t be deactivated`
+                ? `${reason} can't be deactivated`
                 : `Deactivate ${row.username}`
             }
           >
@@ -253,7 +250,7 @@ const UsersListPage = () => {
               run(
                 () => reactivate(row._id),
                 `${row.username} can sign in again.`,
-                "The account could not be reactivated.",
+                "The account couldn't be reactivated.",
               )
             }
             disabled={busy}
@@ -277,7 +274,7 @@ const UsersListPage = () => {
             onClick={() => setConfirming({ kind: "delete", row })}
             disabled={busy || Boolean(reason)}
             aria-label={
-              reason ? `${reason} can’t be deleted` : `Delete ${row.username}`
+              reason ? `${reason} can't be deleted` : `Delete ${row.username}`
             }
           >
             <FiTrash2 aria-hidden="true" />
@@ -306,7 +303,7 @@ const UsersListPage = () => {
           >
             <dt className={panelNote}>{label}</dt>
             <dd className="m-0 mt-1 font-display text-[26px] font-light tracking-[-0.03em] text-spot-ink">
-              {stats.data ? stats.data[key].toLocaleString("en") : "—"}
+              {stats.data ? stats.data[key].toLocaleString("en") : "-"}
             </dd>
           </div>
         ))}

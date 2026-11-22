@@ -21,7 +21,6 @@ import com.jayway.jsonpath.JsonPath;
 import jakarta.mail.Session;
 import jakarta.mail.internet.MimeMessage;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -58,8 +57,7 @@ class DocumentActivityIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a document's history lists what happened to it, newest first")
-    void history() throws Exception {
+    void listsHistoryNewestFirst() throws Exception {
         User owner = createUser();
         String id = invoice(owner);
         mockMvc.perform(patch("/api/v1/document/{id}", id)
@@ -112,8 +110,7 @@ class DocumentActivityIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("each event names the member who did it, the client's views name no one, and a deleted account goes")
-    void actors() throws Exception {
+    void eventsNameTheirActor() throws Exception {
         User owner = createUser();
         Business business = businessOf(owner);
         User member = createMember(business, BusinessRole.MEMBER);
@@ -157,7 +154,6 @@ class DocumentActivityIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an email that fails to send is not recorded as sent, though the link made for it stays")
     void failedEmail() throws Exception {
         User owner = createUser();
         String id = invoice(owner);
@@ -170,8 +166,7 @@ class DocumentActivityIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("only the document's owner sees its history")
-    void ownership() throws Exception {
+    void onlyOwnerSeesHistory() throws Exception {
         User owner = createUser();
         String id = invoice(owner);
 

@@ -32,15 +32,12 @@ import IdentityFields, {
   emptyIdentity,
 } from "../../auth/components/IdentityFields";
 
-// The danger zone is already peach, so its button is white.
 const deleteAccountButton = `${buttonBase} border border-overdue-icon/25 bg-white/80 text-overdue-strong hover:enabled:bg-white disabled:bg-white/40 disabled:text-overdue-muted`;
-// "A", "A and B", "A, B and C".
 const listed = (names) =>
   names.length < 2
     ? names.join("")
     : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
 
-// Deleting an account can't be undone, so its password is asked for again.
 const DeleteAccountDialog = ({ open, busy, onConfirm, onClose }) => {
   const [identity, setIdentity] = useState(emptyIdentity);
   const close = () => {
@@ -57,7 +54,7 @@ const DeleteAccountDialog = ({ open, busy, onConfirm, onClose }) => {
     >
       <p className="mt-3 text-[14px] leading-[1.6] text-spot-body">
         This permanently deletes your account and your business, with all its
-        documents, clients and items. This action cannot be undone.
+        documents, clients and items. This action can't be undone.
       </p>
       <IdentityFields
         values={identity}
@@ -79,7 +76,7 @@ const DeleteAccountDialog = ({ open, busy, onConfirm, onClose }) => {
           onClick={() => onConfirm(identity)}
           disabled={busy || !identity.password}
         >
-          {busy ? "Please wait…" : "Delete account"}
+          {busy ? "Please wait..." : "Delete account"}
         </button>
       </div>
     </Dialog>
@@ -87,7 +84,7 @@ const DeleteAccountDialog = ({ open, busy, onConfirm, onClose }) => {
 };
 
 const ProfilePage = () => {
-  useTitle("Profile — Florin");
+  useTitle("Profile - Florin");
   const query = useGetUserProfileQuery();
   const profile = query.data?.userProfile;
   const business = useGetBusinessQuery().data?.business;
@@ -105,7 +102,7 @@ const ProfilePage = () => {
       navigate("/login", { replace: true });
       toast.success("Your account has been deleted.");
     } catch (error) {
-      toast.error(errorMessage(error, "Your account could not be deleted."));
+      toast.error(errorMessage(error, "Your account couldn't be deleted."));
     }
   };
   return (
@@ -195,9 +192,9 @@ const ProfilePage = () => {
                 </h2>
                 <p className="mt-1.5 text-[13.5px] text-overdue-muted">
                   {profile.demo
-                    ? "The shared demo account can’t be deleted."
+                    ? "The shared demo account can't be deleted."
                     : shared.length
-                      ? `You own ${listed(shared)}, which others work in. Hand it over or remove them first, in Settings → Team.`
+                      ? `You own ${listed(shared)}, which others work in. Hand it over or remove them first, in Settings > Team.`
                       : !profile.hasPassword
                         ? "Deleting your account asks for your password. Set one first with Forgot password on the sign-in page."
                         : "Permanently delete your Florin account and your business."}

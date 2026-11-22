@@ -11,8 +11,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 
-// The cookie that carries a session's refresh token: set when a sign-in
-// starts a session, and cleared when it ends.
 @Component
 public class RefreshCookies {
 
@@ -32,7 +30,6 @@ public class RefreshCookies {
         response.addHeader(HttpHeaders.SET_COOKIE, base("").maxAge(0).build().toString());
     }
 
-    // The refresh token the browser sent, if any.
     public Optional<String> read(HttpServletRequest request) {
         return Optional.ofNullable(request.getCookies())
                 .flatMap(cookies -> Arrays.stream(cookies)

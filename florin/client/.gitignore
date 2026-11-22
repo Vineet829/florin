@@ -40,7 +40,6 @@ bower_components
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
 
-# Create React App's build output, from before Vite
 build/
 
 # Dependency directories

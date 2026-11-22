@@ -8,7 +8,6 @@ import com.florin.config.AppProperties;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.http.HttpStatus;
@@ -32,7 +31,6 @@ class UploadServiceTest {
     }
 
     @Test
-    @DisplayName("an image is stored under /uploads and written to disk")
     void storesImage(@TempDir Path dir) throws Exception {
         UploadService service = serviceFor(dir);
         MockMultipartFile logo = new MockMultipartFile("logo", "brand.png", "image/png", PNG);
@@ -45,7 +43,6 @@ class UploadServiceTest {
     }
 
     @Test
-    @DisplayName("an empty upload is rejected")
     void rejectsEmptyFile(@TempDir Path dir) {
         UploadService service = serviceFor(dir);
         MockMultipartFile empty = new MockMultipartFile("logo", "e.png", "image/png", new byte[0]);
@@ -56,7 +53,6 @@ class UploadServiceTest {
     }
 
     @Test
-    @DisplayName("a non-image upload is rejected")
     void rejectsNonImage(@TempDir Path dir) {
         UploadService service = serviceFor(dir);
         MockMultipartFile text =
@@ -70,7 +66,6 @@ class UploadServiceTest {
     }
 
     @Test
-    @DisplayName("a page sent as an image is refused, whatever its name and type say")
     void refusesDisguisedPages(@TempDir Path dir) {
         UploadService service = serviceFor(dir);
         byte[] page = "<html><p>Not an image</p></html>".getBytes();
@@ -84,7 +79,6 @@ class UploadServiceTest {
     }
 
     @Test
-    @DisplayName("an image is named for what its bytes are, and WebP is refused since PDFs can't show it")
     void namesByContent(@TempDir Path dir) {
         UploadService service = serviceFor(dir);
 
@@ -96,7 +90,6 @@ class UploadServiceTest {
     }
 
     @Test
-    @DisplayName("a stored upload's public URL resolves back to its file")
     void resolvesStoredFile(@TempDir Path dir) throws Exception {
         UploadService service = serviceFor(dir);
         String url = service.store(new MockMultipartFile("logo", "brand.png", "image/png", PNG));
@@ -105,7 +98,6 @@ class UploadServiceTest {
     }
 
     @Test
-    @DisplayName("remote URLs, missing files and paths outside the upload folder never resolve")
     void refusesOtherPaths(@TempDir Path dir) throws Exception {
         UploadService service = serviceFor(dir.resolve("uploads"));
         Files.writeString(dir.resolve("secret.txt"), "secret");
@@ -117,7 +109,6 @@ class UploadServiceTest {
     }
 
     @Test
-    @DisplayName("a logo over 4 megapixels is refused from its header alone, before anything is written")
     void refusesLargeImages(@TempDir Path dir) {
         UploadService service = serviceFor(dir);
 
@@ -135,7 +126,6 @@ class UploadServiceTest {
     }
 
     @Test
-    @DisplayName("a file that starts like an image but can't be read as one is refused")
     void refusesUnreadableImages(@TempDir Path dir) {
         UploadService service = serviceFor(dir);
         byte[] cutShort = {(byte) 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 13};
@@ -147,8 +137,7 @@ class UploadServiceTest {
     }
 
     @Test
-    @DisplayName("a stored logo prints only when it can be read and is at most 4 megapixels")
-    void printable(@TempDir Path dir) throws Exception {
+    void printsReadableSmallLogos(@TempDir Path dir) throws Exception {
         assertThat(UploadService.printable(Files.write(dir.resolve("small.png"), PNG))).isTrue();
         assertThat(UploadService.printable(Files.write(dir.resolve("edge.png"), TestImages.pngHeader(2000, 2000))))
                 .isTrue();
@@ -159,7 +148,6 @@ class UploadServiceTest {
     }
 
     @Test
-    @DisplayName("a logo over 2 MB is refused before anything is written")
     void refusesLargeFiles(@TempDir Path dir) {
         UploadService service = serviceFor(dir);
         MockMultipartFile large = new MockMultipartFile(

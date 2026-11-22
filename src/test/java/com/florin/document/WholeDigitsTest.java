@@ -5,13 +5,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.florin.common.ApiException;
 import java.math.BigDecimal;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class WholeDigitsTest {
 
     @Test
-    @DisplayName("an amount keeps at most 15 digits before the point, counted however it is written")
     void wholeDigits() {
         BigDecimal largest = new BigDecimal("999999999999999.99");
         assertThat(DocumentService.wholeDigits(largest)).isSameAs(largest);

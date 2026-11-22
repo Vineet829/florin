@@ -40,7 +40,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,8 +50,6 @@ import org.springframework.mail.MailSendException;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// A client's portal: their issued documents, balances and statement, and
-// what they may do there, with nothing more than a share link shows.
 class ClientPortalIntegrationTest extends IntegrationTest {
 
     private static final AtomicInteger NETWORKS = new AtomicInteger();
@@ -133,8 +130,7 @@ class ClientPortalIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a client's portal lists only their issued documents, void ones marked, with balances per currency")
-    void portal() throws Exception {
+    void listsIssuedDocumentsOnly() throws Exception {
         String acme = customer("Acme");
         String other = customer("Other Co");
         Made dollars = document(acme, "Invoice", "USD", 200, false);
@@ -187,8 +183,7 @@ class ClientPortalIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("from the portal a client gets PDFs and their statement, answers a quotation and reports a payment")
-    void actions() throws Exception {
+    void clientActsFromPortal() throws Exception {
         String acme = customer("Acme");
         Made invoice = document(acme, "Invoice", "USD", 200, false);
         Made quotation = document(acme, "Quotation", "USD", 500, false);
@@ -225,8 +220,7 @@ class ClientPortalIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the portal names documents by number and holds no ids or emails, field for field")
-    void contract() throws Exception {
+    void portalHidesIdsAndEmails() throws Exception {
         String acme = customer("Acme");
         document(acme, "Invoice", "USD", 200, false);
         JsonNode portal = objectMapper.readTree(
@@ -250,8 +244,7 @@ class ClientPortalIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a new link replaces the old one, a turned-off one is gone, and only those who edit records manage it")
-    void links() throws Exception {
+    void replacesAndRevokesLinks() throws Exception {
         String acme = customer("Acme");
         String first = portal(acme);
         String second = portal(acme);
@@ -280,8 +273,7 @@ class ClientPortalIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a page far past the last, such as one typed into the address, is empty rather than an error")
-    void pageFarPastTheLast() throws Exception {
+    void pageBeyondLastIsEmpty() throws Exception {
         String customer = customer("Paging Co");
         document(customer, "Invoice", "USD", 100, false);
         String token = portal(customer);
@@ -292,19 +284,16 @@ class ClientPortalIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a network asking for portals more than 60 times a minute is asked to wait")
-    void slowedDown() throws Exception {
+    void limitsPortalRequests() throws Exception {
         String token = portal(customer("Acme"));
         List<Integer> statuses = new ArrayList<>();
         for (int request = 0; request < 75; request++) {
             statuses.add(open(token).andReturn().getResponse().getStatus());
         }
-        // The allowance refills a request a second, so a few more get in.
         assertThat(statuses.subList(0, 60)).containsOnly(200);
         assertThat(statuses.subList(60, 75)).contains(429);
     }
 
-    // Every email sent so far, as recipient and message.
     private List<String[]> sentEmails() throws Exception {
         ArgumentCaptor<MimeMessage> captor = ArgumentCaptor.forClass(MimeMessage.class);
         verify(mailSender, atLeast(0)).send(captor.capture());
@@ -323,8 +312,7 @@ class ClientPortalIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a client gets their portal link by email, the same link each time, or on WhatsApp")
-    void send() throws Exception {
+    void sendsPortalLink() throws Exception {
         when(mailSender.createMimeMessage()).thenAnswer(invocation -> new MimeMessage((Session) null));
         String acme = customer("Acme");
         String email = JsonPath.read(
@@ -380,7 +368,6 @@ class ClientPortalIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a client's portal link keeps working when the email that would replace it fails to send")
     void failedEmailKeepsLink() throws Exception {
         when(mailSender.createMimeMessage()).thenAnswer(invocation -> new MimeMessage((Session) null));
         doThrow(new MailSendException("down")).doNothing().when(mailSender).send(any(MimeMessage.class));

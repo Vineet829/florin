@@ -24,9 +24,8 @@ import {
 import { useGetAuditLogQuery } from "../auditApiSlice";
 import AdminTabs from "../components/AdminTabs";
 
-// Every account's sign-ins and security changes, and what admins did.
 const AuditLogPage = () => {
-  useTitle("Audit log — Florin");
+  useTitle("Audit log - Florin");
   const [q, setQ] = useState("");
   const [type, setType] = useState("");
   const [page, setPage] = useState(0);
@@ -121,10 +120,9 @@ const AuditLogPage = () => {
                 {
                   label: "Account",
                   type: "email",
-                  // A team change also names the business it happened in.
                   render: (event) => (
                     <span className="flex flex-col gap-0.5">
-                      {event.email || "—"}
+                      {event.email || "-"}
                       {event.business && (
                         <span className={panelNote}>in {event.business}</span>
                       )}

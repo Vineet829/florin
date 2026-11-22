@@ -7,8 +7,6 @@ import org.springframework.boot.autoconfigure.jdbc.JdbcConnectionDetails;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-// Rate limits live in the database by default, so every instance shares them.
-// app.rate-limit.shared=false keeps them in each instance's memory instead.
 @Configuration(proxyBeanMethods = false)
 class RateLimitConfig {
 

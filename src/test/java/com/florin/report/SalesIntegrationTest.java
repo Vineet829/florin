@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -34,9 +33,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// The documents' view of what was sold in a period: what the overview's Billed
-// counts, by kind of document, beside the period before it, and the tax in it
-// at each rate, as the tax report counts it.
 class SalesIntegrationTest extends IntegrationTest {
 
     private User owner;
@@ -58,7 +54,6 @@ class SalesIntegrationTest extends IntegrationTest {
                 "$.createdCustomer._id");
     }
 
-    // Puts the business in the time zone, and dates what follows from its today.
     private void inZone(ZoneId zone) throws Exception {
         send(put("/api/v1/settings"), """
                 {"defaultCurrency": "USD", "paymentTermsDays": 15, "defaultTaxRate": 0,
@@ -78,8 +73,6 @@ class SalesIntegrationTest extends IntegrationTest {
         return result.andReturn().getResponse().getContentAsString();
     }
 
-    // A document dated the day, at one price taxed at a rate; a draft is only
-    // planned for that day.
     private String create(String type, String currency, String price, String rate, LocalDate issued, boolean draft)
             throws Exception {
         return JsonPath.read(
@@ -105,8 +98,6 @@ class SalesIntegrationTest extends IntegrationTest {
         return create(type, "USD", price, rate, issued, false);
     }
 
-    // A credit note on the document, dated the day, taking one line at the
-    // price off, taxed at the rate.
     private void credit(String document, String price, String rate, LocalDate issued) throws Exception {
         String note = JsonPath.read(
                 body(send(post("/api/v1/document/{id}/credit-note", document), "").andExpect(status().isCreated())),
@@ -132,7 +123,6 @@ class SalesIntegrationTest extends IntegrationTest {
         return send(request, "");
     }
 
-    // The documents list's billed documents in dollars over the days.
     private String billedList(LocalDate from, LocalDate to) throws Exception {
         MockHttpServletRequestBuilder request = get("/api/v1/document/all")
                 .param("billed", "true")
@@ -148,7 +138,6 @@ class SalesIntegrationTest extends IntegrationTest {
         return new BigDecimal(JsonPath.read(body, path).toString());
     }
 
-    // The amounts at the path added up.
     private static BigDecimal sum(String body, String path) {
         List<Object> amounts = JsonPath.read(body, path);
         return amounts.stream()
@@ -162,20 +151,14 @@ class SalesIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("a period's invoices, receipts and credit notes, by kind and by tax rate, beside the period before")
-    void figures(ZoneId zone) throws Exception {
+    void salesByKindAndRate(ZoneId zone) throws Exception {
         inZone(zone);
-        // In the last 30 days: an invoice taxed 10% and an untaxed one today,
-        // a receipt taxed 18%, an invoice taxed 5% on their first day, and a
-        // credit note taking 18% off an invoice from before them.
         issue("Invoice", "1000", "10", today);
         issue("Invoice", "50", "0", today);
         issue("Receipt", "200", "18", today.minusDays(3));
         issue("Invoice", "300", "5", today.minusDays(29));
         credit(issue("Invoice", "500", "18", today.minusDays(60)), "100", "18", today.minusDays(2));
-        // The day before the last 30 days.
         issue("Invoice", "400", "10", today.minusDays(30));
-        // Never counted: a draft, a void invoice, a quotation and euros.
         create("Invoice", "USD", "900", "18", today, true);
         voided(issue("Invoice", "800", "18", today));
         issue("Quotation", "600", "18", today);
@@ -191,7 +174,6 @@ class SalesIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.period.to").value(today.toString()))
                 .andExpect(jsonPath("$.period.previousFrom").value(today.minusDays(59).toString()))
                 .andExpect(jsonPath("$.period.previousTo").value(today.minusDays(30).toString()))
-                // 1100 + 50 + 315 + 236 - 118, beside the 440 the day before.
                 .andExpect(jsonPath("$.total").value(1583.0))
                 .andExpect(jsonPath("$.previousTotal").value(440.0))
                 .andExpect(jsonPath("$.documents").value(5))
@@ -208,7 +190,6 @@ class SalesIntegrationTest extends IntegrationTest {
                 .andExpect(content().string(containsString(
                         "\"tax\":{\"total\":133.00,\"rates\":[{\"rate\":0,\"taxable\":50.00,\"tax\":0.00,"
                                 + "\"documents\":1},")));
-        // The euros begin today, so there is nothing to compare them with.
         sales("period", "30d", "currency", "EUR")
                 .andExpect(jsonPath("$.currency").value("EUR"))
                 .andExpect(jsonPath("$.total").value(300.0))
@@ -219,15 +200,10 @@ class SalesIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("over each of the overview's periods the total, the one before and the tax are the overview's, the"
-            + " tax is the tax report's, and the documents are the documents list's billed ones")
     void addsUpToTheOverview(ZoneId zone) throws Exception {
         inZone(zone);
         LocalDate year = today.minusMonths(12).plusDays(1);
         LocalDate january = today.withDayOfYear(1);
-        // Documents on the first day of each period and the day before it,
-        // and on the first and last days of the periods before them, at
-        // several rates, with credit notes and receipts.
         List<LocalDate> days = List.of(
                 today,
                 today.minusDays(29),
@@ -256,7 +232,6 @@ class SalesIntegrationTest extends IntegrationTest {
             }
             issue("Receipt", String.valueOf(40 + 11 * index), rates.get((index + 1) % 4), day);
         }
-        // Never counted with dollars: euros, a quotation and a draft.
         create("Invoice", "EUR", "900", "18", today, false);
         issue("Quotation", "5000", "18", today);
         create("Invoice", "USD", "6000", "18", today, true);
@@ -286,7 +261,6 @@ class SalesIntegrationTest extends IntegrationTest {
             assertThat(date(sold, "$.period.to")).as(key).isEqualTo(date(overview, "$.period.to"));
             assertThat(date(sold, "$.period.previousFrom")).as(key).isEqualTo(date(overview, "$.period.previousFrom"));
             assertThat(date(sold, "$.period.previousTo")).as(key).isEqualTo(date(overview, "$.period.previousTo"));
-            // The tax report's dollars over the same days, rate for rate.
             String report = body(send(get("/api/v1/report/tax").param("period", periods.getValue()), "")
                     .andExpect(status().isOk()));
             List<Object> tax = JsonPath.read(report, "$.currencies[?(@.currency == 'USD')].tax");
@@ -301,7 +275,6 @@ class SalesIntegrationTest extends IntegrationTest {
                             .isEqualByComparingTo(rows.get(index).get(field).toString());
                 }
             }
-            // The documents list's billed documents over the same days.
             String billed = billedList(date(sold, "$.period.from"), date(sold, "$.period.to"));
             assertThat((Integer) JsonPath.read(billed, "$.totalDocuments"))
                     .as(key)
@@ -312,12 +285,8 @@ class SalesIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("the period before is compared only when the currency's records reach back to its first day, as"
-            + " the overview compares it")
-    void previousWhenCovered(ZoneId zone) throws Exception {
+    void previousTotalNeedsHistory(ZoneId zone) throws Exception {
         inZone(zone);
-        // The 30 days before the last 30 begin 59 days ago; records from the
-        // day after cover only part of them.
         issue("Invoice", "100", "0", today.minusDays(58));
         issue("Invoice", "200", "0", today);
         sales("period", "30d")
@@ -326,35 +295,27 @@ class SalesIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.previousTotal").value(nullValue()));
         hasPrevious("30d", false);
 
-        // A receipt dated on their first day.
         issue("Receipt", "50", "0", today.minusDays(59));
         sales("period", "30d").andExpect(jsonPath("$.previousTotal").value(150.0));
         hasPrevious("30d", true);
         sales("period", "90d").andExpect(jsonPath("$.previousTotal").value(nullValue()));
         hasPrevious("90d", false);
 
-        // Older records cover the 90 days before the last 90 as well.
         issue("Invoice", "70", "0", today.minusDays(400));
         sales("period", "90d").andExpect(jsonPath("$.previousTotal").value(0.0));
         hasPrevious("90d", true);
     }
 
-    // Whether the overview compares the period with the one before.
     private void hasPrevious(String period, boolean compared) throws Exception {
         send(get("/api/v1/report/overview").param("currency", "USD").param("period", period), "")
                 .andExpect(jsonPath("$.totals.hasPrevious").value(compared));
     }
 
     @Test
-    @DisplayName("a calendar month, quarter or year runs to today while it lasts and to its last day once gone by,"
-            + " compared with the one before; all dates have nothing to compare with")
     void calendarPeriods() throws Exception {
         LocalDate month = today.withDayOfMonth(1);
         LocalDate quarter = today.with(IsoFields.DAY_OF_QUARTER, 1);
         LocalDate year = today.withDayOfYear(1);
-        // On the first day of this month, quarter and year and the day before
-        // each, on the first day of last month, quarter and year, and the
-        // day before those.
         List<LocalDate> days = List.of(
                 month,
                 month.minusDays(1),
@@ -403,7 +364,6 @@ class SalesIntegrationTest extends IntegrationTest {
                     .as(key)
                     .isEqualTo(JsonPath.read(listed, "$.totalDocuments"));
         }
-        // All dates: every document, and nothing before them.
         String all = body(sales()
                 .andExpect(jsonPath("$.period.key").value(""))
                 .andExpect(jsonPath("$.period.from").value(nullValue()))
@@ -419,8 +379,6 @@ class SalesIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the currency is chosen as the overview chooses it, and a period that sold nothing has zeros of"
-            + " every kind and no tax rates")
     void currencyAndEmpty() throws Exception {
         sales("period", "30d")
                 .andExpect(status().isOk())
@@ -435,8 +393,6 @@ class SalesIntegrationTest extends IntegrationTest {
                 .andExpect(content().string(containsString("\"tax\":{\"total\":0.00,\"rates\":[]}")));
         sales().andExpect(jsonPath("$.total").value(0.0)).andExpect(jsonPath("$.previousTotal").value(nullValue()));
 
-        // Only euros are billed, so euros are shown whatever is asked for,
-        // until there are dollars too; an older sale is in no recent period.
         create("Invoice", "EUR", "400", "0", today.minusDays(100), false);
         sales("period", "30d", "currency", "USD")
                 .andExpect(jsonPath("$.currency").value("EUR"))
@@ -451,9 +407,7 @@ class SalesIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the view isn't read as a document's id, a viewer may see it, it counts only its business, and"
-            + " a period from no list is refused")
-    void route() throws Exception {
+    void salesRouteAccess() throws Exception {
         String invoice = issue("Invoice", "100", "0", today);
 
         send(get("/api/v1/document/{id}", invoice), "")

@@ -11,7 +11,7 @@ import SignedInDevices from "../components/SignedInDevices";
 import TwoFactor from "../components/TwoFactor";
 
 const SecurityPage = () => {
-  useTitle("Security — Florin");
+  useTitle("Security - Florin");
   const profile = useGetUserProfileQuery().data?.userProfile;
   const demo = profile?.demo;
   return (

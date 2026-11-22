@@ -3,11 +3,6 @@ import { createRoot } from "react-dom/client";
 import { act } from "react-dom/test-utils";
 import fixture from "./CustomerSalesPage.fixture.json";
 
-// The view as the app draws it, through its own store and RTK Query, with
-// only fetch faked. The fixture is the demo account's last 90 days to Oct
-// 4, 2026: every client billed, as the Reports page's Top clients counts
-// them, adding up to the overview's Billed and Received. The signed-in
-// shell is left out.
 vi.mock("../../dashboard/components/DashboardShell", () => ({
   default: ({ children }) => children,
 }));
@@ -36,9 +31,6 @@ const json = (body, status = 200) =>
     headers: { "content-type": "application/json" },
   });
 
-// Answers each request by its path; `answers` replaces any of them with a
-// body or a Response, a promise of either, or a function of the request's
-// address giving one.
 const serve = (answers = {}) =>
   vi.stubGlobal(
     "fetch",
@@ -108,7 +100,6 @@ const table = (page) =>
   [...page.querySelectorAll("tbody tr")].map((row) =>
     [...row.children].map((cell) => cell.textContent),
   );
-// A sortable column's header holds a button with its name.
 const headings = (page) =>
   [...page.querySelectorAll("thead th")].map(
     (header) =>
@@ -120,8 +111,6 @@ const tabs = (page) =>
     tab.getAttribute("href"),
     tab.getAttribute("aria-current"),
   ]);
-// The styled dropdown with this label: its trigger, which carries the value
-// chosen.
 const select = (page, label) =>
   [...page.querySelectorAll("label")]
     .find((element) => element.textContent.startsWith(label))
@@ -146,9 +135,9 @@ const choose = async (combobox, value) => {
 };
 const C = "00000000-0000-0000-0000-00000000";
 
-it("lists every client billed in the period, the most billed first, with what they paid and owe and the totals", async () => {
+it("lists clients with totals", async () => {
   const page = await open("/customers/sales?period=90d");
-  expect(document.title).toBe("Sales by customer — Florin");
+  expect(document.title).toBe("Sales by customer - Florin");
   expect(page.querySelector("h1").textContent).toBe("Clients.");
   expect(tabs(page)).toEqual([
     ["All clients", "/customers", null],
@@ -158,7 +147,7 @@ it("lists every client billed in the period, the most billed first, with what th
     "/api/v1/customer/sales?period=90d&sort=billed&dir=desc&page=1&size=10",
   ]);
   expect(page.textContent).toContain(
-    "What each client was billed on the documents issued Jul 7 – Oct 4, 2026, what they have paid on them, and what they still owe.",
+    "What each client was billed on the documents issued Jul 7 - Oct 4, 2026, what they've paid on them, and what they still owe.",
   );
   expect(select(page, "Issued").textContent).toContain("Last 90 days");
   expect(select(page, "Sort clients").textContent).toContain("Most billed");
@@ -170,41 +159,36 @@ it("lists every client billed in the period, the most billed first, with what th
     "Paid",
     "Owed",
   ]);
-  // The clients, then the totals for all of them, which match the
-  // overview's Billed and Received, and what is owed today.
   expect(table(page)).toEqual([
-    ["Quill & Co. Publishing", "2", "13,459.88", "11,490.77", "1,969.11"],
-    ["Kestrel Outdoor", "2", "10,317.45", "10,317.45", "0.00"],
-    ["Verdant Farms", "2", "8,590.73", "3,278.96", "5,311.77"],
-    ["Oak Street Bakery", "3", "8,363.36", "5,145.86", "3,217.50"],
-    ["Atlas Robotics", "2", "5,298.15", "2,747.75", "2,550.40"],
-    ["Bluefin Analytics", "2", "5,164.09", "2,500.00", "2,664.09"],
-    ["Harbor & Pine Architects", "2", "4,953.00", "4,465.00", "488.00"],
-    ["Juniper Films", "2", "4,861.50", "2,931.00", "1,930.50"],
-    ["Lumen Health", "2", "4,262.75", "1,500.00", "2,762.75"],
-    ["Sable Fitness", "2", "3,577.17", "185.50", "3,391.67"],
+    ["Deshmukh & Associates", "2", "13,459.88", "11,490.77", "1,969.11"],
+    ["Casa Fernandes Homestay", "2", "10,317.45", "10,317.45", "0.00"],
+    ["Nisarg Organic Farms", "2", "8,590.73", "3,278.96", "5,311.77"],
+    ["Mehta Bakers", "3", "8,363.36", "5,145.86", "3,217.50"],
+    ["Pai Electricals", "2", "5,298.15", "2,747.75", "2,550.40"],
+    ["Shinde Constructions", "2", "5,164.09", "2,500.00", "2,664.09"],
+    ["Kale & Deshpande Architects", "2", "4,953.00", "4,465.00", "488.00"],
+    ["Iyer Dance Academy", "2", "4,861.50", "2,931.00", "1,930.50"],
+    ["Bhide Nursing Home", "2", "4,262.75", "1,500.00", "2,762.75"],
+    ["Gadre Mess", "2", "3,577.17", "185.50", "3,391.67"],
     ["All 10 clients", "21", "68,848.08", "44,562.29", "24,285.79"],
   ]);
-  // A client's name opens the client; one only named on its documents, and
-  // the totals, open nothing.
   const links = [...page.querySelectorAll("tbody a")].map((link) => [
     link.textContent,
     link.getAttribute("href"),
   ]);
   expect(links).toHaveLength(9);
   expect(links[0]).toEqual([
-    "Quill & Co. Publishing",
+    "Deshmukh & Associates",
     `/single-customer/${C}c107`,
   ]);
-  expect(links.map(([name]) => name)).not.toContain("Verdant Farms");
-  expect(page.querySelector('[role="status"]').textContent).toBe("1–10 of 10");
-  // The sort column's header shows its direction.
+  expect(links.map(([name]) => name)).not.toContain("Nisarg Organic Farms");
+  expect(page.querySelector('[role="status"]').textContent).toBe("1-10 of 10");
   expect(
     page.querySelector('th[aria-sort="descending"] button').textContent,
   ).toBe("Billed");
 });
 
-it("sorts by a column's header and by the menu, keeping the order in the address", async () => {
+it("sorts by header and menu", async () => {
   const page = await open("/customers/sales?period=90d");
   const header = (name) =>
     [...page.querySelectorAll("thead button")].find(
@@ -219,7 +203,6 @@ it("sorts by a column's header and by the menu, keeping the order in the address
       ),
     ),
   );
-  // A second click turns it around.
   await click(header("Owed"));
   expect(address).toBe("?period=90d&sort=owed&dir=asc");
   expect(await options(select(page, "Sort clients"))).toEqual([
@@ -229,8 +212,8 @@ it("sorts by a column's header and by the menu, keeping the order in the address
     "Least paid",
     "Most owed",
     "Least owed",
-    "Name A–Z",
-    "Name Z–A",
+    "Name A-Z",
+    "Name Z-A",
   ]);
   await choose(select(page, "Sort clients"), "name:asc");
   expect(address).toBe("?period=90d&sort=name&dir=asc");
@@ -238,7 +221,7 @@ it("sorts by a column's header and by the menu, keeping the order in the address
   expect(address).toBe("?period=90d");
 });
 
-it("keeps the period and the currency in the address", async () => {
+it("keeps period and currency in URL", async () => {
   const page = await open("/customers/sales?period=90d", {
     "/customer/sales": (url) => ({
       ...fixture.sales,
@@ -246,7 +229,6 @@ it("keeps the period and the currency in the address", async () => {
       currency: url.searchParams.get("currency") || "USD",
     }),
   });
-  // Several currencies: amounts name theirs, one currency at a time.
   expect(table(page)[0][2]).toBe("USD13,459.88");
   await choose(select(page, "Issued"), "this-year");
   expect(address).toBe("?period=this-year");
@@ -271,7 +253,7 @@ it("keeps the period and the currency in the address", async () => {
   expect(address).toBe("?period=this-year");
 });
 
-it("pages through the clients, with the totals for all of them on each page", async () => {
+it("pages with overall totals", async () => {
   const page = await open("/customers/sales?period=12m", {
     "/customer/sales": (url) => ({
       ...fixture.sales,
@@ -290,7 +272,7 @@ it("pages through the clients, with the totals for all of them on each page", as
   await act(() =>
     vi.waitFor(() =>
       expect(page.querySelector('[role="status"]').textContent).toBe(
-        "11–13 of 13",
+        "11-13 of 13",
       ),
     ),
   );
@@ -298,7 +280,7 @@ it("pages through the clients, with the totals for all of them on each page", as
   expect(table(page).at(-1)[0]).toBe("All 13 clients");
 });
 
-it("says when no one was billed in the period", async () => {
+it("empty period message", async () => {
   const page = await open(
     "/customers/sales?period=30d",
     {
@@ -321,11 +303,10 @@ it("says when no one was billed in the period", async () => {
     "Clients show up here once you bill them, with what they paid and what they still owe.",
   );
   expect(page.querySelector("table")).toBeNull();
-  // The menus stay, to pick another period.
   expect(select(page, "Issued")).toBeTruthy();
 });
 
-it("shows every date until a period is chosen", async () => {
+it("defaults to all dates", async () => {
   const page = await open("/customers/sales", {
     "/customer/sales": {
       ...fixture.sales,
@@ -345,7 +326,7 @@ it("shows every date until a period is chosen", async () => {
   expect(page.textContent).toContain("on the documents issued at any time");
 });
 
-it("holds the table's place while it loads", async () => {
+it("shows placeholder while loading", async () => {
   let answer;
   const page = await open(
     "/customers/sales?period=90d",
@@ -357,7 +338,7 @@ it("holds the table's place while it loads", async () => {
     () => Promise.resolve(),
   );
   expect(page.querySelector('[role="status"]').textContent).toBe(
-    "Loading workspace data…",
+    "Loading workspace data...",
   );
   expect(page.querySelector("table")).toBeNull();
   await act(async () => answer(fixture.sales));
@@ -365,7 +346,7 @@ it("holds the table's place while it loads", async () => {
   expect(table(page)).toHaveLength(11);
 });
 
-it("says when the clients can't be loaded, with a way to try again", async () => {
+it("load error with retry", async () => {
   let fails = true;
   const page = await open(
     "/customers/sales?period=90d",
@@ -379,7 +360,7 @@ it("says when the clients can't be loaded, with a way to try again", async () =>
       ),
   );
   const alert = page.querySelector('[role="alert"]');
-  expect(alert.textContent).toContain("We couldn’t load this page.");
+  expect(alert.textContent).toContain("We couldn't load this page.");
   expect(alert.textContent).toContain("Try later.");
   fails = false;
   await click(
@@ -391,7 +372,7 @@ it("says when the clients can't be loaded, with a way to try again", async () =>
   expect(table(page)).toHaveLength(11);
 });
 
-it("gives the clients list the same tab row", async () => {
+it("shares the clients tab row", async () => {
   const page = await open(
     "/customers",
     {},

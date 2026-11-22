@@ -1,7 +1,5 @@
 import { baseApiSlice } from "../api/baseApiSlice";
 
-// Read every server page so the existing 5 / 10 / 25 / All table controls
-// can operate on the complete list, using the same paginated endpoints.
 export const fetchWorkspaceRows = async (
   baseQuery,
   path,
@@ -37,8 +35,6 @@ export const workspaceApiSlice = baseApiSlice.injectEndpoints({
         fetchWorkspaceRows(baseQuery, "/customer/all", "myCustomers"),
       providesTags: ["Customer"],
     }),
-    // The logo's address comes back as text; a refusal comes back as the
-    // usual error, so its message can be shown.
     uploadProfileLogo: builder.mutation({
       query: (body) => ({
         url: "/upload",

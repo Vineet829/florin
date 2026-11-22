@@ -1,9 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { readSavedUser, saveUser } from "./savedSession";
 
-// The access token lives only here, in memory. A reload starts without it
-// and, when someone was signed in, gets it back through the session's cookie
-// before any page draws.
 const initialState = {
   user: null,
   restoring: readSavedUser(localStorage) !== null,
@@ -23,8 +20,6 @@ const authSlice = createSlice({
       state.restoring = false;
       localStorage.removeItem("user");
     },
-    // The server couldn't answer: this load starts signed out, and the next
-    // one tries again.
     restoreFailed: (state) => {
       state.restoring = false;
     },
@@ -37,9 +32,6 @@ export default authSlice.reducer;
 
 export const selectCurrentUserToken = (state) => state.auth.user?.accessToken;
 
-// Swaps the session's cookie for an access token after a reload. A cookie the
-// server refuses signs out; a server that can't answer leaves who was signed
-// in for the next load.
 export const restoreSession = async ({ dispatch, getState }, refresh) => {
   if (!getState().auth.restoring) return;
   let result;

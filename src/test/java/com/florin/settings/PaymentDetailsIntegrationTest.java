@@ -17,7 +17,6 @@ import com.florin.user.User;
 import com.jayway.jsonpath.JsonPath;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -26,9 +25,9 @@ import org.springframework.test.web.servlet.ResultActions;
 class PaymentDetailsIntegrationTest extends IntegrationTest {
 
     private static final String DETAILS = """
-            {"accountHolder": "Ada & Co", "bankName": "HDFC Bank", "accountNumber": "50100123456789",
-             "bankCodeType": "IFSC", "bankCode": "hdfc0001234", "upiId": "Ada@OKHDFCBANK",
-             "payLink": "https://pay.example.com/ada", "instructions": "Use the invoice number as the reference."}
+            {"accountHolder": "Apte & Co", "bankName": "HDFC Bank", "accountNumber": "50100123456789",
+             "bankCodeType": "IFSC", "bankCode": "hdfc0001234", "upiId": "Apte@OKHDFCBANK",
+             "payLink": "https://pay.example.com/apte", "instructions": "Use the invoice number as the reference."}
             """;
 
     private User owner;
@@ -101,7 +100,6 @@ class PaymentDetailsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("payment details are saved in their standard form, read by any member, and changed only by admins")
     void roundTrip() throws Exception {
         Business business = businessOf(owner);
         User member = createMember(business, BusinessRole.MEMBER);
@@ -113,12 +111,12 @@ class PaymentDetailsIntegrationTest extends IntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Your payment details were saved"))
                 .andExpect(jsonPath("$.paymentDetails.bankCode").value("HDFC0001234"))
-                .andExpect(jsonPath("$.paymentDetails.upiId").value("ada@okhdfcbank"));
+                .andExpect(jsonPath("$.paymentDetails.upiId").value("apte@okhdfcbank"));
         read(bearer(member, business))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.paymentDetails.accountHolder").value("Ada & Co"))
+                .andExpect(jsonPath("$.paymentDetails.accountHolder").value("Apte & Co"))
                 .andExpect(jsonPath("$.paymentDetails.bankCodeType").value("IFSC"))
-                .andExpect(jsonPath("$.paymentDetails.payLink").value("https://pay.example.com/ada"));
+                .andExpect(jsonPath("$.paymentDetails.payLink").value("https://pay.example.com/apte"));
         save(bearer(member, business), "{}").andExpect(status().isForbidden());
 
         save(bearer(owner), "{\"bankCodeType\": \"IFSC\", \"bankCode\": \"HDFC1001234\"}")
@@ -138,29 +136,28 @@ class PaymentDetailsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an unpaid invoice says how to pay it, on its share page and PDF, and a UPI ID only on rupee ones")
     void unpaidInvoices() throws Exception {
         save(bearer(owner), DETAILS).andExpect(status().isOk());
         String rupees = document(owner, "Invoice", "INR");
 
         shared(owner, rupees)
-                .andExpect(jsonPath("$.payment.accountHolder").value("Ada & Co"))
+                .andExpect(jsonPath("$.payment.accountHolder").value("Apte & Co"))
                 .andExpect(jsonPath("$.payment.bankName").value("HDFC Bank"))
                 .andExpect(jsonPath("$.payment.accountNumber").value("50100123456789"))
                 .andExpect(jsonPath("$.payment.bankCodeLabel").value("IFSC"))
                 .andExpect(jsonPath("$.payment.bankCode").value("HDFC0001234"))
-                .andExpect(jsonPath("$.payment.upiId").value("ada@okhdfcbank"))
-                .andExpect(jsonPath("$.payment.payLink").value("https://pay.example.com/ada"))
+                .andExpect(jsonPath("$.payment.upiId").value("apte@okhdfcbank"))
+                .andExpect(jsonPath("$.payment.payLink").value("https://pay.example.com/apte"))
                 .andExpect(jsonPath("$.payment.instructions").value("Use the invoice number as the reference."));
         assertThat(pdfText(owner, rupees))
-                .contains("HOW TO PAY", "Account holder", "Ada & Co", "50100123456789", "IFSC", "HDFC0001234")
-                .contains("ada@okhdfcbank", "https://pay.example.com/ada", "Use the invoice number as the reference.");
+                .contains("HOW TO PAY", "Account holder", "Apte & Co", "50100123456789", "IFSC", "HDFC0001234")
+                .contains("apte@okhdfcbank", "https://pay.example.com/apte", "Use the invoice number as the reference.");
 
         String dollars = document(owner, "Invoice", "USD");
         shared(owner, dollars)
                 .andExpect(jsonPath("$.payment.accountNumber").value("50100123456789"))
                 .andExpect(jsonPath("$.payment.upiId").value(nullValue()));
-        assertThat(pdfText(owner, dollars)).contains("HOW TO PAY").doesNotContain("UPI ID", "ada@okhdfcbank");
+        assertThat(pdfText(owner, dollars)).contains("HOW TO PAY").doesNotContain("UPI ID", "apte@okhdfcbank");
 
         mockMvc.perform(post("/api/v1/document/{id}/payment", rupees)
                         .header(HttpHeaders.AUTHORIZATION, bearer(owner))
@@ -186,7 +183,6 @@ class PaymentDetailsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("each invoice can leave out how to pay, and change that once issued, and its copies keep the choice")
     void perInvoice() throws Exception {
         save(bearer(owner), DETAILS).andExpect(status().isOk());
         String invoice = document(owner, "Invoice", "INR", ", \"showPaymentDetails\": false");

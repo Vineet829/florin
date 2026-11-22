@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-// An invitation link, opened before anyone signs in.
 @RestController
 @RequestMapping("/api/v1/public/invitations")
 public class PublicInvitationController {

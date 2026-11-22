@@ -10,11 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-// Before something that can't be undone, such as deleting an account or a
-// business, the person proves again that it is them: with the account's
-// password, and a code from their app or a recovery code when two-factor
-// sign-in is on. A browser left signed in, or a token that leaked, isn't
-// enough. Wrong passwords count toward the same limit as everywhere else.
 @Component
 public class IdentityCheck {
 
@@ -29,7 +24,6 @@ public class IdentityCheck {
     }
 
     public void require(User user, ConfirmIdentityRequest request) {
-        // An account made by signing in with Google has no password to confirm.
         if (user.getPassword() == null) {
             throw new ApiException(
                     HttpStatus.CONFLICT, "Set a password first, with Forgot password on the sign-in page");

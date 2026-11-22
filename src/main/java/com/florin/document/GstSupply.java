@@ -13,13 +13,6 @@ import java.util.Locale;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
-// Where a GST supply goes, and so how it is taxed. A draft follows the
-// business's regime each time it is saved and when it is issued; an issued
-// document keeps what it went out with. The place of supply is the one chosen,
-// else the client's GSTIN or state, else the seller's own state. A supply to
-// the seller's state is intra-state, to another state inter-state, and one
-// outside India an export: under the business's letter of undertaking
-// without tax, or with IGST paid.
 @Component
 public class GstSupply {
 
@@ -33,8 +26,6 @@ public class GstSupply {
         this.settingsService = settingsService;
     }
 
-    // As a draft is saved. A blank place is worked out again; an export keeps
-    // its choice of LUT or IGST until another is given.
     public void place(Document document, String requestedPlace, Boolean reverseCharge, String exportType) {
         BusinessSettings settings = settingsService.forBusiness(document.getBusiness().getPkid());
         document.setTaxRegime(settings.getTaxRegime());
@@ -65,35 +56,22 @@ public class GstSupply {
         document.setLutReference(type == SupplyType.EXPORT_LUT ? settings.getLutReference() : null);
     }
 
-    // As a draft is issued: its reverse charge and export choice as last
-    // saved, under the business's regime now. A place that was chosen stays;
-    // one worked out from the client it was saved with is worked out again
-    // from the client as it is issued.
     public void placeAtIssue(Document document, CustomerSnapshot saved) {
         place(document, chosenPlace(document, saved), null, null);
         zeroRatedExport(document);
     }
 
-    // The place chosen for a document: the one it has, unless that is the
-    // place worked out from the client it was saved with, as the editor
-    // tells them apart.
     static String chosenPlace(Document document, CustomerSnapshot saved) {
         String place = document.getPlaceOfSupply();
         return place == null || place.equals(defaultPlace(saved, document.getSellerStateCode())) ? null : place;
     }
 
-    // An export under a LUT charges no tax, so it is issued with its lines at
-    // 0%. A draft keeps the rates its lines were given (a credit note's stay
-    // at 0%, since its supply never changes), so they are charged again if it
-    // goes elsewhere before it is issued.
     static void zeroRatedExport(Document document) {
         if (document.getSupplyType() == SupplyType.EXPORT_LUT) {
             document.getBillingItems().forEach(item -> item.setTaxRate(BigDecimal.ZERO));
         }
     }
 
-    // What an issued GST document needs: the seller's GSTIN, a place of
-    // supply, a currency with a rate to rupees, and a number GST allows.
     static void requireIssuable(Document document) {
         if (document.getTaxRegime() != TaxRegime.GST_INDIA) {
             return;
@@ -101,7 +79,7 @@ public class GstSupply {
         if (document.getSellerStateCode() == null) {
             throw new ApiException(
                     HttpStatus.CONFLICT,
-                    "Add your business's GSTIN under Settings → Business before issuing in GST mode");
+                    "Add your business's GSTIN under Settings > Business before issuing in GST mode");
         }
         if (document.getPlaceOfSupply() == null || document.getSupplyType() == null) {
             throw new ApiException(HttpStatus.CONFLICT, "Choose the place of supply before issuing");
@@ -144,7 +122,7 @@ public class GstSupply {
         if (type == SupplyType.EXPORT_LUT && settings.getLutReference() == null) {
             throw new ApiException(
                     HttpStatus.BAD_REQUEST,
-                    "Add your LUT reference under Settings → Documents to export without IGST");
+                    "Add your LUT reference under Settings > Documents to export without IGST");
         }
         return type;
     }

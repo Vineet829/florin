@@ -15,8 +15,6 @@ public interface BusinessSettingsRepository extends JpaRepository<BusinessSettin
 
     Optional<BusinessSettings> findByBusinessPkid(Long businessPkid);
 
-    // The time zone each of the businesses chose, in one query; a business
-    // with no settings yet has none here.
     @Query("select s.business.pkid as businessPkid, s.timeZone as timeZone from BusinessSettings s"
             + " where s.business.pkid in :businessPkids")
     List<Zone> findTimeZones(@Param("businessPkids") Collection<Long> businessPkids);

@@ -27,24 +27,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
-// The tax charged in a period at each rate, by the day each document is dated:
-// invoices and receipts add theirs and credit notes take theirs off, in each
-// currency or in the reporting one. Under India's GST it is split as it was
-// charged; on a supply under reverse charge the client pays the tax, so its
-// value is kept apart and none of it counts as charged.
 @Service
 public class TaxReport {
 
     private static final BigDecimal ZERO = BigDecimal.ZERO.setScale(2);
 
-    // The tax file's columns. The last four, GST's split and what was supplied
-    // under reverse charge, which only GST has, are GST's own.
     private static final List<String> COLUMNS = List.of(
             "Currency", "Month", "From", "To", "Rate %", "Documents", "Taxable", "Tax", "CGST", "SGST", "IGST",
             "Reverse-charge taxable");
     private static final int GST_COLUMNS = 4;
 
-    // Running totals for one rate, in a month or over the period.
     private static final class Sum {
 
         private final Set<UUID> documents = new HashSet<>();
@@ -116,10 +108,6 @@ public class TaxReport {
                         : List.of());
     }
 
-    // Every month and rate, for every currency, each month with the days of
-    // it the period covers. The amounts are plain numbers. GST's columns are
-    // there for a business in GST mode, which is when the reports page shows
-    // its GST helpers, or for a period with documents taxed under GST.
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public CsvFile csv(BusinessAccess access, String periodKey, String viewKey) {
         TaxReportResponse report = report(access, periodKey, viewKey);
@@ -148,9 +136,6 @@ public class TaxReport {
                         .toList());
     }
 
-    // Rates in order, 18 and 18.00 being one; months in order, each with the
-    // rates charged in it. The documents' sales view reads one currency's tax
-    // from here too, so that it is always this report's.
     static TaxCurrency currency(String currency, List<ReportQueries.Taxed> rows) {
         Sum all = new Sum();
         Map<BigDecimal, Sum> rates = new TreeMap<>();

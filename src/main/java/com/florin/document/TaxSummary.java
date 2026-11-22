@@ -7,8 +7,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-// The tax a document charges at one rate: what was taxable at that rate, and
-// the tax on it, which India's GST splits into CGST and SGST or IGST.
 @Embeddable
 @Getter
 @Setter

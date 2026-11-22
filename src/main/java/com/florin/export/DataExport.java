@@ -41,10 +41,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
-// Everything a business keeps in the app, in one ZIP file: a CSV file for each
-// kind of record, the settings, business and profile as JSON, and a note on
-// what each file holds. It is read in one snapshot, so the files agree with
-// each other.
 @Service
 public class DataExport {
 
@@ -140,7 +136,6 @@ public class DataExport {
         return new Archive("florin-export-" + today + ".zip", zip(files));
     }
 
-    // Each line's total is worked out the way its document's totals are.
     private CsvFile lineItems(Long businessPkid) {
         return CsvFile.of(
                 "line-items.csv",
@@ -176,8 +171,6 @@ public class DataExport {
                         .list());
     }
 
-    // The tax on each document at each rate, as the document worked it out;
-    // the GST split and reverse charge only on documents made in GST mode.
     private CsvFile documentTax(Long businessPkid) {
         return CsvFile.of(
                 "document-tax.csv",
@@ -255,8 +248,6 @@ public class DataExport {
                         .list());
     }
 
-    // A unit price keeps up to four decimals, and at least two.
-    // A rate without trailing zeros, when there is one.
     private static String rate(BigDecimal value) {
         return value == null ? null : BillingItemResponse.plain(value).toPlainString();
     }

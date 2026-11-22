@@ -36,15 +36,8 @@ import { panelNote, textLink } from "../../../components/workspace/pastel";
 
 const NO_ITEMS = [];
 
-// Items › Sales by item: what each item sold in the period, before tax, as
-// the overview's Top items counts it, with no limit, and its share of the
-// income behind Profit, with the totals under each page. Each item opens
-// its own sales page for the same period and currency, the lines saved
-// without a name too. The table keeps its rows' own height, like the
-// Reports page's, so the totals are always in sight. The period, currency
-// and page are kept in the address.
 const ItemSalesPage = () => {
-  useTitle("Sales by item — Florin");
+  useTitle("Sales by item - Florin");
   const [list, update] = useListState(readItemSales, itemSalesSearch);
   const query = useGetItemSalesQuery(itemSalesQuery(list), {
     refetchOnMountOrArgChange: 60,
@@ -59,7 +52,6 @@ const ItemSalesPage = () => {
     setPage: (page) => update({ page: page + 1 }),
     setSize: (size) => update({ size, page: 1 }),
   });
-  // A page past the end, from an old link, shows the last.
   const pages = query.currentData?.numberOfPages;
   useEffect(() => {
     if (pages && list.page > pages) update({ page: pages });
@@ -67,7 +59,6 @@ const ItemSalesPage = () => {
 
   const currency = sales?.currency;
   const several = sales?.currencies?.length > 1;
-  // The shares shown add up to the 100% of the totals row.
   const shares = shareLabels(pagination.rows, sales?.total);
   const columns = [
     {
@@ -171,7 +162,7 @@ const ItemSalesPage = () => {
                   ? "Nothing was sold in this period."
                   : "Nothing sold yet."
               }
-              text="Items show up here once they are on an invoice or receipt you issue, with what each brought in."
+              text="Items show up here once they're on an invoice or receipt you issue, with what each brought in."
               icon={FiPackage}
             />
           )}

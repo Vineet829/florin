@@ -9,10 +9,8 @@ import { primaryButton, textLink } from "../../../components/workspace/pastel";
 import { useCreateBusinessMutation } from "../businessApiSlice";
 import useEnterBusiness from "../useEnterBusiness";
 
-// Where someone who works in no business lands: they start one here, or wait
-// to be invited to someone else's.
 const WelcomePage = () => {
-  useTitle("Start a business — Florin");
+  useTitle("Start a business - Florin");
   const [name, setName] = useState("");
   const [create, { isLoading }] = useCreateBusinessMutation();
   const enter = useEnterBusiness();
@@ -23,13 +21,13 @@ const WelcomePage = () => {
       toast.success(`${business.name} is ready.`);
       enter(business._id);
     } catch (error) {
-      toast.error(errorMessage(error, "The business could not be started."));
+      toast.error(errorMessage(error, "The business couldn't be started."));
     }
   };
   return (
     <PublicPage>
       <CardHeading icon={FiBriefcase} title="Start a business">
-        You aren’t part of a business yet. Start one to send quotations and
+        You aren't part of a business yet. Start one to send quotations and
         invoices, or ask someone to invite you to theirs.
       </CardHeading>
       <form className="mt-6 flex flex-col gap-4" onSubmit={submit}>
@@ -45,7 +43,7 @@ const WelcomePage = () => {
           data-autofocus
         />
         <button type="submit" className={primaryButton} disabled={isLoading}>
-          {isLoading ? "Starting…" : "Start business"}
+          {isLoading ? "Starting..." : "Start business"}
         </button>
       </form>
       <p className="mt-5 text-[13.5px] text-spot-muted">

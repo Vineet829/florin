@@ -13,7 +13,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.actuate.observability.AutoConfigureObservability;
@@ -28,9 +27,6 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-// The app on real ports, with the management port apart as MANAGEMENT_PORT
-// sets it: Prometheus reads the metrics there, and the app's port refuses
-// them. Tests leave metrics off unless asked, so they are turned on here.
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
@@ -76,15 +72,13 @@ class ManagementPortIntegrationTest {
     @Autowired
     private SessionService sessionService;
 
-    // Nothing here sends an email, and none could reach a real mail server.
     @MockBean
     private JavaMailSender mailSender;
 
     private final HttpClient http = HttpClient.newHttpClient();
 
     @Test
-    @DisplayName("sign-ins and an issued invoice are counted in the metrics read on the management port")
-    void scraped() throws Exception {
+    void countsSignInsAndInvoices() throws Exception {
         User user = createUser();
         assertThat(post(appPort, "/api/v1/auth/login", null, signIn(user, "not-the-password")).statusCode())
                 .isEqualTo(401);
@@ -114,7 +108,6 @@ class ManagementPortIntegrationTest {
     }
 
     @Test
-    @DisplayName("the app's port refuses the metrics, even to someone signed in")
     void refusedOnAppPort() throws Exception {
         User user = createUser();
         String token = jwtService.issueAccessToken(user, sessionService.start(user).session().getId());

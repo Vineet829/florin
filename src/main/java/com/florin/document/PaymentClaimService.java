@@ -30,9 +30,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// Payments clients report on invoices shared with them. A report changes
-// nothing that is owed: someone in the business confirms it, which records it
-// as a payment they can adjust first, or dismisses it.
 @Service
 public class PaymentClaimService {
 
@@ -70,8 +67,6 @@ public class PaymentClaimService {
         this.clock = clock;
     }
 
-    // An issued invoice with something left to pay takes reports, three at
-    // most waiting at a time.
     static boolean takesReports(Document document) {
         return document.getDocumentType() == DocumentType.INVOICE
                 && document.state() == DocumentState.ISSUED
@@ -83,7 +78,6 @@ public class PaymentClaimService {
                 && claimRepository.countByDocumentAndStatus(document, PaymentClaim.Status.PENDING) < MOST_WAITING;
     }
 
-    // The invoice is locked, so reports at the same moment take turns.
     @Transactional
     void report(Document shared, ReportPaymentRequest request) {
         Document document = documentRepository.findForUpdateByPkid(shared.getPkid()).orElseThrow();
@@ -100,8 +94,6 @@ public class PaymentClaimService {
                             + " still to pay");
         }
         LocalDate today = LocalDate.now(clock.withZone(zoneOf(document)));
-        // The client may be a day ahead of the business, so a day is refused
-        // only once it is after today everywhere, as a recorded payment is.
         if (request.paidOn().isAfter(Today.latest(clock))) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "The day you paid can't be after today");
         }
@@ -140,7 +132,6 @@ public class PaymentClaimService {
                         + document.getDocumentType().getValue() + " " + document.getDocumentNumber());
     }
 
-    // What the client sees of the payments they reported, newest first.
     List<PublicPaymentReport> reports(Document document) {
         return claimRepository.findByDocumentOrderByCreatedAtDescPkidDesc(document).stream()
                 .limit(MOST_SHOWN)
@@ -148,7 +139,6 @@ public class PaymentClaimService {
                 .toList();
     }
 
-    // Every report waiting in the business, newest first, up to a page.
     @Transactional(readOnly = true)
     public List<WaitingClaimResponse> waiting(BusinessAccess access) {
         return claimRepository
@@ -166,8 +156,6 @@ public class PaymentClaimService {
                 .toList();
     }
 
-    // Records the payment the client reported, as reported unless changed,
-    // through the same checks as any payment.
     @Transactional
     public PaymentClaimResponse confirm(
             BusinessAccess access, String documentId, String claimId, ConfirmClaimRequest request) {
@@ -210,10 +198,6 @@ public class PaymentClaimService {
         return PaymentClaimResponse.from(claim);
     }
 
-    // A report dismissed by what a member did to its document, such as deleting
-    // the payment it was confirmed as: that member decides it, the reason stays
-    // with the business, and the client sees it wasn't confirmed. Static, since
-    // DocumentService calls it and this service already depends on DocumentService.
     static void dismissed(PaymentClaim claim, String reason, User actor, Instant at, DocumentActivity activity) {
         claim.setStatus(PaymentClaim.Status.DISMISSED);
         claim.setPayment(null);
@@ -232,7 +216,6 @@ public class PaymentClaimService {
         claim.setDecidedAt(Instant.now(clock));
     }
 
-    // The business's document, locked while a report on it is decided.
     private Document inBusiness(BusinessAccess access, String documentId, boolean lock) {
         UUID id;
         try {
@@ -270,7 +253,6 @@ public class PaymentClaimService {
         }
     }
 
-    // "INR 177.00 · UPI · Ref. 412512345678".
     private static String detail(PaymentClaim claim) {
         return DocumentActivity.amount(claim.getDocument(), claim.getAmount()) + " · " + claim.getMethod().label()
                 + (claim.getReference() == null ? "" : " · Ref. " + claim.getReference());

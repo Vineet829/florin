@@ -41,7 +41,6 @@ public class CustomerSnapshot {
     @Column(name = "customer_phone_number", length = 30)
     private String phoneNumber;
 
-    // The client's details as they are now.
     static CustomerSnapshot of(Customer customer) {
         CustomerSnapshot snapshot = new CustomerSnapshot();
         snapshot.setName(customer.getName());

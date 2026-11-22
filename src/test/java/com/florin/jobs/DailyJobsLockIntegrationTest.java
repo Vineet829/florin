@@ -8,15 +8,12 @@ import com.florin.IntegrationTest;
 import com.florin.auth.TokenCleanup;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
 
-// The daily jobs turned on, as on a server, but never due on their own while
-// the tests run: each call to run() is one instance's daily tick.
 @TestPropertySource(properties = {"app.jobs.enabled=true", "app.jobs.cron=-"})
 class DailyJobsLockIntegrationTest extends IntegrationTest {
 
@@ -29,15 +26,12 @@ class DailyJobsLockIntegrationTest extends IntegrationTest {
     @MockBean
     private TokenCleanup tokenCleanup;
 
-    // Each test starts with the lock free. Its row is run out rather than
-    // deleted, since ShedLock only updates a lock row once it has made one.
     @BeforeEach
     void freeTheLock() {
         jdbcTemplate.update("update shedlock set lock_until = timezone('utc', now())");
     }
 
     @Test
-    @DisplayName("the migrations add the table the job locks are kept in")
     void lockTable() {
         List<String> columns = jdbcTemplate.queryForList("""
                 select column_name || ' ' || data_type from information_schema.columns
@@ -52,8 +46,7 @@ class DailyJobsLockIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a run is skipped while another instance holds the lock, and goes ahead once that lock has run out")
-    void skippedWhileAnotherInstanceHoldsTheLock() {
+    void skipsWhileLockIsHeld() {
         jdbcTemplate.update("""
                 insert into shedlock (name, lock_until, locked_at, locked_by)
                 values ('daily-jobs', timezone('utc', now()) + interval '1 hour', timezone('utc', now()), 'other')
@@ -70,7 +63,6 @@ class DailyJobsLockIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a second run straight after the first is skipped, so a late instance doesn't repeat the day's jobs")
     void runsOncePerTick() {
         dailyJobs.run();
         dailyJobs.run();

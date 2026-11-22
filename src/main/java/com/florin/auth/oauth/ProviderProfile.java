@@ -3,9 +3,6 @@ package com.florin.auth.oauth;
 import java.util.Locale;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
-// Who signed in at a provider: its lasting ID for them, their email, whether
-// the provider verified it and whether it hosts it, their name, and a handle
-// to make a username from.
 public record ProviderProfile(
         SignInProvider provider,
         String subject,
@@ -24,10 +21,6 @@ public record ProviderProfile(
         };
     }
 
-    // Google's ID token says whether it verified the email, as true or "true".
-    // Google hosts a Gmail address, and a Google Workspace account's, which
-    // carries the hd claim. Any other address it checked only when the Google
-    // account was made.
     private static ProviderProfile google(OAuth2User user) {
         String email = text(user.getAttribute("email"));
         Object verified = user.getAttribute("email_verified");

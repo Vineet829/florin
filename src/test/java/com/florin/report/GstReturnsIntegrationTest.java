@@ -20,18 +20,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// The GST helper files for a Maharashtra seller's month: each GSTR-1 table in
-// the offline tool's columns, credit notes netted or listed where their
-// invoices went, exports valued in rupees, the B2C large limit, and the
-// GSTR-3B figures they add up to. Documents made outside GST mode are left
-// out and counted.
 class GstReturnsIntegrationTest extends IntegrationTest {
 
     private static final String MUMBAI = "27AAACB1234C1ZF";
@@ -68,8 +62,6 @@ class GstReturnsIntegrationTest extends IntegrationTest {
                 "$.createdCustomer._id");
     }
 
-    // A line is "quantity x price @ rate", with an HSN/SAC code and a unit if
-    // given.
     private static String line(String quantity, String price, String rate, String code, String unit) {
         return """
                 {"itemName": "Work", "quantity": %s, "unitPrice": %s, "taxRate": "%s" %s %s}"""
@@ -142,27 +134,26 @@ class GstReturnsIntegrationTest extends IntegrationTest {
         String pune = client("Pune Walk In", ", \"stateCode\": \"27\"");
         String abroad = client("Acme Inc", ", \"stateCode\": \"96\"");
 
-        String within = invoice(mumbai, "", line("1", "1000", "18", "998314", null)); // INV-0001
+        String within = invoice(mumbai, "", line("1", "1000", "18", "998314", null));
         invoice(bengaluru, "", line("1", "2000", "18", "998314", null), line("5", "100", "5", "4901", "PCS"));
-        invoice(bengaluru, ", \"reverseCharge\": true", line("1", "300", "18", "998314", null)); // INV-0003
-        String large = invoice(delhi, "", line("1", "90000", "18", "998314", null)); // INV-0004
-        String small = invoice(delhi, "", line("1", "1000", "18", "998314", null)); // INV-0005
-        invoice(pune, "", line("20", "100", "5", "4901", "pcs")); // INV-0006
+        invoice(bengaluru, ", \"reverseCharge\": true", line("1", "300", "18", "998314", null));
+        String large = invoice(delhi, "", line("1", "90000", "18", "998314", null));
+        String small = invoice(delhi, "", line("1", "1000", "18", "998314", null));
+        invoice(pune, "", line("20", "100", "5", "4901", "pcs"));
         invoice(abroad, ", \"currency\": \"USD\", \"exchangeRate\": \"83.25\"",
-                line("1", "1000", "0", "998314", null)); // INV-0007, under the LUT
+                line("1", "1000", "0", "998314", null));
         String withIgst = invoice(
                 abroad,
                 ", \"currency\": \"USD\", \"exchangeRate\": \"83.25\", \"exportType\": \"IGST\"",
-                line("1", "100", "18", "998314", null)); // INV-0008
-        invoice(delhi, "", line("1", "100000", "0", null, null)); // INV-0009, exactly the limit, no code
+                line("1", "100", "18", "998314", null));
+        invoice(delhi, "", line("1", "100000", "0", null, null));
 
-        credit(within, line("1", "100", "18", "998314", null)); // CN-0001
-        credit(large, line("1", "1000", "18", "998314", null)); // CN-0002
-        credit(small, line("1", "200", "18", "998314", null)); // CN-0003
-        credit(withIgst, line("1", "10", "18", "998314", null)); // CN-0004
+        credit(within, line("1", "100", "18", "998314", null));
+        credit(large, line("1", "1000", "18", "998314", null));
+        credit(small, line("1", "200", "18", "998314", null));
+        credit(withIgst, line("1", "10", "18", "998314", null));
 
-        // Left out: a void invoice, a draft, and a receipt made outside GST mode.
-        String voided = invoice(mumbai, "", line("1", "5000", "18", "998314", null)); // INV-0010
+        String voided = invoice(mumbai, "", line("1", "5000", "18", "998314", null));
         send(post("/api/v1/document/{id}/void", voided), "{\"reason\": \"Sent twice\"}").andExpect(status().isOk());
         invoice(mumbai, ", \"draft\": true", line("1", "7000", "18", "998314", null));
         settings("STANDARD");
@@ -174,8 +165,7 @@ class GstReturnsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("invoices to registered buyers by rate, with their place of supply and reverse charge")
-    void b2b() throws Exception {
+    void b2bInvoicesByRate() throws Exception {
         assertThat(csv("b2b")).containsExactly(
                 MUMBAI + ",Mumbai Co,INV-0001," + date + ",1180.00,27-Maharashtra,N,,Regular B2B,,18,1000.00,",
                 BENGALURU + ",Bengaluru Co,INV-0002," + date + ",2885.00,29-Karnataka,N,,Regular B2B,,5,500.00,",
@@ -186,11 +176,8 @@ class GstReturnsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("unregistered sales: above the limit to another state one by one, the rest per place and rate")
-    void b2c() throws Exception {
+    void b2cLargeAndSmallSales() throws Exception {
         assertThat(csv("b2cl")).containsExactly("INV-0004," + date + ",106200.00,07-Delhi,,18,90000.00,,");
-        // INV-0009 is worth exactly the limit, so it is a small one; CN-0003
-        // comes off INV-0005.
         assertThat(csv("b2cs")).containsExactly(
                 "OE,07-Delhi,,0,100000.00,,",
                 "OE,07-Delhi,,18,800.00,,",
@@ -201,7 +188,6 @@ class GstReturnsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an invoice dated before August 2024 is B2C large only above that time's limit of 2,50,000")
     void b2clLimitBeforeAugust2024() throws Exception {
         settings("GST_INDIA");
         String delhi = client("Delhi Earlier", ", \"stateCode\": \"07\"");
@@ -215,7 +201,6 @@ class GstReturnsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a code whose credit notes outweigh its sales in a month has its quantity below nothing, as a number")
     void negativeHsnQuantity() throws Exception {
         settings("GST_INDIA");
         String pune = client("Pune Returns", ", \"stateCode\": \"27\"");
@@ -227,16 +212,14 @@ class GstReturnsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("exports under the LUT or with IGST, valued in rupees at their own rate")
-    void exports() throws Exception {
+    void exportsValuedInRupees() throws Exception {
         assertThat(csv("exp")).containsExactly(
                 "WOPAY,INV-0007," + date + ",83250.00,,,,0,83250.00,",
                 "WPAY,INV-0008," + date + ",9823.50,,,,18,8325.00,");
     }
 
     @Test
-    @DisplayName("the HSN summary per code, unit and rate, less credit notes, with lines missing a code apart")
-    void hsn() throws Exception {
+    void hsnSummaryPerCode() throws Exception {
         assertThat(csv("hsn-b2b")).containsExactly(
                 "4901,,PCS,5,525.00,5,500.00,25.00,0.00,0.00,",
                 "998314,,NA,0,3776.00,18,3200.00,414.00,81.00,81.00,");
@@ -248,8 +231,7 @@ class GstReturnsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("GSTR-3B: taxable, zero-rated and nil-rated supplies, inter-state ones to unregistered buyers")
-    void gstr3b() throws Exception {
+    void gstr3bSupplyTotals() throws Exception {
         assertThat(csv("gstr3b")).containsExactly(
                 "3.1(a),\"Outward taxable supplies (other than zero rated, nil rated and exempted)\","
                         + "95200.00,16549.00,131.00,131.00,",
@@ -261,8 +243,7 @@ class GstReturnsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the summary counts each file's rows and what was left out, for at most 12 months up to this one")
-    void summary() throws Exception {
+    void summaryCountsRows() throws Exception {
         summary(month.toString(), month.toString())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.from").value(month.toString()))

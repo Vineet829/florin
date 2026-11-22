@@ -17,17 +17,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
-// The documents' view of what was sold in a period, in one currency chosen as
-// the overview chooses it: the documents the overview's Billed counts, dated
-// in the period, by kind of document, and the tax in them at each rate, read
-// by the tax report's own code.
 @Service
 public class Sales {
 
     private static final BigDecimal ZERO = BigDecimal.ZERO.setScale(2);
 
-    // The kinds of document that bill, in the order they are listed; each is
-    // listed even when none of it was issued in the period.
     private static final List<String> TYPES = List.of("Invoice", "Receipt", "Credit Note");
 
     private final ReportQueries queries;
@@ -43,9 +37,6 @@ public class Sales {
         this.clock = clock;
     }
 
-    // Today is the business's, in its time zone. The period before is
-    // compared, as on the overview, only when the currency's records cover
-    // all of it.
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public SalesResponse summary(BusinessAccess access, String periodKey, String requested) {
         Long businessPkid = access.businessPkid();

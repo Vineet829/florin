@@ -16,19 +16,11 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
-// What needs doing in one currency, most urgent first: payments clients
-// reported that wait to be confirmed, overdue invoices, invoices due within
-// the week, and drafts. Quotations and the invoices schedules will make are
-// what is coming up, so they are listed there instead. Each kind is counted
-// in full; six things at most are listed. Each names its client as its
-// document does, with the id of the client the document is linked to while
-// it is linked.
 @Repository
 class NeedsAttention {
 
     private static final int MOST = 6;
 
-    // The first few of one kind, and how many there are in all.
     private record Group(List<OverviewAttention.Item> items, long count) {}
 
     private record Counted(OverviewAttention.Item item, long count) {}
@@ -39,7 +31,6 @@ class NeedsAttention {
         this.jdbc = jdbc;
     }
 
-    // The week is today and the six days after it, in the business's time zone.
     OverviewAttention list(long businessPkid, String currency, ZoneId zone, LocalDate today) {
         Map<String, Object> params = Map.of(
                 "business", businessPkid,
@@ -60,7 +51,6 @@ class NeedsAttention {
                 new OverviewAttention.Counts(reports.count(), overdue.count(), dueSoon.count(), drafts.count()));
     }
 
-    // Newest report first, with the amount and the day the client gave.
     private Group paymentReports(Map<String, Object> params) {
         return group(
                 """
@@ -79,8 +69,6 @@ class NeedsAttention {
                         item("paymentReport", result, result.getObject("paid_on", LocalDate.class), null));
     }
 
-    // Issued invoices with money owed on them, falling due as asked, the
-    // earliest due first: days late for those overdue, days left for the rest.
     private Group owed(String kind, String due, Map<String, Object> params, ZoneId zone, LocalDate today) {
         return group(
                 """
@@ -100,8 +88,6 @@ class NeedsAttention {
                 });
     }
 
-    // Drafts of any kind, the newest first, on the day each was made. A draft
-    // has no number until it is issued.
     private Group drafts(Map<String, Object> params, ZoneId zone) {
         return group(
                 """
@@ -139,7 +125,6 @@ class NeedsAttention {
                 days);
     }
 
-    // A moment's day in the business's time zone.
     private static LocalDate day(Timestamp moment, ZoneId zone) {
         return LocalDate.ofInstant(moment.toInstant(), zone);
     }

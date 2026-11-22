@@ -22,7 +22,6 @@ public class Customer extends BaseEntity {
     @JoinColumn(name = "business_pkid", nullable = false, updatable = false)
     private Business business;
 
-    // The member who made it, forgotten if their account is deleted.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_pkid", updatable = false)
     private User createdBy;
@@ -39,8 +38,6 @@ public class Customer extends BaseEntity {
     @Column(name = "vat_tin_no", length = 50)
     private String vatTinNo;
 
-    // The client's Indian GST number, and the state or territory they are in
-    // as GST codes it, or "96" outside India.
     @Column(name = "gstin", length = 15)
     private String gstin;
 

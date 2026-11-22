@@ -9,26 +9,18 @@ import { PERIODS, currencyOf, periodQuery } from "../documents/documentFilters";
 import { amountsOf } from "../documents/listTotals";
 import { PAYMENT_METHODS } from "../documents/paymentMethods";
 
-// The Payments list's search, filters, sort and page, as kept in the URL. It
-// has the Documents list's periods and currencies.
-
-// A receipt is paid as it is issued, so it has no method of its own; the
-// method filter names receipts with this instead.
 export const RECEIPT = "receipt";
 
-// The fields the list sorts by. Customers sort from A to Z only.
 export const SORT_FIELDS = {
   date: { first: "desc", asc: "Oldest first", desc: "Newest first" },
   amount: { first: "desc", asc: "Lowest amount", desc: "Highest amount" },
-  client: { first: "asc", asc: "Customer A–Z" },
+  client: { first: "asc", asc: "Customer A-Z" },
 };
 
 export const SORT_OPTIONS = sortOptions(SORT_FIELDS).filter(
   (option) => option.label,
 );
 
-// Unknown or malformed values fall back to the defaults, and so does an
-// order the menu doesn't offer.
 export const readPaymentList = (params) => {
   const method = params.get("method");
   const period = params.get("period");
@@ -47,7 +39,6 @@ export const readPaymentList = (params) => {
   };
 };
 
-// The URL for a list state, leaving out every default.
 export const paymentListSearch = ({
   q,
   method,
@@ -66,7 +57,6 @@ export const paymentListSearch = ({
 export const isPaymentListFiltered = ({ q, method, period, currency }) =>
   Boolean(q || method || period || currency);
 
-// The query the server's payments list takes for a list state.
 export const paymentQuery = (
   { q, method, period, currency, sort, dir, page, size },
   today = new Date(),
@@ -81,16 +71,11 @@ export const paymentQuery = (
   ...(currency && { currency }),
 });
 
-// What the summary above the list asks the server: the list's period by
-// name, which the server works out in the business's time zone, and its
-// currency. The search and the method narrow the list, not the summary.
 export const paymentSummaryQuery = ({ period, currency }) => ({
   ...(period && { period }),
   ...(currency && { currency }),
 });
 
-// The methods to filter by: those the business has had payments by, one an
-// old link names, then receipts.
 export const methodOptions = (methods = [], chosen = "") => [
   { value: "", label: "All methods" },
   ...[
@@ -102,19 +87,13 @@ export const methodOptions = (methods = [], chosen = "") => [
   { value: RECEIPT, label: "On a receipt" },
 ];
 
-// What the Method column says. A receipt was paid as it was issued, and a
-// refund names how the money went back.
 export const methodLabel = (row) =>
   row.kind === RECEIPT
     ? "On a receipt"
     : row.kind === "refund"
       ? ["Refund", row.method].filter(Boolean).join(" · ")
-      : row.method || "—";
+      : row.method || "-";
 
-// The line above a filtered list: how many payments it holds, from the days
-// the server applied, what came in, less refunds, and how many of them were
-// receipts, unless the list keeps to receipts. Amounts name their currency
-// when the business bills in more than one.
 export const paymentResults = (list, data, currencies = []) => {
   const totals = data?.totals || [];
   const several = currencies.length > 1 || totals.length > 1;

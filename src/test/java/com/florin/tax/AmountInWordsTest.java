@@ -3,7 +3,6 @@ package com.florin.tax;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.math.BigDecimal;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class AmountInWordsTest {
@@ -13,8 +12,7 @@ class AmountInWordsTest {
     }
 
     @Test
-    @DisplayName("rupees count in thousands, lakhs and crores, with the paise after them")
-    void rupees() {
+    void rupeesInLakhsAndCrores() {
         assertThat(words("123456.78", "INR"))
                 .isEqualTo("Rupees One Lakh Twenty Three Thousand Four Hundred Fifty Six and Seventy Eight Paise Only");
         assertThat(words("10000000", "INR")).isEqualTo("Rupees One Crore Only");
@@ -25,8 +23,7 @@ class AmountInWordsTest {
     }
 
     @Test
-    @DisplayName("other currencies are written cheque style, with the cents as a fraction")
-    void others() {
+    void otherCurrenciesChequeStyle() {
         assertThat(words("1234.56", "USD")).isEqualTo("USD One Thousand Two Hundred Thirty Four and 56/100");
         assertThat(words("2500000", "EUR")).isEqualTo("EUR Two Million Five Hundred Thousand and 00/100");
         assertThat(words("90", "GBP")).isEqualTo("GBP Ninety and 00/100");

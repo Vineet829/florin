@@ -8,8 +8,8 @@ import {
 
 const read = (search) => readCustomerSales(new URLSearchParams(search));
 
-describe("sales by customer in the URL", () => {
-  it("opens at every date, the most billed first, ten to a page", () => {
+describe("customer sales URL state", () => {
+  it("starts with the defaults", () => {
     expect(read("")).toEqual({
       period: "",
       currency: "",
@@ -21,7 +21,7 @@ describe("sales by customer in the URL", () => {
     expect(customerSalesSearch(read("")).toString()).toBe("");
   });
 
-  it("reads and writes the period, the currency, the order and the page", () => {
+  it("round-trips URL parameters", () => {
     const list = read("page=2&dir=asc&sort=owed&currency=EUR&period=90d");
     expect(list).toEqual({
       period: "90d",
@@ -36,7 +36,7 @@ describe("sales by customer in the URL", () => {
     );
   });
 
-  it("falls back to the defaults for unknown or malformed values", () => {
+  it("defaults for invalid values", () => {
     expect(read("period=ytd&currency=usd&sort=client&size=7")).toEqual({
       period: "",
       currency: "",
@@ -47,7 +47,7 @@ describe("sales by customer in the URL", () => {
     });
   });
 
-  it("offers each order the server sorts by", () => {
+  it("offers each server sort", () => {
     expect(SORT_OPTIONS.map((option) => [option.value, option.label])).toEqual([
       ["billed:desc", "Most billed"],
       ["billed:asc", "Least billed"],
@@ -55,13 +55,13 @@ describe("sales by customer in the URL", () => {
       ["paid:asc", "Least paid"],
       ["owed:desc", "Most owed"],
       ["owed:asc", "Least owed"],
-      ["name:asc", "Name A–Z"],
-      ["name:desc", "Name Z–A"],
+      ["name:asc", "Name A-Z"],
+      ["name:desc", "Name Z-A"],
     ]);
   });
 });
 
-it("asks for the period by name, the currency when chosen, and the order and page", () => {
+it("builds the server query", () => {
   expect(customerSalesQuery(read("period=this-year&sort=name"))).toEqual({
     period: "this-year",
     sort: "name",

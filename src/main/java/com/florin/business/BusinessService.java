@@ -45,14 +45,11 @@ public class BusinessService {
         this.clock = clock;
     }
 
-    // Everyone starts with a business of their own, named after them, which
-    // they can rename.
     @Transactional
     public Business createPersonal(User user) {
         return found(user, personalName(user));
     }
 
-    // Another business, which its founder owns.
     @Transactional
     public Business create(User user, String name) {
         demoAccountGuard.requireNotDemo(user, "starting a business");
@@ -63,8 +60,6 @@ public class BusinessService {
             throw new ApiException(HttpStatus.CONFLICT, "You can own at most " + MOST_OWNED + " businesses");
         }
         Business business = found(user, name.trim());
-        // Named rather than linked: the log writes on its own, before this
-        // business exists for anyone else to see.
         auditLog.record(AuditEventType.BUSINESS_CREATED, user, user, null, business.getName());
         return business;
     }
@@ -88,7 +83,6 @@ public class BusinessService {
         return fullName.isEmpty() ? user.getUsername() : fullName;
     }
 
-    // The business an account owns first.
     @Transactional(readOnly = true)
     public Business ownedBy(Long userPkid) {
         return businessRepository.findOwnedBy(userPkid).stream()
@@ -103,8 +97,6 @@ public class BusinessService {
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Business not found"));
     }
 
-    // The account that owns a business, which work done for the business
-    // without anyone signed in, such as the daily jobs, acts as.
     @Transactional(readOnly = true)
     public User owner(Long businessPkid) {
         return memberRepository.findOwner(businessPkid)
@@ -112,7 +104,6 @@ public class BusinessService {
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "This business has no owner"));
     }
 
-    // Everything a job needs to act for a business, as its owner.
     @Transactional(readOnly = true)
     public BusinessAccess ownerAccess(Long businessPkid) {
         BusinessMember owner = memberRepository.findOwner(businessPkid)
@@ -125,14 +116,9 @@ public class BusinessService {
         return BusinessProfileResponse.from(require(access), access.role());
     }
 
-    // The shared demo business's details and logo are on every visitor's
-    // documents, share links and PDFs, so they stay as its sample data has
-    // them.
     @Transactional
     public BusinessProfileResponse updateProfile(BusinessAccess access, UpdateBusinessRequest request) {
         demoAccountGuard.requireNotDemo(access.user(), "changing the business's details");
-        // Locked, so a save that waits for another member's starts from what
-        // that one saved, instead of putting it back.
         Business business = businessRepository.findForUpdate(access.businessPkid())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Business not found"));
         if (request.name() != null) {
@@ -156,14 +142,11 @@ public class BusinessService {
         return BusinessProfileResponse.from(business, access.role());
     }
 
-    // The businesses an account owns that others work in, which keep the
-    // account from going until they are handed over.
     @Transactional(readOnly = true)
     public List<String> sharedOwnedBy(Long userPkid) {
         return businessRepository.findSharedNamesOwnedBy(userPkid);
     }
 
-    // The businesses an account owns are deleted with it.
     @Transactional
     public void deleteOwnedBy(User user) {
         businessRepository.deleteAll(businessRepository.findOwnedBy(user.getPkid()));
@@ -173,7 +156,6 @@ public class BusinessService {
         return require(access.businessPkid());
     }
 
-    // In India GST mode the tax ID is the business's GSTIN, and must stay one.
     private String taxId(Long businessPkid, String value) {
         boolean gst = settingsRepository.findByBusinessPkid(businessPkid)
                 .map(settings -> settings.getTaxRegime() == TaxRegime.GST_INDIA)

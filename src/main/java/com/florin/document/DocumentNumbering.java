@@ -22,10 +22,6 @@ public class DocumentNumbering {
         this.documentRepository = documentRepository;
     }
 
-    // Each business numbers its own documents. Its settings row is locked
-    // while a number is handed out, so members creating documents at once
-    // take turns. It is read again once locked: issuing read the settings
-    // before, and writing that copy back would undo settings saved since.
     @Transactional(propagation = Propagation.MANDATORY)
     public String next(Long businessPkid, DocumentType type) {
         settingsRepository.insertDefaultsIfMissing(businessPkid);

@@ -47,9 +47,6 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder(10);
     }
 
-    // Provider sign-in comes in here rather than through the constructor: it
-    // signs people in through AuthService, which needs the password encoder
-    // above.
     @Bean
     public SecurityFilterChain filterChain(
             HttpSecurity http, Customizer<OAuth2LoginConfigurer<HttpSecurity>> oauthSignIn, Environment environment)
@@ -82,13 +79,6 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // Metrics are read only on the management port MANAGEMENT_PORT sets,
-    // which stays private to the scraper. Spring guards that port with this
-    // chain too, so the port a request came in on tells the two apart; Spring
-    // records it once the management server is up. On the app's own port
-    // metrics are refused, even to someone signed in, so without a management
-    // port of its own they can't be read at all: Spring then reports the app's
-    // port as the management port, so that alone would let them through.
     private static AuthorizationManager<RequestAuthorizationContext> onManagementPort(Environment environment) {
         return (authentication, context) -> {
             boolean apart = ManagementPortType.get(environment) == ManagementPortType.DIFFERENT;

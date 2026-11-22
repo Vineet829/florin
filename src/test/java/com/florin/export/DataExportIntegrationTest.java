@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -63,8 +62,7 @@ class DataExportIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the archive holds every kind of record, the owner's only, with a note on each file")
-    void everything() throws Exception {
+    void archiveHoldsEveryRecord() throws Exception {
         User owner = createUser();
         String client = JsonPath.read(
                 send(owner, "/api/v1/customer/create", """
@@ -134,8 +132,7 @@ class DataExportIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a business can download everything at most ten times an hour")
-    void limited() throws Exception {
+    void limitedToTenPerHour() throws Exception {
         User owner = createUser();
         for (int attempt = 0; attempt < 10; attempt++) {
             export(owner);

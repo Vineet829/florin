@@ -8,14 +8,12 @@ const encode = (value) =>
     .replace(/=+$/, "")
     .replace(/\+/g, "-")
     .replace(/\//g, "_");
-// A token an older version saved, readable and still in date.
 const savedToken = `${encode({ alg: "HS256" })}.${encode({
   sub: "u1",
   roles: ["User"],
   exp: 4102444800,
 })}.signature`;
 
-// A store as the app's, with only the auth slice.
 const storeWith = (auth) => ({
   getState: () => ({ auth }),
   dispatch: vi.fn((action) => {
@@ -23,7 +21,7 @@ const storeWith = (auth) => ({
   }),
 });
 
-it("keeps the access token in memory and saves only who signed in", () => {
+it("keeps token only in memory", () => {
   const state = reducer(
     undefined,
     logIn({ username: "asha", firstName: "Asha", accessToken: "token" }),
@@ -35,7 +33,7 @@ it("keeps the access token in memory and saves only who signed in", () => {
   });
 });
 
-it("starts a reload without a token, waiting to restore who was signed in", async () => {
+it("reload starts in restoring state", async () => {
   localStorage.setItem(
     "user",
     JSON.stringify({ username: "asha", accessToken: savedToken }),
@@ -49,7 +47,7 @@ it("starts a reload without a token, waiting to restore who was signed in", asyn
   expect(localStorage.getItem("user")).not.toContain(savedToken);
 });
 
-it("gets a reload's access token back through the session's cookie", async () => {
+it("restores token via cookie", async () => {
   localStorage.setItem("user", JSON.stringify({ username: "asha" }));
   const store = storeWith({ user: null, restoring: true });
   await restoreSession(store, async () => ({
@@ -66,7 +64,7 @@ it.each([
   { status: 401, data: null },
   { status: 403, data: null },
   { status: "PARSING_ERROR", originalStatus: 403, data: "" },
-])("signs out when the server refuses the cookie: %j", async (error) => {
+])("signs out on refused cookie: %j", async (error) => {
   localStorage.setItem("user", JSON.stringify({ username: "asha" }));
   const store = storeWith({ user: null, restoring: true });
   await restoreSession(store, async () => ({ error }));
@@ -78,20 +76,17 @@ it.each([
   { status: "FETCH_ERROR", error: "TypeError: Failed to fetch" },
   { status: "PARSING_ERROR", originalStatus: 502, data: "<html>" },
   { status: 503, data: null },
-])(
-  "keeps who was signed in for the next load when the server can't answer: %j",
-  async (error) => {
-    localStorage.setItem("user", JSON.stringify({ username: "asha" }));
-    const store = storeWith({ user: null, restoring: true });
-    await restoreSession(store, async () => ({ error }));
-    expect(store.getState().auth).toEqual({ user: null, restoring: false });
-    expect(JSON.parse(localStorage.getItem("user"))).toEqual({
-      username: "asha",
-    });
-  },
-);
+])("keeps user on server error: %j", async (error) => {
+  localStorage.setItem("user", JSON.stringify({ username: "asha" }));
+  const store = storeWith({ user: null, restoring: true });
+  await restoreSession(store, async () => ({ error }));
+  expect(store.getState().auth).toEqual({ user: null, restoring: false });
+  expect(JSON.parse(localStorage.getItem("user"))).toEqual({
+    username: "asha",
+  });
+});
 
-it("finishes restoring even when the request itself throws", async () => {
+it("finishes restoring on thrown request", async () => {
   const store = storeWith({ user: null, restoring: true });
   await restoreSession(store, async () => {
     throw new Error("boom");
@@ -99,7 +94,7 @@ it("finishes restoring even when the request itself throws", async () => {
   expect(store.getState().auth.restoring).toBe(false);
 });
 
-it("asks for nothing when no one was signed in", async () => {
+it("skips restore when signed out", async () => {
   const refresh = vi.fn();
   await restoreSession(storeWith({ user: null, restoring: false }), refresh);
   expect(refresh).not.toHaveBeenCalled();

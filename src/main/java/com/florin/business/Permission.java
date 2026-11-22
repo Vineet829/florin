@@ -1,7 +1,5 @@
 package com.florin.business;
 
-// What a member may do in a business, and what they're told when their role
-// doesn't allow it.
 public enum Permission {
     VIEW_RECORDS("You can't see this business's records"),
     EXPORT_LISTS("You can't download this business's records"),

@@ -14,16 +14,12 @@ import org.springframework.data.repository.query.Param;
 
 public interface UserSessionRepository extends JpaRepository<UserSession, Long> {
 
-    // Locked, so two refreshes of one session take turns; only the session's
-    // row is locked.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<UserSession> findByTokenHash(String tokenHash);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<UserSession> findByPreviousHash(String previousHash);
 
-    // The user and their roles come in the same query, for the request's
-    // authentication.
     @EntityGraph(attributePaths = {"user", "user.roles"})
     @Query("select s from UserSession s where s.id = :id")
     Optional<UserSession> findByExternalId(@Param("id") UUID id);
@@ -57,7 +53,6 @@ public interface UserSessionRepository extends JpaRepository<UserSession, Long> 
     @Query("update UserSession s set s.businessPkid = :businessPkid where s.id = :id")
     int useBusiness(@Param("id") UUID id, @Param("businessPkid") Long businessPkid);
 
-    // Sessions working in a business someone left start again in another.
     @Modifying
     @Query("""
             update UserSession s set s.businessPkid = null

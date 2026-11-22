@@ -3,10 +3,6 @@ import { useGetTwoFactorQuery } from "../../settings/securityApiSlice";
 
 export const emptyIdentity = { password: "", code: "" };
 
-// Something that can't be undone, such as deleting an account or a business,
-// asks for the account's password again, and a code from the authenticator
-// app or a recovery code when two-factor sign-in is on (the server's
-// IdentityCheck).
 const IdentityFields = ({ values, onChange, disabled }) => {
   const twoFactor = useGetTwoFactorQuery().data?.enabled;
   const edit = (key) => (event) =>

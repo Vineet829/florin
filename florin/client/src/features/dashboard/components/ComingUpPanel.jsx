@@ -14,25 +14,16 @@ import {
 } from "../dashboardModel";
 import { overviewPanel, panelAction, panelLink } from "./DashboardPanels";
 
-// Each part's title, beside its icon on the tint the attention list gives
-// the same kind, then the link to its list, the title and the link on one
-// baseline and the icon centred beside the title.
 const partHeading = "flex items-baseline justify-between gap-3";
 const partTitle = "flex min-w-0 items-baseline gap-2 text-[17px] font-medium";
 const partIcon =
   "grid size-7 shrink-0 self-center place-items-center rounded-[10px] [&>svg]:size-[15px] [&>svg]:stroke-[1.6]";
 const card = "rounded-[14px] bg-white/55";
 const amount = "text-[20px] font-light tracking-[-0.03em]";
-// A row that opens something, as tall on a touch screen as the overview's
-// other small links, white under the pointer unless its list says otherwise.
-// Its date and amount sit on its first line's baseline.
 const rowBase =
   "grid items-baseline gap-2.5 rounded-xl px-3 py-1.5 transition-colors coarse:min-h-11";
 const rowLink = `${rowBase} hover:bg-white`;
 
-// A quotation's row, laid out as a recurring invoice's: its client, with its
-// amount on the client's line, then its number and last valid day under
-// them, across the row so they keep to one line. It opens the quotation.
 const QuotationRow = ({ quote, currency, hover = "hover:bg-white" }) => {
   const number = quote.documentNumber || "No number yet";
   const client = quote.client || "No client";
@@ -58,13 +49,6 @@ const QuotationRow = ({ quote, currency, hover = "hover:bg-white" }) => {
   );
 };
 
-// What is coming up, in the overview's currency: the next invoice each
-// recurring schedule will make, the quotations still waiting for an answer,
-// and the latest few whose last day went by without one, with how many more
-// did. Each schedule opens the invoice it repeats, unless what needs
-// attention already opens it, and each quotation its document. With nothing
-// repeating yet, the way to set one up opens the recurring list, so the
-// link to it beside the title gives way.
 const ComingUpPanel = ({ snapshot, currencyChosen }) => {
   const { currency } = snapshot;
   const chosen = currencyChosen ? currency : undefined;
@@ -163,8 +147,7 @@ const ComingUpPanel = ({ snapshot, currencyChosen }) => {
             className={`${card} flex flex-wrap items-center gap-x-3 gap-y-2 p-3`}
           >
             <p className="min-w-[180px] flex-1 text-[15px] text-spot-body">
-              None yet. Bill a client every week, month or year without lifting
-              a finger.
+              None yet. Bill a client every week, month or year automatically.
             </p>
             <ActionLink
               to={recurringLink}

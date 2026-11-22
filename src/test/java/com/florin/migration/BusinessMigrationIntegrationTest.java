@@ -9,15 +9,12 @@ import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-// Accounts, clients, documents and payments made before businesses existed,
-// migrated to the latest version.
 class BusinessMigrationIntegrationTest extends IntegrationTest {
 
     @Autowired
@@ -88,10 +85,9 @@ class BusinessMigrationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("every record joins its author's business, which then keeps it if the author's account goes")
     void recordsJoinBusinesses() {
-        long named = user("named", "Ada", "Lovelace", "Ada Analytics");
-        long unnamed = user("unnamed", "Grace", "Hopper", null);
+        long named = user("named", "Neha", "Apte", "Apte Analytics");
+        long unnamed = user("unnamed", "Priya", "Kulkarni", null);
         records(named);
         records(unnamed);
 
@@ -122,7 +118,7 @@ class BusinessMigrationIntegrationTest extends IntegrationTest {
 
         long member = jdbc.queryForObject("""
                 insert into users (id, email, username, first_name, last_name)
-                values (?, 'member@example.test', 'member', 'Mary', 'Jackson') returning pkid
+                values (?, 'member@example.test', 'member', 'Anita', 'Joshi') returning pkid
                 """, Long.class, UUID.randomUUID());
         jdbc.update("""
                 insert into business_members (business_pkid, user_pkid, role) values (?, ?, 'MEMBER')
@@ -136,9 +132,8 @@ class BusinessMigrationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("what happened to a document before now names no one, rather than a guess at who did it")
-    void pastEventsNameNoOne() {
-        long author = user("author", "Ada", "Lovelace", "Ada Analytics");
+    void pastEventsHaveNoActor() {
+        long author = user("author", "Neha", "Apte", "Apte Analytics");
         records(author);
 
         database.migrateToLatest();
@@ -151,10 +146,9 @@ class BusinessMigrationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("every account owns a business named as its documents named the sender, with its details")
     void accountsGetBusinesses() {
-        long named = user("named", "Ada", "Lovelace", "Ada Analytics");
-        long unnamed = user("unnamed", "Grace", "Hopper", "   ");
+        long named = user("named", "Neha", "Apte", "Apte Analytics");
+        long unnamed = user("unnamed", "Priya", "Kulkarni", "   ");
         long nameless = user("nameless", " ", " ", null);
         records(named);
         records(unnamed);
@@ -162,14 +156,14 @@ class BusinessMigrationIntegrationTest extends IntegrationTest {
 
         database.migrateToLatest();
 
-        assertThat(businessOf(named)).containsEntry("name", "Ada Analytics")
+        assertThat(businessOf(named)).containsEntry("name", "Apte Analytics")
                 .containsEntry("email", "named@example.test")
                 .containsEntry("phone_number", "+91 20 5555 0100")
                 .containsEntry("address", "12 MG Road")
                 .containsEntry("city", "Pune")
                 .containsEntry("country", "India")
                 .containsEntry("logo", "/uploads/logo.png");
-        assertThat(businessOf(unnamed)).containsEntry("name", "Grace Hopper");
+        assertThat(businessOf(unnamed)).containsEntry("name", "Priya Kulkarni");
         assertThat(businessOf(nameless)).containsEntry("name", "nameless");
         assertThat(jdbc.queryForList("select role from business_members", String.class))
                 .containsExactly("OWNER", "OWNER", "OWNER");

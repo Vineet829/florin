@@ -37,7 +37,7 @@
     "myDocuments": [
       {
         "_id": "00000000-0000-0000-0000-000000001039",
-        "customer": { "name": "Lumen Health" },
+        "customer": { "name": "Bhide Nursing Home" },
         "documentType": "Invoice",
         "documentNumber": "INV-1039",
         "state": "issued",
@@ -51,7 +51,7 @@
       },
       {
         "_id": "00000000-0000-0000-0000-000000001038",
-        "customer": { "name": "Harbor & Pine Architects" },
+        "customer": { "name": "Kale & Deshpande Architects" },
         "documentType": "Invoice",
         "documentNumber": "INV-1038",
         "state": "issued",
@@ -65,7 +65,7 @@
       },
       {
         "_id": "00000000-0000-0000-0000-000000000304",
-        "customer": { "name": "Quill & Co. Publishing" },
+        "customer": { "name": "Deshmukh & Associates" },
         "documentType": "Receipt",
         "documentNumber": "REC-0304",
         "state": "issued",
@@ -79,7 +79,7 @@
       },
       {
         "_id": "00000000-0000-0000-0000-000000001037",
-        "customer": { "name": "Juniper Films" },
+        "customer": { "name": "Iyer Dance Academy" },
         "documentType": "Invoice",
         "documentNumber": "INV-1037",
         "state": "issued",
@@ -93,7 +93,7 @@
       },
       {
         "_id": "00000000-0000-0000-0000-000000001035",
-        "customer": { "name": "Oak Street Bakery" },
+        "customer": { "name": "Mehta Bakers" },
         "documentType": "Invoice",
         "documentNumber": "INV-1035",
         "state": "issued",
@@ -107,7 +107,7 @@
       },
       {
         "_id": "00000000-0000-0000-0000-000000001034",
-        "customer": { "name": "Atlas Robotics" },
+        "customer": { "name": "Pai Electricals" },
         "documentType": "Invoice",
         "documentNumber": "INV-1034",
         "state": "issued",
@@ -121,7 +121,7 @@
       },
       {
         "_id": "00000000-0000-0000-0000-000000000c02",
-        "customer": { "name": "Kestrel Outdoor" },
+        "customer": { "name": "Casa Fernandes Homestay" },
         "documentType": "Credit Note",
         "documentNumber": "CN-0002",
         "state": "issued",
@@ -135,7 +135,7 @@
       },
       {
         "_id": "00000000-0000-0000-0000-000000001036",
-        "customer": { "name": "Verdant Farms" },
+        "customer": { "name": "Nisarg Organic Farms" },
         "documentType": "Invoice",
         "documentNumber": "INV-1036",
         "state": "issued",
@@ -149,7 +149,7 @@
       },
       {
         "_id": "00000000-0000-0000-0000-000000001032",
-        "customer": { "name": "Bluefin Analytics" },
+        "customer": { "name": "Shinde Constructions" },
         "documentType": "Invoice",
         "documentNumber": "INV-1032",
         "state": "issued",
@@ -163,7 +163,7 @@
       },
       {
         "_id": "00000000-0000-0000-0000-000000000303",
-        "customer": { "name": "Kestrel Outdoor" },
+        "customer": { "name": "Casa Fernandes Homestay" },
         "documentType": "Receipt",
         "documentNumber": "REC-0303",
         "state": "issued",

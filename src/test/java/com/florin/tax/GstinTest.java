@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.florin.common.ApiException;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -13,34 +12,30 @@ class GstinTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"27AAPFU0939F1ZV", "29AAGCB7383J1Z4"})
-    @DisplayName("a GSTIN with a known state and the right check character is valid")
-    void valid(String gstin) {
+    void acceptsValidGstins(String gstin) {
         assertThat(Gstin.isValid(gstin)).isTrue();
     }
 
     @ParameterizedTest
     @ValueSource(strings = {
-        "27AAPFU0939F1ZW", // wrong check character
-        "27AAPFU0939F1Z", // too short
-        "99AAPFU0939F1ZV", // no such state
-        "27aapfu0939f1zv", // not upper case yet
+        "27AAPFU0939F1ZW",
+        "27AAPFU0939F1Z",
+        "99AAPFU0939F1ZV",
+        "27aapfu0939f1zv",
         "27AAPFU0939F1Z-",
     })
-    @DisplayName("anything else is not")
-    void invalid(String gstin) {
+    void refusesInvalidGstins(String gstin) {
         assertThat(Gstin.isValid(gstin)).isFalse();
     }
 
     @Test
-    @DisplayName("the check character is worked out over the first fourteen characters")
     void checkCharacter() {
         assertThat(Gstin.checkCharacter("27AAPFU0939F1Z")).isEqualTo('V');
         assertThat(Gstin.checkCharacter("29AAGCB7383J1Z")).isEqualTo('4');
     }
 
     @Test
-    @DisplayName("parsing trims and upper-cases, keeps nothing as nothing, and names the format when wrong")
-    void parse() {
+    void parseTrimsAndUppercases() {
         assertThat(Gstin.parse(" 27aapfu0939f1zv ")).isEqualTo("27AAPFU0939F1ZV");
         assertThat(Gstin.parse("  ")).isNull();
         assertThatThrownBy(() -> Gstin.parse("27AAPFU0939F1ZW"))
@@ -49,15 +44,13 @@ class GstinTest {
     }
 
     @Test
-    @DisplayName("the state is the first two characters, and the PAN the next ten")
-    void parts() {
+    void readsStateAndPan() {
         assertThat(Gstin.stateCode("27AAPFU0939F1ZV")).isEqualTo("27");
         assertThat(Gstin.pan("27AAPFU0939F1ZV")).isEqualTo("AAPFU0939F");
     }
 
     @Test
-    @DisplayName("states are named, territories without a legislature marked, and outside India is a place")
-    void states() {
+    void namesStatesAndTerritories() {
         assertThat(GstStates.name("27")).isEqualTo("Maharashtra");
         assertThat(GstStates.name("96")).isEqualTo("Outside India");
         assertThat(GstStates.isState("96")).isFalse();

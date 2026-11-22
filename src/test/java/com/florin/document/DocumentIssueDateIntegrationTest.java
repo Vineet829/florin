@@ -17,19 +17,14 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// The day a document is dated: today in its business's time zone unless an
-// earlier day is chosen, never a day still to come, and the day every view
-// of the document shows.
 class DocumentIssueDateIntegrationTest extends IntegrationTest {
 
-    // Fourteen hours ahead of UTC, so its today is often not UTC's.
     private static final ZoneId ZONE = ZoneId.of("Pacific/Kiritimati");
 
     private String session;
@@ -88,8 +83,7 @@ class DocumentIssueDateIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a document is dated today in its business's time zone, unless an earlier day is chosen")
-    void defaults() throws Exception {
+    void datedTodayByDefault() throws Exception {
         LocalDate today = LocalDate.now(ZONE);
 
         create(null).andExpect(jsonPath("$.newDocument.issueDate").value(today.toString()));
@@ -98,8 +92,7 @@ class DocumentIssueDateIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a day still to come is refused, when a document is made and when a draft is changed")
-    void future() throws Exception {
+    void refusesFutureIssueDates() throws Exception {
         LocalDate tomorrow = LocalDate.now(ZONE).plusDays(1);
 
         create(tomorrow)
@@ -114,8 +107,7 @@ class DocumentIssueDateIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the PDF, the share page, the CSV, the list's date filter and the statement all use it")
-    void everywhere() throws Exception {
+    void issueDateUsedEverywhere() throws Exception {
         LocalDate day = LocalDate.now(ZONE).minusDays(40);
         String id = created(day);
         String label = PdfService.DATE.format(day);
@@ -138,8 +130,7 @@ class DocumentIssueDateIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a copy is a draft with no date, dated the day it is issued")
-    void copies() throws Exception {
+    void copyDatedOnIssue() throws Exception {
         String id = created(LocalDate.now(ZONE).minusDays(40));
 
         String copy = JsonPath.read(

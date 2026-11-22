@@ -4,8 +4,6 @@ import com.florin.common.ApiException;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 
-// The browser is working in a business it no longer can, and should switch
-// to the one named in the header, or to none.
 public class BusinessChangedException extends ApiException {
 
     public static final String HEADER = "X-Active-Business";

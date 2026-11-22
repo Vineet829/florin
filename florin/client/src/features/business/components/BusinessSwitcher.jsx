@@ -42,12 +42,6 @@ const row = (active) =>
 const trigger =
   "flex max-w-full items-center gap-1 rounded-md border-0 bg-transparent p-0 text-left text-[14.5px] text-spot-muted transition-colors hover:text-spot-night coarse:min-h-11 [&>svg]:size-3.5 [&>svg]:shrink-0";
 
-// The businesses someone works in, as a list to switch between, with a way
-// to start another. The shell opens it from the line under the account's
-// name, which names the business this tab works in. Like the bell, it checks
-// for news every minute while the tab is in view: a dot says another
-// business has unread notifications, and the list counts them. The bell
-// counts the business this tab works in.
 const BusinessSwitcher = ({ label }) => {
   const [open, setOpen] = useState(false);
   const [starting, setStarting] = useState(false);
@@ -79,10 +73,10 @@ const BusinessSwitcher = ({ label }) => {
     try {
       await switchTo(business._id).unwrap();
       close();
-      toast.success(`You’re working in ${business.name}.`);
+      toast.success(`You're working in ${business.name}.`);
       enter(business._id);
     } catch (error) {
-      toast.error(error?.data?.message || "That business could not be opened.");
+      toast.error(error?.data?.message || "That business couldn't be opened.");
     }
   };
   const start = async (event) => {
@@ -93,7 +87,7 @@ const BusinessSwitcher = ({ label }) => {
       toast.success(`${business.name} is ready.`);
       enter(business._id);
     } catch (error) {
-      toast.error(error?.data?.message || "The business could not be started.");
+      toast.error(error?.data?.message || "The business couldn't be started.");
     }
   };
   return (
@@ -202,7 +196,7 @@ const BusinessSwitcher = ({ label }) => {
                   Cancel
                 </button>
                 <button type="submit" className={primaryButton} disabled={busy}>
-                  {creating ? "Starting…" : "Start business"}
+                  {creating ? "Starting..." : "Start business"}
                 </button>
               </div>
             </form>

@@ -69,7 +69,6 @@ public class EmailTemplateService {
         return EmailTemplateResponse.of(kind, template);
     }
 
-    // Back to the standard subject and message.
     @Transactional
     public EmailTemplateResponse reset(BusinessAccess access, String kindName) {
         EmailTemplateKind kind = kind(kindName);
@@ -78,16 +77,12 @@ public class EmailTemplateService {
         return EmailTemplateResponse.of(kind, null);
     }
 
-    // Saves and resets of a business's emails take turns, so neither finds a
-    // template the other is adding or removing.
     private void lock(BusinessAccess access) {
         businessRepository
                 .findForUpdate(access.businessPkid())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Business not found"));
     }
 
-    // What a business's emails of a kind say: its own words, or the standard
-    // ones.
     @Transactional(readOnly = true)
     public EmailText text(Long businessPkid, EmailTemplateKind kind) {
         return repository.findByBusinessPkidAndKind(businessPkid, kind)
@@ -95,8 +90,6 @@ public class EmailTemplateService {
                 .orElseGet(() -> new EmailText(kind.standardSubject(), kind.standardBody()));
     }
 
-    // A subject on one line and a message, each using only the placeholders
-    // its kind of email fills.
     public static EmailText checked(EmailTemplateKind kind, EmailTemplateRequest request) {
         EmailText text = new EmailText(request.subject().replaceAll("[\\r\\n]+", " ").trim(), request.body());
         for (String part : List.of(text.subject(), text.body())) {
@@ -121,7 +114,6 @@ public class EmailTemplateService {
         }
     }
 
-    // "{client}, {document} or {business}".
     private static String choices(EmailTemplateKind kind) {
         List<String> names = kind.placeholders().stream().map(known -> "{" + known.name() + "}").toList();
         return String.join(", ", names.subList(0, names.size() - 1)) + " or " + names.get(names.size() - 1);

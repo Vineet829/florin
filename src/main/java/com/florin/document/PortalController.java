@@ -20,7 +20,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-// A client's portal link, as the business manages it.
 @RestController
 @RequestMapping("/api/v1/customer/{id}/portal")
 public class PortalController {
@@ -45,7 +44,6 @@ public class PortalController {
         return portalService.create(access, id);
     }
 
-    // A draft is for whoever can send it, and holds the portal link.
     @GetMapping("/email")
     public EmailDraftResponse emailDraft(
             @Requires(Permission.EDIT_RECORDS) BusinessAccess access, @PathVariable String id) {

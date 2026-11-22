@@ -4,9 +4,6 @@ import { act } from "react-dom/test-utils";
 import ExpenseDialog from "./ExpenseDialog";
 import { dateInput } from "../../../components/workspace/Workspace";
 
-// The dialog saves through these hooks, and reads the business it works in
-// from the last, so it needs no store or server; the browser's modal is
-// left out.
 const idle = () => [vi.fn(), { isLoading: false }];
 vi.mock("../expensesApiSlice", () => ({
   useCreateExpenseMutation: () => idle(),
@@ -33,7 +30,6 @@ afterEach(() => {
   active.business = undefined;
 });
 
-// A new expense's date field as it starts, and the latest day it takes.
 const datePaid = () => {
   const container = document.createElement("div");
   const root = createRoot(container);
@@ -45,14 +41,11 @@ const datePaid = () => {
   return { value, max };
 };
 
-// A new expense and a changed one share the form.
-it("dates a new expense today, and no expense later", () => {
+it("expense date defaults to today", () => {
   expect(datePaid()).toEqual({ value: dateInput(), max: dateInput() });
 });
 
-// At 5 in the morning of Oct 8 in Kolkata it is still Oct 7 in Los Angeles,
-// where the business is.
-it("dates an expense by the business's calendar, not the viewer's", () => {
+it("uses the business calendar", () => {
   const zone = process.env.TZ;
   process.env.TZ = "Asia/Kolkata";
   try {
@@ -66,8 +59,7 @@ it("dates an expense by the business's calendar, not the viewer's", () => {
   }
 });
 
-// An expense in another currency than the reporting one.
-it("takes a rate with up to the 10 decimals the server keeps", () => {
+it("accepts up to 10 decimals", () => {
   const container = document.createElement("div");
   const root = createRoot(container);
   act(() => {

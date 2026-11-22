@@ -3,11 +3,6 @@ import { createRoot } from "react-dom/client";
 import { act } from "react-dom/test-utils";
 import fixture from "./SalesPage.fixture.json";
 
-// The view as the app draws it, through its own store and RTK Query, with
-// only fetch faked. The fixture is the demo account's last 90 days to Oct
-// 4, 2026: what the server sums up as billed, the same 68,848.08 as the
-// overview's Billed, and the first page of the documents behind it. The
-// signed-in shell is left out.
 vi.mock("../../dashboard/components/DashboardShell", () => ({
   default: ({ children }) => children,
 }));
@@ -21,7 +16,6 @@ let container;
 beforeEach(() => {
   vi.resetModules();
   vi.stubEnv("VITE_API_URL", "http://localhost:3001/api/v1");
-  // The calendar's periods are worked out from the day the fixture was taken.
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date(2026, 9, 4, 12));
   requests = [];
@@ -40,9 +34,6 @@ const json = (body, status = 200) =>
     headers: { "content-type": "application/json" },
   });
 
-// Answers each request by its path; `answers` replaces any of them with a
-// body or a Response, a promise of either, or a function of the request's
-// address giving one.
 const serve = (answers = {}) =>
   vi.stubGlobal(
     "fetch",
@@ -102,7 +93,6 @@ const click = (element) =>
   });
 const documents = () =>
   requests.filter((request) => request.includes("/document/"));
-// The summary, and the list of documents under it.
 const summary = (page) => page.querySelector("section");
 const list = (page) => page.querySelectorAll("section")[1];
 const table = (element) =>
@@ -115,13 +105,10 @@ const part = (page, title) =>
   [...summary(page).querySelectorAll("h3")].find(
     (heading) => heading.textContent === title,
   ).parentElement;
-// The line comparing the total with the period before.
 const compared = (page) =>
   [...summary(page).querySelectorAll("p")].find((line) =>
     line.textContent.includes("vs "),
   );
-// The styled dropdown with this label: its trigger, which carries the value
-// chosen.
 const select = (page, label) =>
   [...page.querySelectorAll("label")]
     .find((element) => element.textContent.startsWith(label))
@@ -145,29 +132,24 @@ const choose = async (combobox, value) => {
   );
 };
 
-it("sums up what was billed in the period against the period before, by type and tax rate, above the documents behind it", async () => {
+it("shows the period summary", async () => {
   const page = await open("/sales?period=90d");
-  expect(document.title).toBe("Sales — Florin");
+  expect(document.title).toBe("Sales - Florin");
   expect(page.querySelector("h1").textContent).toBe("Documents.");
-  // The documents are asked for in the total's currency, once the server
-  // has named it.
   expect(documents()).toEqual([
     "/api/v1/document/sales?period=90d",
     "/api/v1/document/all?page=1&size=10&sort=createdAt&dir=desc&billed=true&period=90d&currency=USD",
   ]);
   expect(summary(page).textContent).toContain(
-    "Billed68,848.08on 21 documents, issued Jul 7 – Oct 4, 2026",
+    "Billed68,848.08on 21 documents, issued Jul 7 - Oct 4, 2026",
   );
-  // Up on the 90 days before, in green, with the earlier total named.
   const change = compared(page);
   expect(change.textContent).toBe(
-    "up 29.1%vs 53,344.02 in Apr 8 – Jul 6, 2026",
+    "up 29.1%vs 53,344.02 in Apr 8 - Jul 6, 2026",
   );
   expect(change.querySelector(".text-change-up")).not.toBeNull();
   expect(select(page, "Issued").textContent).toContain("Last 90 days");
-  // One currency, so there is nothing to switch.
   expect(select(page, "Currency")).toBeUndefined();
-  // By type, credit notes taking off, each with a bar against the largest.
   const types = part(page, "By type");
   expect(headings(types)).toEqual(["Type", "Documents", "Amount"]);
   expect(table(types)).toEqual([
@@ -180,7 +162,6 @@ it("sums up what was billed in the period against the period before, by type and
       Math.round(parseFloat(bar.style.width)),
     ),
   ).toEqual([100, 34, 0]);
-  // The tax in the total, by rate, as the overview's Billed names it.
   const tax = part(page, "Tax by rate");
   expect(headings(tax)).toEqual(["Rate", "Documents", "Taxable", "Tax"]);
   expect(table(tax)).toEqual([
@@ -188,7 +169,6 @@ it("sums up what was billed in the period against the period before, by type and
     ["5%", "6", "16,048.00", "802.40"],
   ]);
   expect(tax.textContent).toContain("The total includes 4,654.08 tax.");
-  // The documents behind the total, each opening its document.
   expect(list(page).querySelector("h2").textContent).toBe("Billed documents");
   expect(headings(list(page))).toEqual([
     "Document",
@@ -198,18 +178,18 @@ it("sums up what was billed in the period against the period before, by type and
     "Amount",
   ]);
   expect(table(list(page)).slice(0, 3)).toEqual([
-    ["INV-1039", "Invoice", "Lumen Health", "Oct 3, 2026", "USD2,762.75"],
+    ["INV-1039", "Invoice", "Bhide Nursing Home", "Oct 3, 2026", "USD2,762.75"],
     [
       "INV-1038",
       "Invoice",
-      "Harbor & Pine Architects",
+      "Kale & Deshpande Architects",
       "Oct 2, 2026",
       "USD750.76",
     ],
     [
       "REC-0304",
       "Receipt",
-      "Quill & Co. Publishing",
+      "Deshmukh & Associates",
       "Oct 2, 2026",
       "USD9,598.88",
     ],
@@ -217,10 +197,9 @@ it("sums up what was billed in the period against the period before, by type and
   expect(list(page).querySelector("tbody a").getAttribute("href")).toBe(
     "/document/00000000-0000-0000-0000-000000001039",
   );
-  expect(page.querySelector('[role="status"]').textContent).toBe("1–10 of 21");
+  expect(page.querySelector('[role="status"]').textContent).toBe("1-10 of 21");
 });
 
-// Every date: no days of issue, and no period before to compare with.
 const always = {
   ...fixture.sales,
   period: {
@@ -235,7 +214,7 @@ const always = {
   documents: 64,
 };
 
-it("shows every date until a period is chosen, with nothing to compare with", async () => {
+it("defaults to all dates", async () => {
   const page = await open("/sales", { "/document/sales": always });
   expect(documents()).toEqual([
     "/api/v1/document/sales",
@@ -249,7 +228,7 @@ it("shows every date until a period is chosen, with nothing to compare with", as
   expect(compared(page)).toBeUndefined();
 });
 
-it("keeps the period and the currency in the address, and follows them below", async () => {
+it("keeps period and currency in URL", async () => {
   const page = await open("/sales?period=90d", {
     "/document/sales": (url) => ({
       ...fixture.sales,
@@ -270,8 +249,6 @@ it("keeps the period and the currency in the address, and follows them below", a
   ]);
   await choose(select(page, "Issued"), "this-year");
   expect(address).toBe("?period=this-year");
-  // The summary takes the period's name; the list, as the Documents list
-  // does, its days, up to today.
   await act(() =>
     vi.waitFor(() =>
       expect(documents()).toContain(
@@ -280,7 +257,6 @@ it("keeps the period and the currency in the address, and follows them below", a
     ),
   );
   expect(documents()).toContain("/api/v1/document/sales?period=this-year");
-  // Several currencies: one at a time, named with each amount.
   expect(await options(select(page, "Currency"))).toEqual(["USD", "EUR"]);
   await choose(select(page, "Currency"), "EUR");
   expect(address).toBe("?period=this-year&currency=EUR");
@@ -298,9 +274,7 @@ it("keeps the period and the currency in the address, and follows them below", a
   expect(address).toBe("?period=this-year");
 });
 
-// At 5 in the morning of Jan 1, 2027 in Kolkata it is still Dec 31, 2026 in
-// Los Angeles, where the business is: this year is still 2026 there.
-it("runs this year to the business's today, not the viewer's", async () => {
+it("this year ends at business today", async () => {
   const zone = process.env.TZ;
   process.env.TZ = "Asia/Kolkata";
   try {
@@ -330,7 +304,7 @@ it("runs this year to the business's today, not the viewer's", async () => {
   }
 });
 
-it("names the currency of every amount when the business bills in several", async () => {
+it("names currencies when several", async () => {
   const page = await open("/sales?period=90d", {
     "/document/sales": { ...fixture.sales, currencies: ["USD", "EUR"] },
   });
@@ -346,7 +320,7 @@ it("names the currency of every amount when the business bills in several", asyn
   );
 });
 
-it("shows a fall in rust, and no change from a period with nothing billed", async () => {
+it("marks a fall, skips zero base", async () => {
   const page = await open("/sales?period=90d", {
     "/document/sales": (url) =>
       url.searchParams.get("period") === "30d"
@@ -354,18 +328,18 @@ it("shows a fall in rust, and no change from a period with nothing billed", asyn
         : { ...fixture.sales, previousTotal: 80000 },
   });
   expect(compared(page).textContent).toBe(
-    "down 13.9%vs 80,000.00 in Apr 8 – Jul 6, 2026",
+    "down 13.9%vs 80,000.00 in Apr 8 - Jul 6, 2026",
   );
   expect(compared(page).querySelector(".text-change-down")).not.toBeNull();
   await choose(select(page, "Issued"), "30d");
   await act(() =>
     vi.waitFor(() =>
-      expect(compared(page).textContent).toBe("vs 0.00 in Apr 8 – Jul 6, 2026"),
+      expect(compared(page).textContent).toBe("vs 0.00 in Apr 8 - Jul 6, 2026"),
     ),
   );
 });
 
-it("lists a type with nothing billed at zero, beside those with sales", async () => {
+it("lists unbilled types at zero", async () => {
   const page = await open("/sales?period=30d", {
     "/document/sales": {
       ...fixture.sales,
@@ -383,7 +357,7 @@ it("lists a type with nothing billed at zero, beside those with sales", async ()
   ]);
 });
 
-it("keeps the page in the address", async () => {
+it("keeps page in URL", async () => {
   const page = await open("/sales?period=90d");
   await click(page.querySelector('button[aria-label="Next page"]'));
   expect(address).toBe("?period=90d&page=2");
@@ -394,12 +368,11 @@ it("keeps the page in the address", async () => {
       ),
     ),
   );
-  // A new period starts at its first page.
   await choose(select(page, "Issued"), "12m");
   expect(address).toBe("?period=12m");
 });
 
-it("says when nothing was billed in the period", async () => {
+it("empty period message", async () => {
   const page = await open(
     "/sales?period=30d",
     {
@@ -436,12 +409,12 @@ it("says when nothing was billed in the period", async () => {
     "Tax by rateNo tax was charged.",
   );
   expect(list(page).textContent).toContain(
-    "Invoices, receipts and credit notes show up here once they are issued, newest first.",
+    "Invoices, receipts and credit notes show up here once they're issued, newest first.",
   );
   expect(list(page).querySelector("table")).toBeNull();
 });
 
-it("holds the summary's place while it loads", async () => {
+it("shows placeholder while loading", async () => {
   let answer;
   const page = await open(
     "/sales?period=90d",
@@ -456,7 +429,7 @@ it("holds the summary's place while it loads", async () => {
     page.querySelector('[aria-hidden="true"] .animate-ov-pulse'),
   ).not.toBeNull();
   expect(page.querySelector('[role="status"]').textContent).toBe(
-    "Loading workspace data…",
+    "Loading workspace data...",
   );
   expect(documents()).toEqual(["/api/v1/document/sales?period=90d"]);
   await act(async () => answer(fixture.sales));
@@ -465,7 +438,7 @@ it("holds the summary's place while it loads", async () => {
   expect(page.querySelector(".animate-ov-pulse")).toBeNull();
 });
 
-it("says when the figures can't be loaded, with a way to try again", async () => {
+it("figures load error with retry", async () => {
   let fails = true;
   const page = await open(
     "/sales?period=90d",
@@ -479,7 +452,7 @@ it("says when the figures can't be loaded, with a way to try again", async () =>
       ),
   );
   const alert = page.querySelector('[role="alert"]');
-  expect(alert.textContent).toContain("We couldn’t load this page.");
+  expect(alert.textContent).toContain("We couldn't load this page.");
   expect(alert.textContent).toContain("Try later.");
   expect(documents().some((request) => request.includes("/document/all"))).toBe(
     false,
@@ -494,7 +467,7 @@ it("says when the figures can't be loaded, with a way to try again", async () =>
   expect(summary(page).textContent).toContain("68,848.08");
 });
 
-it("says when the documents can't be loaded, and keeps the figures", async () => {
+it("documents load error keeps figures", async () => {
   const page = await open(
     "/sales?period=90d",
     { "/document/all": () => json({ message: "Try later." }, 500) },
@@ -505,11 +478,11 @@ it("says when the documents can't be loaded, and keeps the figures", async () =>
   );
   expect(summary(page).textContent).toContain("68,848.08");
   expect(list(page).querySelector('[role="alert"]').textContent).toContain(
-    "We couldn’t load this page.",
+    "We couldn't load this page.",
   );
 });
 
-it("sits between Receivables and Payments", async () => {
+it("shows the documents tab row", async () => {
   const page = await open("/sales?period=90d");
   expect(
     [...page.querySelectorAll('nav[aria-label="Documents views"] a')].map(

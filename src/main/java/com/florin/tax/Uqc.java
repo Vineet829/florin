@@ -3,9 +3,6 @@ package com.florin.tax;
 import java.util.Locale;
 import java.util.Set;
 
-// The unit quantity codes GST returns count goods in. A line's unit counts
-// when it is one of them; services, under a SAC code (99…), have none, and
-// any other unit is "other".
 public final class Uqc {
 
     public static final String NONE = "NA";

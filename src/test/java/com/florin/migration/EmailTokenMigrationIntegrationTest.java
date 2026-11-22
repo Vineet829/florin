@@ -5,21 +5,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.florin.IntegrationTest;
 import com.florin.common.SecretTokens;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-// Verification and reset links sent before tokens were kept hashed still work
-// after V44: the token in the link hashes to what is kept.
 class EmailTokenMigrationIntegrationTest extends IntegrationTest {
 
     @Autowired
     private PostgreSQLContainer<?> postgres;
 
     @Test
-    @DisplayName("a token already emailed is hashed in place, so its link still finds it")
     void hashesInPlace() {
         try (MigrationDatabase database = MigrationDatabase.create(postgres)) {
             database.migrateTo("43");

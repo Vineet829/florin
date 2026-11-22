@@ -7,11 +7,6 @@ import { countOf } from "../../utils/counts";
 import { dateSpan } from "../../utils/dates";
 import { amountsOf } from "./listTotals";
 
-// The Documents list's search, filters, sort and page, as kept in the URL.
-
-// Payment statuses are an issued document's; drafts and void documents have
-// filters of their own. Outstanding is every issued invoice with money still
-// owed on it, overdue or not.
 export const STATUS_FILTERS = [
   { value: "", label: "All" },
   { value: "outstanding", label: "Outstanding" },
@@ -23,8 +18,6 @@ export const STATUS_FILTERS = [
   { value: "void", label: "Void", state: "void" },
 ];
 
-// Billed is what the overview's Billed adds up: issued invoices, receipts
-// and credit notes.
 export const TYPE_FILTERS = [
   { value: "", label: "All types" },
   { value: "billed", label: "Billed: invoices, receipts and credit notes" },
@@ -34,10 +27,6 @@ export const TYPE_FILTERS = [
   { value: "credit-note", label: "Credit notes", type: "Credit Note" },
 ];
 
-// Periods of issue dates. The last 30 or 90 days and the last 12 months are
-// the overview's, so the server works out their days, in the business's time
-// zone. The others are picked here from the business's today, which the
-// pages pass in, and the server reads them in the same time zone.
 export const PERIODS = [
   { value: "", label: "All dates" },
   { value: "30d", label: "Last 30 days", recent: true },
@@ -50,9 +39,6 @@ export const PERIODS = [
   { value: "last-year", label: "Last year" },
 ];
 
-// Due dates by the week, counted from today; later includes invoices with
-// no due date. Only the address sets one, so it shows as a filter to remove
-// rather than in a menu.
 export const DUE_FILTERS = [
   { value: "this-week", label: "Due this week" },
   { value: "next-week", label: "Due next week" },
@@ -67,9 +53,6 @@ const localDay = (date) =>
     String(date.getDate()).padStart(2, "0"),
   ].join("-");
 
-// The first and last day of a period, as the server's from and to dates.
-// This month, quarter and year run to today, as the server's views count
-// them; last month and last year are whole.
 export const periodRange = (period, today) => {
   const year = today.getFullYear();
   const month = today.getMonth();
@@ -85,21 +68,17 @@ export const periodRange = (period, today) => {
   return from ? { from: localDay(from), to: localDay(to) } : {};
 };
 
-// What the server is sent for a period: the overview's periods by name, the
-// others as from and to dates.
 export const periodQuery = (period, today) =>
   PERIODS.find((option) => option.value === period)?.recent
     ? { period }
     : periodRange(period, today);
 
-// The fields the list sorts by. Status has filters instead: stored
-// statuses would sort alphabetically, not by payment.
 export const SORT_FIELDS = {
   createdAt: { first: "desc", asc: "Oldest first", desc: "Newest first" },
   dueDate: { first: "asc", asc: "Due soonest", desc: "Due latest" },
   total: { first: "desc", asc: "Lowest amount", desc: "Highest amount" },
-  client: { first: "asc", asc: "Customer A–Z", desc: "Customer Z–A" },
-  number: { first: "asc", asc: "Number A–Z", desc: "Number Z–A" },
+  client: { first: "asc", asc: "Customer A-Z", desc: "Customer Z-A" },
+  number: { first: "asc", asc: "Number A-Z", desc: "Number Z-A" },
 };
 
 export const SORT_OPTIONS = sortOptions(SORT_FIELDS);
@@ -107,11 +86,9 @@ export const SORT_OPTIONS = sortOptions(SORT_FIELDS);
 const oneOf = (value, filters) =>
   filters.some((filter) => filter.value === value) ? value : "";
 
-// A currency is a three-letter code, as documents keep it.
 export const currencyOf = (value) =>
   /^[A-Z]{3}$/.test(value || "") ? value : "";
 
-// Unknown or malformed values fall back to the defaults.
 export const readListState = (params) => ({
   q: params.get("q") || "",
   status: oneOf(params.get("status"), STATUS_FILTERS),
@@ -122,7 +99,6 @@ export const readListState = (params) => ({
   ...readSortAndPage(params, SORT_FIELDS, "createdAt"),
 });
 
-// The URL for a list state, leaving out every default.
 export const listSearch = ({
   q,
   status,
@@ -145,9 +121,6 @@ export const listSearch = ({
 export const isFiltered = ({ q, status, due, type, period, currency }) =>
   Boolean(q || status || due || type || period || currency);
 
-// The query the server's document list takes for a list state.
-// The list's filters and order, as the server reads them; an export of the
-// list sends these without a page.
 export const documentFilterQuery = (
   { q, status, due, type, period, currency, sort, dir },
   today = new Date(),
@@ -176,11 +149,6 @@ export const documentQuery = (list, today = new Date()) => ({
   ...documentFilterQuery(list, today),
 });
 
-// The line above a filtered list: how many documents it holds, the days of
-// issue the server applied, and what they add up to, from the totals it
-// sends with each page. Outstanding invoices are named by what is owed on
-// them and how much of it is overdue. Amounts name their currency when the
-// business bills in more than one.
 export const documentResults = (list, data, currencies = []) => {
   const totals = data?.totals || [];
   const count = data?.totalDocuments ?? 0;

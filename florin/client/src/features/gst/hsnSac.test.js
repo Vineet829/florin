@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { HSN_SAC_PATTERN, isValidHsnSac, normalizeHsnSac } from "./hsnSac";
 
-it("drops spaces and takes 4 to 8 digits, as the server does", () => {
+it("accepts 4 to 8 digits", () => {
   expect(normalizeHsnSac(" 9983 14 ")).toBe("998314");
   expect(normalizeHsnSac(undefined)).toBe("");
   for (const code of ["4901", "9983 14", "12345678"]) {
@@ -12,7 +12,7 @@ it("drops spaces and takes 4 to 8 digits, as the server does", () => {
   }
 });
 
-it("lets an input take exactly what the check takes", () => {
+it("input pattern matches the check", () => {
   const pattern = new RegExp(`^(?:${HSN_SAC_PATTERN})$`, "v");
   for (const code of [
     "4901",

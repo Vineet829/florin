@@ -1,7 +1,5 @@
 import { baseApiSlice } from "../api/baseApiSlice";
 
-// The businesses someone works in, and the one the session is working in,
-// with the details its documents carry.
 export const businessApiSlice = baseApiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getBusinesses: builder.query({
@@ -94,12 +92,10 @@ export const businessApiSlice = baseApiSlice.injectEndpoints({
       query: (id) => ({ url: `/business/invitations/${id}`, method: "DELETE" }),
       invalidatesTags: ["Invitation"],
     }),
-    // Changes to the team, for its owner and admins.
     getTeamActivity: builder.query({
       query: ({ page, size }) => `/business/activity?page=${page}&size=${size}`,
       providesTags: ["Team", "Invitation"],
     }),
-    // An invitation as anyone holding its link sees it.
     getInvitation: builder.query({
       query: (token) => `/public/invitations/${token}`,
     }),

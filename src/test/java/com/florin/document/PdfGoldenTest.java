@@ -13,13 +13,9 @@ import java.time.LocalDate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-// The HTML of every kind of PDF, pinned in src/test/resources/pdf-golden, so
-// any change to a template or to what fills it shows up as a diff to review.
-// After an intended change, rewrite the files with -Dgolden.update=true.
 class PdfGoldenTest {
 
     private static final Path GOLDEN = Path.of("src/test/resources/pdf-golden");
@@ -38,15 +34,11 @@ class PdfGoldenTest {
         seller = PdfFixtures.seller(uploads);
     }
 
-    // Issued, so it keeps the seller as it went out.
     private Document kept(Document document) {
         document.setSeller(SellerSnapshot.of(seller));
         return document;
     }
 
-    // One tag, and one style rule or declaration, per line, without the
-    // whitespace the templates' own layout adds, so moving markup between
-    // files doesn't count as a change.
     static String normalized(String html) {
         String flat = html.replaceAll(">\\s+<", "><").replaceAll("\\s+", " ").trim();
         String styled = STYLE.matcher(flat).replaceAll(style -> Matcher.quoteReplacement("<style>\n"
@@ -70,37 +62,31 @@ class PdfGoldenTest {
     }
 
     @Test
-    @DisplayName("an invoice, part paid")
-    void invoice() throws IOException {
+    void partPaidInvoice() throws IOException {
         assertGolden("invoice", service.html(kept(PdfFixtures.invoice()), seller, PdfFixtures.settings()));
     }
 
     @Test
-    @DisplayName("a quotation")
-    void quotation() throws IOException {
+    void dollarQuotation() throws IOException {
         assertGolden("quotation", service.html(kept(PdfFixtures.quotation()), seller, PdfFixtures.settings()));
     }
 
     @Test
-    @DisplayName("a receipt")
-    void receipt() throws IOException {
+    void rupeeReceipt() throws IOException {
         assertGolden("receipt", service.html(kept(PdfFixtures.receipt()), seller, PdfFixtures.settings()));
     }
 
     @Test
-    @DisplayName("an invoice taxed at two rates")
     void twoRates() throws IOException {
         assertGolden("two-rate-invoice", service.html(kept(PdfFixtures.twoRates()), seller, PdfFixtures.settings()));
     }
 
     @Test
-    @DisplayName("a credit note against an invoice, with its reason")
     void creditNote() throws IOException {
         assertGolden("credit-note", service.html(kept(PdfFixtures.creditNote()), seller, PdfFixtures.settings()));
     }
 
     @Test
-    @DisplayName("an invoice part paid and part credited")
     void creditedInvoice() throws IOException {
         assertGolden(
                 "credited-invoice",
@@ -108,19 +94,16 @@ class PdfGoldenTest {
     }
 
     @Test
-    @DisplayName("a GST tax invoice within the state, at two rates, summed by HSN/SAC code")
     void gstInvoice() throws IOException {
         assertGolden("gst-invoice", service.html(kept(PdfFixtures.gstInvoice()), seller, PdfFixtures.settings()));
     }
 
     @Test
-    @DisplayName("a GST export under a LUT, billed in dollars")
     void gstExport() throws IOException {
         assertGolden("gst-export", service.html(kept(PdfFixtures.gstExport()), seller, PdfFixtures.settings()));
     }
 
     @Test
-    @DisplayName("a GST export under a LUT prints the same whatever rates its lines keep")
     void gstExportKeepingRates() throws IOException {
         Document export = PdfFixtures.gstExport();
         export.getBillingItems().get(0).setTaxRate(new BigDecimal("18"));
@@ -129,19 +112,16 @@ class PdfGoldenTest {
     }
 
     @Test
-    @DisplayName("a draft invoice")
-    void draft() throws IOException {
+    void draftInvoice() throws IOException {
         assertGolden("draft-invoice", service.html(PdfFixtures.draft(), seller, PdfFixtures.settings()));
     }
 
     @Test
-    @DisplayName("a void invoice")
-    void voided() throws IOException {
+    void voidInvoice() throws IOException {
         assertGolden("void-invoice", service.html(kept(PdfFixtures.voided()), seller, PdfFixtures.settings()));
     }
 
     @Test
-    @DisplayName("a payment receipt")
     void paymentReceipt() throws IOException {
         Document invoice = kept(PdfFixtures.invoice());
         assertGolden(
@@ -156,8 +136,7 @@ class PdfGoldenTest {
     }
 
     @Test
-    @DisplayName("a statement in two currencies, one overdue")
-    void statement() throws IOException {
+    void twoCurrencyStatement() throws IOException {
         assertGolden(
                 "statement",
                 service.statementHtml(
@@ -169,13 +148,11 @@ class PdfGoldenTest {
     }
 
     @Test
-    @DisplayName("an invoice in the Modern template")
     void modernInvoice() throws IOException {
         assertGolden("modern-invoice", service.html(kept(PdfFixtures.invoice()), seller, in(PdfTemplate.MODERN)));
     }
 
     @Test
-    @DisplayName("an invoice in the Compact template")
     void compactInvoice() throws IOException {
         assertGolden("compact-invoice", service.html(kept(PdfFixtures.invoice()), seller, in(PdfTemplate.COMPACT)));
     }

@@ -6,8 +6,6 @@ import { baseApiSlice } from "../api/baseApiSlice";
 import { useGetBusinessesQuery } from "./businessApiSlice";
 import { changeNoticed, setActiveBusiness } from "./businessSlice";
 
-// Waits for the session's business, sends anyone in none to the welcome page,
-// and shows the pages only once this tab works in that business.
 const Gate = () => {
   const dispatch = useDispatch();
   const activeId = useSelector((state) => state.business.activeId);
@@ -27,9 +25,6 @@ const Gate = () => {
   return <Outlet />;
 };
 
-// The pages that work in a business. When the server says the session moved
-// to another business, everything loaded for the last one is dropped first,
-// then the pages start over in the new one.
 const BusinessGate = () => {
   const dispatch = useDispatch();
   const { activeId, changedElsewhere } = useSelector((state) => state.business);

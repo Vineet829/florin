@@ -7,7 +7,6 @@ import io.github.bucket4j.TimeMeter;
 import java.time.Clock;
 import java.time.Duration;
 
-// Buckets in this instance's memory, for a single instance.
 class LocalBucketStore implements BucketStore {
 
     private final Cache<String, Bucket> buckets = Caffeine.newBuilder()
@@ -33,7 +32,6 @@ class LocalBucketStore implements BucketStore {
         buckets.invalidate(cacheKey(limit, key));
     }
 
-    // The cache drops idle buckets by itself.
     @Override
     public int removeExpired() {
         return 0;

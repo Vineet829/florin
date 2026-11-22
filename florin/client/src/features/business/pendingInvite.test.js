@@ -11,7 +11,7 @@ describe("pendingInvite", () => {
     localStorage.clear();
   });
 
-  it("leads back to the invitation opened before signing in", () => {
+  it("returns to the pending invitation", () => {
     expect(pendingInvitePath()).toBeNull();
     rememberInvite("abc_DEF-123");
     expect(pendingInvitePath()).toBe("/invite/abc_DEF-123");
@@ -19,7 +19,7 @@ describe("pendingInvite", () => {
     expect(pendingInvitePath()).toBeNull();
   });
 
-  it("stops leading back once the invitation could no longer be open", () => {
+  it("forgets expired invitations", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-09-01T10:00:00Z"));
     rememberInvite("token");
@@ -29,7 +29,7 @@ describe("pendingInvite", () => {
     expect(pendingInvitePath()).toBeNull();
   });
 
-  it("ignores an entry it can't read", () => {
+  it("ignores unreadable entries", () => {
     localStorage.setItem("pendingInvite", "{not json");
     expect(pendingInvitePath()).toBeNull();
     localStorage.setItem("pendingInvite", JSON.stringify({ token: 42 }));

@@ -18,17 +18,12 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// The tax charged in a period at each rate, by the day each document is dated:
-// invoices and receipts add theirs, credit notes take theirs off, and drafts,
-// void documents and quotations don't count. Under GST it is split as it was
-// charged, and supplies under reverse charge are kept apart.
 class TaxReportIntegrationTest extends IntegrationTest {
 
     private final LocalDate today = LocalDate.now(ZoneOffset.UTC);
@@ -61,7 +56,6 @@ class TaxReportIntegrationTest extends IntegrationTest {
                 "$.createdCustomer._id");
     }
 
-    // Each line is "price@rate".
     private String document(String client, String type, String currency, LocalDate issued, String extra,
             String... lines) throws Exception {
         List<String> items = new ArrayList<>();
@@ -79,7 +73,6 @@ class TaxReportIntegrationTest extends IntegrationTest {
                 "$.newDocument._id");
     }
 
-    // A credit note against an invoice for one amount at one rate, issued today.
     private void credit(String invoice, String line) throws Exception {
         String[] parts = line.split("@");
         String note = JsonPath.read(
@@ -98,28 +91,24 @@ class TaxReportIntegrationTest extends IntegrationTest {
                 .header(HttpHeaders.AUTHORIZATION, session));
     }
 
-    // In dollars, euros at a typed-in rate, and pounds without one.
     private void standardBusiness() throws Exception {
         session = bearer(createUser());
         business("USD", "STANDARD");
         String acme = client("");
-        String first = document(acme, "Invoice", "USD", lastMonth, "", "1000@18", "101@5"); // INV-0001
-        document(acme, "Invoice", "USD", today, "", "500@18"); // INV-0002
-        document(acme, "Receipt", "USD", today, "", "200@0"); // REC-0001
-        credit(first, "100@18"); // CN-0001
-        document(acme, "Invoice", "EUR", today, ", \"exchangeRate\": \"1.1\"", "400@20"); // INV-0003
-        document(acme, "Invoice", "GBP", today, "", "300@10"); // INV-0004
-        // Left out: a draft, a void invoice, a quotation, and an invoice from
-        // before the period.
+        String first = document(acme, "Invoice", "USD", lastMonth, "", "1000@18", "101@5");
+        document(acme, "Invoice", "USD", today, "", "500@18");
+        document(acme, "Receipt", "USD", today, "", "200@0");
+        credit(first, "100@18");
+        document(acme, "Invoice", "EUR", today, ", \"exchangeRate\": \"1.1\"", "400@20");
+        document(acme, "Invoice", "GBP", today, "", "300@10");
         document(acme, "Invoice", "USD", today, ", \"draft\": true", "1000@18");
-        String voided = document(acme, "Invoice", "USD", today, "", "300@18"); // INV-0005
+        String voided = document(acme, "Invoice", "USD", today, "", "300@18");
         send(post("/api/v1/document/{id}/void", voided), "{\"reason\": \"Sent twice\"}").andExpect(status().isOk());
         document(acme, "Quotation", "USD", today, "", "700@18");
-        document(acme, "Invoice", "USD", today.withDayOfMonth(1).minusMonths(4), "", "900@18"); // INV-0006
+        document(acme, "Invoice", "USD", today.withDayOfMonth(1).minusMonths(4), "", "900@18");
     }
 
     @Test
-    @DisplayName("each currency's tax per rate and per month, less credit notes, from issued documents only")
     void byCurrency() throws Exception {
         standardBusiness();
         report("3m", null)
@@ -164,7 +153,6 @@ class TaxReportIntegrationTest extends IntegrationTest {
         report("next year", null).andExpect(status().isBadRequest());
     }
 
-    // The tax file's lines for the period.
     private List<String> taxFile(String period) throws Exception {
         return new String(
                         mockMvc.perform(get("/api/v1/report/csv/tax")
@@ -180,7 +168,6 @@ class TaxReportIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the tax file has GST's columns only in GST mode, or for a period with documents taxed under GST")
     void gstColumns() throws Exception {
         standardBusiness();
         String fivePercent = "USD,%s,%s,%s,5,1,101.00,5.05"
@@ -190,8 +177,6 @@ class TaxReportIntegrationTest extends IntegrationTest {
         assertThat(standard).contains(fivePercent).hasSizeGreaterThan(4);
         assertThat(standard).allMatch(line -> line.split(",", -1).length == 8);
 
-        // The same documents in GST mode, as the reports page then shows its
-        // GST helpers.
         send(patch("/api/v1/business"), "{\"taxId\": \"27AAPFU0939F1ZV\"}").andExpect(status().isOk());
         business("USD", "GST_INDIA");
         List<String> inGstMode = taxFile("3m");
@@ -200,8 +185,6 @@ class TaxReportIntegrationTest extends IntegrationTest {
                         + "Reverse-charge taxable");
         assertThat(inGstMode).contains(fivePercent + ",0.00,0.00,0.00,0.00").hasSameSizeAs(standard);
 
-        // Back in standard mode, a period with an invoice taxed under GST still
-        // has them, and one without has not.
         document(client(", \"gstin\": \"27AAACB1234C1ZF\""), "Invoice", "INR", today, "", "1000@18");
         business("USD", "STANDARD");
         assertThat(taxFile("3m").get(0)).endsWith(",Tax,CGST,SGST,IGST,Reverse-charge taxable");
@@ -210,7 +193,6 @@ class TaxReportIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("in the reporting currency, at each document's own rate, listing what has no rate to it")
     void inReportingCurrency() throws Exception {
         standardBusiness();
         report("3m", "base")
@@ -231,8 +213,7 @@ class TaxReportIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("under GST each rate is split as charged, and reverse-charge supplies are kept apart")
-    void gst() throws Exception {
+    void gstSplitsEachRate() throws Exception {
         session = bearer(createUser());
         send(patch("/api/v1/business"), "{\"taxId\": \"27AAPFU0939F1ZV\"}").andExpect(status().isOk());
         business("INR", "GST_INDIA");
@@ -255,8 +236,6 @@ class TaxReportIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.currencies[0].rates[0].sgst").value(81.0))
                 .andExpect(jsonPath("$.currencies[0].rates[0].igst").value(360.0))
                 .andExpect(jsonPath("$.currencies[0].rates[0].reverseChargeTaxable").value(500.0));
-        // The overview's tax in what was billed leaves out the supply under
-        // reverse charge too.
         report("30d", null).andExpect(jsonPath("$.currencies[0].tax").value(522.0));
         mockMvc.perform(get("/api/v1/report/overview")
                         .param("period", "30d")
@@ -278,7 +257,6 @@ class TaxReportIntegrationTest extends IntegrationTest {
                         .getResponse()
                         .getContentAsByteArray(),
                 StandardCharsets.UTF_8);
-        // This month's rows give the days of it the period covers: up to today.
         assertThat(csv.lines().toList()).containsExactly(
                 "﻿Currency,Month,From,To,Rate %,Documents,Taxable,Tax,CGST,SGST,IGST,Reverse-charge taxable",
                 "INR,%s,%s,%s,18,4,2900.00,522.00,81.00,81.00,360.00,500.00"

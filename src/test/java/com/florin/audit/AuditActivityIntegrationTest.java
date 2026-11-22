@@ -8,7 +8,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.florin.IntegrationTest;
 import com.florin.user.User;
 import com.jayway.jsonpath.JsonPath;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -49,8 +48,7 @@ class AuditActivityIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an account's own sign-ins and changes are listed newest first, this device marked")
-    void mine() throws Exception {
+    void listsOwnActivity() throws Exception {
         User user = withPassword(createUser());
         login(user, "Wrong!pass1").andExpect(status().isUnauthorized());
         String authorization = signIn(user);
@@ -72,8 +70,7 @@ class AuditActivityIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("each visitor of the shared demo account sees only what they did")
-    void demo() throws Exception {
+    void demoVisitorsSeeOwnActivity() throws Exception {
         User demo = withPassword(demoUser());
         String first = signIn(demo);
         String second = signIn(demo);
@@ -87,7 +84,6 @@ class AuditActivityIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("admins read the whole log by email and kind of event; no one else can")
     void adminLog() throws Exception {
         User user = withPassword(createUser());
         login(user, "Wrong!pass1");

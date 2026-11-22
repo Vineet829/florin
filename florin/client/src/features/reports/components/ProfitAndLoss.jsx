@@ -22,18 +22,13 @@ const amountColumn = (label, key, currency) => ({
   render: (row) => <Amount value={row[key]} currency={currency} />,
 });
 
-// Profit and loss for the period, in each currency it has: income before tax
-// less credit notes, and what expenses cost, by month, with each month's
-// margin and the profit made so far; then what each expense category cost,
-// and its share of all the expenses. A month the period holds only part of
-// is named by its days.
 const ProfitAndLoss = ({ report, periodName, busy }) => {
   const currencies = report?.currencies || [];
   return (
     <Panel
       id="profit"
       title="Profit and loss"
-      description={`${periodName}. Income is what you invoiced before tax, less credit notes, on the day each was issued. Expenses count on the day they were paid, with any tax you can’t claim back.`}
+      description={`${periodName}. Income is what you invoiced before tax, less credit notes, on the day each was issued. Expenses count on the day they were paid, with any tax you can't claim back.`}
     >
       {currencies.length ? (
         <div

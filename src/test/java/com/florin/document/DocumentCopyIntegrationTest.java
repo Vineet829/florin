@@ -14,7 +14,6 @@ import com.florin.user.User;
 import com.jayway.jsonpath.JsonPath;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -75,8 +74,7 @@ class DocumentCopyIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a copy is a draft with the client and lines, no number and no payments, and links back")
-    void duplicate() throws Exception {
+    void copyIsLinkedDraft() throws Exception {
         String original = document("Invoice");
         mockMvc.perform(post("/api/v1/document/{id}/payment", original)
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
@@ -111,8 +109,7 @@ class DocumentCopyIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an issued quotation becomes a draft invoice once, and each names the other")
-    void convert() throws Exception {
+    void quotationConvertsOnce() throws Exception {
         String quotation = document("Quotation");
 
         String body = action(quotation, "convert", owner)
@@ -144,8 +141,7 @@ class DocumentCopyIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("only quotations convert, only the owner can copy, and a deleted draft leaves its copy")
-    void rules() throws Exception {
+    void copyAndConvertRules() throws Exception {
         String invoice = document("Invoice");
 
         action(invoice, "convert", owner)

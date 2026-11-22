@@ -4,16 +4,12 @@ import com.florin.common.ApiException;
 import java.util.Locale;
 import org.springframework.http.HttpStatus;
 
-// An Indian GST identification number: 15 letters and digits, starting with
-// a state code and ending with a check character worked out over the other
-// fourteen. The PAN is characters 3 to 12.
 public final class Gstin {
 
     private static final String ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     private Gstin() {}
 
-    // Upper-cased, or null when nothing was given.
     public static String parse(String value) {
         if (value == null || value.isBlank()) {
             return null;
@@ -32,8 +28,6 @@ public final class Gstin {
                 && checkCharacter(gstin.substring(0, 14)) == gstin.charAt(14);
     }
 
-    // Each character's value, doubled at every second place, adds its quotient
-    // and remainder by 36; the check character makes the sum a multiple of 36.
     static char checkCharacter(String first14) {
         int sum = 0;
         for (int index = 0; index < 14; index++) {

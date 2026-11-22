@@ -24,7 +24,6 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -110,7 +109,6 @@ class OverviewIntegrationTest extends IntegrationTest {
                 .content(json));
     }
 
-    // Puts the business in the time zone and returns its today.
     private LocalDate inZone(ZoneId zone) throws Exception {
         send(put("/api/v1/settings"), """
                 {"defaultCurrency": "USD", "paymentTermsDays": 15, "defaultTaxRate": 0,
@@ -120,8 +118,6 @@ class OverviewIntegrationTest extends IntegrationTest {
         return LocalDate.now(zone);
     }
 
-    // A document dated the given day and due on the other, at one price taxed
-    // at a rate; a draft is only planned for that day.
     private String create(
             String type, String currency, String price, String rate, LocalDate issued, LocalDate due, boolean draft)
             throws Exception {
@@ -159,18 +155,14 @@ class OverviewIntegrationTest extends IntegrationTest {
                 .andExpect(status().isCreated());
     }
 
-    // A credit note taking the amount off the document, dated the given day.
-    // Its line takes the one tax rate the note was copied with, if it had one.
     private void credit(String document, String amount, LocalDate issued) throws Exception {
         creditNote(document, "\"unitPrice\": %s".formatted(amount), issued);
     }
 
-    // The same, with the line taxed at the given rate.
     private void credit(String document, String amount, String rate, LocalDate issued) throws Exception {
         creditNote(document, "\"unitPrice\": %s, \"taxRate\": \"%s\"".formatted(amount, rate), issued);
     }
 
-    // A credit note on the document with one line of work, issued on the day.
     private void creditNote(String document, String line, LocalDate issued) throws Exception {
         String note = JsonPath.read(
                 send(post("/api/v1/document/{id}/credit-note", document), "")
@@ -208,7 +200,6 @@ class OverviewIntegrationTest extends IntegrationTest {
                 .andExpect(status().isOk());
     }
 
-    // Moves a document's due date to a moment on the business's clock.
     private void dueAt(String document, LocalDateTime moment, ZoneId zone) {
         jdbcTemplate.update(
                 "update documents set due_date = ? where id = ?",
@@ -220,7 +211,6 @@ class OverviewIntegrationTest extends IntegrationTest {
         return new BigDecimal(JsonPath.read(body, path).toString());
     }
 
-    // One of the trend's figures, summed over its buckets.
     private static BigDecimal trendSum(String body, String figure) {
         List<Object> amounts = JsonPath.read(body, "$.trend[*]." + figure);
         return amounts.stream()
@@ -229,8 +219,7 @@ class OverviewIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("income is invoices and receipts, pending what they still await")
-    void figures() throws Exception {
+    void incomeAndPendingFigures() throws Exception {
         String partly = document("Invoice", "USD", "100", -1);
         pay(partly, "20", "2025-01-10");
         pay(document("Invoice", "USD", "200", 5), "200", "2025-02-01");
@@ -249,8 +238,7 @@ class OverviewIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("money is shown one currency at a time, the default first")
-    void currencies() throws Exception {
+    void oneCurrencyAtATime() throws Exception {
         pay(document("Invoice", "USD", "100", 5), "40", "2025-01-10");
         pay(document("Invoice", "EUR", "50", 5), "10", "2025-03-01");
         document("Quotation", "GBP", "70", 5);
@@ -268,8 +256,7 @@ class OverviewIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a new account sees zeros in its default currency")
-    void empty() throws Exception {
+    void newAccountSeesZeros() throws Exception {
         owner = createUser();
         overview(null)
                 .andExpect(jsonPath("$.currencies").isEmpty())
@@ -291,8 +278,7 @@ class OverviewIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("the period is the last 90 days unless another is chosen, beside as long a stretch just before it")
-    void periods(ZoneId zone) throws Exception {
+    void defaultsToNinetyDays(ZoneId zone) throws Exception {
         LocalDate day = inZone(zone);
         overview(null, null)
                 .andExpect(status().isOk())
@@ -309,8 +295,6 @@ class OverviewIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.period.previousFrom").value(day.minusDays(59).toString()))
                 .andExpect(jsonPath("$.period.previousTo").value(day.minusDays(30).toString()))
                 .andExpect(jsonPath("$.period.step").value("day"));
-        // The last 12 months go back to the same day a year ago, beside the
-        // 12 months before them.
         LocalDate first = day.minusMonths(12).plusDays(1);
         overview(null, "12m")
                 .andExpect(jsonPath("$.period.key").value("12m"))
@@ -333,13 +317,8 @@ class OverviewIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("billed, received and profit in the period and the one before, counted as the reports count them")
-    void totals(ZoneId zone) throws Exception {
+    void totalsMatchReports(ZoneId zone) throws Exception {
         LocalDate day = inZone(zone);
-        // In the last 90 days: an invoice taxed 10% and partly paid, a receipt,
-        // an invoice partly paid and credited, and one paid, credited and
-        // refunded; an expense with tax that can't be claimed back, and one
-        // with tax that can.
         String taxed = create("Invoice", "USD", "1000", "10", day.minusDays(10), day.plusDays(20), false);
         pay(taxed, "400", "0", day.minusDays(5));
         create("Receipt", "USD", "300", "0", day.minusDays(3), null, false);
@@ -352,14 +331,11 @@ class OverviewIntegrationTest extends IntegrationTest {
         refund(refunded, "80", day.minusDays(2));
         expense("USD", "100", "18", false, day.minusDays(6));
         expense("USD", "50", "9", true, day.minusDays(7));
-        // In the 90 days before: an invoice paid partly then and partly now,
-        // a payment on an older invoice, and an expense.
         String older = issue("Invoice", "USD", "2000", day.minusDays(100), day.minusDays(70));
         pay(older, "1500", "0", day.minusDays(95));
         pay(older, "500", "0", day.minusDays(10));
         pay(issue("Invoice", "USD", "250", day.minusDays(200), day.minusDays(170)), "250", "0", day.minusDays(150));
         expense("USD", "300", "0", false, day.minusDays(120));
-        // Never counted: a draft, a void invoice, a quotation, another currency.
         create("Invoice", "USD", "700", "0", day.minusDays(1), null, true);
         voided(issue("Invoice", "USD", "300", day.minusDays(1), day.plusDays(10)));
         issue("Quotation", "USD", "900", day.minusDays(2), day.plusDays(10));
@@ -376,8 +352,6 @@ class OverviewIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.totals.profit.current").value(1702.0))
                 .andExpect(jsonPath("$.totals.profit.previous").value(1700.0))
                 .andExpect(jsonPath("$.totals.hasPrevious").value(true));
-        // The 30 days before the last 30 end on the day the refunded invoice
-        // was dated and paid.
         overview(null, "30d")
                 .andExpect(jsonPath("$.totals.billed.current").value(1770.0))
                 .andExpect(jsonPath("$.totals.billed.previous").value(200.0))
@@ -394,19 +368,11 @@ class OverviewIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("the period is compared with the one before only when money was billed, paid or spent on that one's"
-            + " first day or earlier")
-    void previous(ZoneId zone) throws Exception {
+    void previousPeriodNeedsHistory(ZoneId zone) throws Exception {
         LocalDate day = inZone(zone);
-        // The last 90 days are compared with the 90 before them, which begin
-        // 179 days ago. Money from the day after that covers only part of
-        // them: a deposit the day before the period, on an invoice dated in
-        // it, and an expense.
         String invoice = issue("Invoice", "USD", "100", day.minusDays(89), day.plusDays(10));
         pay(invoice, "40", "0", day.minusDays(90));
         expense("USD", "20", "0", false, day.minusDays(178));
-        // Earlier, but none of it counts: a quotation, a draft, a void
-        // invoice, and money in another currency.
         issue("Quotation", "USD", "50", day.minusDays(400), day.minusDays(380));
         create("Invoice", "USD", "60", "0", day.minusDays(400), null, true);
         voided(issue("Invoice", "USD", "70", day.minusDays(400), day.minusDays(380)));
@@ -418,12 +384,8 @@ class OverviewIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.totals.billed.current").value(100.0))
                 .andExpect(jsonPath("$.totals.received.previous").value(40.0))
                 .andExpect(jsonPath("$.totals.profit.previous").value(-20.0));
-        // The 30 days before the last 30 are all covered.
         overview("USD", "30d").andExpect(jsonPath("$.totals.hasPrevious").value(true));
 
-        // Money of any kind on the first of the 90 days before is enough: an
-        // invoice or a receipt dated then, a payment made then on a later
-        // invoice, or an expense paid then.
         for (String kind : List.of("Invoice", "Receipt", "Payment", "Expense")) {
             owner();
             LocalDate first = inZone(zone).minusDays(179);
@@ -440,7 +402,6 @@ class OverviewIntegrationTest extends IntegrationTest {
             overview("USD", "30d").andExpect(jsonPath("$.totals.hasPrevious").value(true));
         }
 
-        // A business whose only money is an old expense.
         owner = createUser();
         LocalDate later = inZone(zone);
         expense("USD", "10", "0", false, later.minusDays(400));
@@ -451,13 +412,8 @@ class OverviewIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("the trend splits the period's money by day, week or month, and adds up to its totals")
-    void trend(ZoneId zone) throws Exception {
+    void trendAddsUpToTotals(ZoneId zone) throws Exception {
         LocalDate day = inZone(zone);
-        // Today: a receipt, and a credit note on yesterday's invoice taxed 10%,
-        // which was partly paid. Two days ago: a credit note on the day
-        // before's receipt, paid back, and an expense with tax that can't be
-        // claimed back. On the first day of the last 30: an expense.
         create("Receipt", "USD", "300", "0", day, null, false);
         String invoice = create("Invoice", "USD", "1000", "10", day.minusDays(1), day.plusDays(30), false);
         pay(invoice, "400", "0", day.minusDays(1));
@@ -467,7 +423,6 @@ class OverviewIntegrationTest extends IntegrationTest {
         refund(receipt, "50", day.minusDays(2));
         expense("USD", "100", "18", false, day.minusDays(2));
         expense("USD", "10", "0", false, day.minusDays(29));
-        // The day before the last 30, and money in another currency.
         pay(issue("Invoice", "USD", "500", day.minusDays(35), day.minusDays(5)), "500", "0", day.minusDays(30));
         expense("USD", "70", "0", false, day.minusDays(30));
         pay(issue("Invoice", "EUR", "900", day, day.plusDays(5)), "900", "0", day);
@@ -485,7 +440,6 @@ class OverviewIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.trend[26].received").value(200.0))
                 .andExpect(jsonPath("$.trend[26].income").value(200.0))
                 .andExpect(jsonPath("$.trend[26].moneyIn").value(200.0))
-                // A refund is money out, and comes off what was received.
                 .andExpect(jsonPath("$.trend[27].billed").value(-50.0))
                 .andExpect(jsonPath("$.trend[27].received").value(-50.0))
                 .andExpect(jsonPath("$.trend[27].income").value(-50.0))
@@ -516,8 +470,6 @@ class OverviewIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.trend[12].billed").value(1440.0))
                 .andExpect(jsonPath("$.trend[12].moneyIn").value(900.0))
                 .andExpect(jsonPath("$.trend[12].moneyOut").value(168.0));
-        // By calendar month, the first from the day after today's date a year
-        // ago, which is a part month unless it is the 1st.
         LocalDate first = day.minusMonths(12).plusDays(1);
         int months = first.getDayOfMonth() == 1 ? 12 : 13;
         overview(null, "12m")
@@ -536,9 +488,6 @@ class OverviewIntegrationTest extends IntegrationTest {
             assertThat(trendSum(body, "received")).isEqualByComparingTo(amount(body, "$.totals.received.current"));
             assertThat(trendSum(body, "income").subtract(trendSum(body, "expenses")))
                     .isEqualByComparingTo(amount(body, "$.totals.profit.current"));
-            // Received is the money in less what was paid back, and money out
-            // is what was paid for expenses, here with no tax to claim back,
-            // and what was paid back.
             assertThat(trendSum(body, "moneyIn").subtract(trendSum(body, "received")))
                     .isEqualByComparingTo(trendSum(body, "moneyOut").subtract(trendSum(body, "expenses")));
         }
@@ -546,13 +495,9 @@ class OverviewIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("money out is what was paid for expenses, tax that can be claimed back and all, as the expenses"
-            + " list's Spent adds it up, while profit takes off only what they cost")
     void reclaimableTax(ZoneId zone) throws Exception {
         LocalDate day = inZone(zone);
         create("Receipt", "USD", "1000", "0", day, null, false);
-        // Yesterday: an expense with tax that can be claimed back, and one
-        // with tax that can't.
         expense("USD", "100", "18", true, day.minusDays(1));
         expense("USD", "50", "9", false, day.minusDays(1));
 
@@ -571,7 +516,6 @@ class OverviewIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("what is owed now is the pending money, split by due date into overdue and not due yet")
     void owedNow(ZoneId zone) throws Exception {
         LocalDate day = inZone(zone);
         issue("Invoice", "USD", "100", day.minusDays(10), day.minusDays(1));
@@ -580,8 +524,6 @@ class OverviewIntegrationTest extends IntegrationTest {
         issue("Invoice", "USD", "50", day.minusDays(2), day);
         String credited = issue("Invoice", "USD", "400", day.minusDays(1), day.plusDays(30));
         credit(credited, "150", day);
-        // Nothing owed: a paid invoice, a receipt, a draft, a void invoice
-        // and a quotation; one in euros is owed in euros.
         pay(issue("Invoice", "USD", "70", day.minusDays(20), day.minusDays(10)), "70", "0", day);
         create("Receipt", "USD", "60", "0", day, null, false);
         create("Invoice", "USD", "500", "0", day.minusDays(9), day.minusDays(5), true);
@@ -606,21 +548,13 @@ class OverviewIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("what is owed now is split by days late on the business's calendar: not due yet, then up to 15, 30"
-            + " and 45 days, and over 45")
     void owedBands(ZoneId zone) throws Exception {
         LocalDate day = inZone(zone);
-        // Not due yet: due in the first minutes of today by the business's
-        // clock, due later, and saved without a due date, as the oldest
-        // invoices were.
         String early = issue("Invoice", "USD", "100", day.minusDays(1), day);
         dueAt(early, day.atTime(0, 30), zone);
         issue("Invoice", "USD", "200", day.minusDays(1), day.plusDays(30));
         String undated = issue("Invoice", "USD", "300", day.minusDays(1), day.plusDays(5));
         jdbcTemplate.update("update documents set due_date = null where id = ?", UUID.fromString(undated));
-        // Due in the last minutes of yesterday, then each side of 15, 30 and
-        // 45 days late: one partly paid with tax withheld, and one partly
-        // credited.
         String late = issue("Invoice", "USD", "10", day.minusDays(20), day.minusDays(1));
         dueAt(late, day.minusDays(1).atTime(23, 30), zone);
         pay(issue("Invoice", "USD", "1000", day.minusDays(40), day.minusDays(15)), "400", "50", day.minusDays(3));
@@ -630,8 +564,6 @@ class OverviewIntegrationTest extends IntegrationTest {
         issue("Invoice", "USD", "50", day.minusDays(60), day.minusDays(45));
         issue("Invoice", "USD", "60", day.minusDays(90), day.minusDays(46));
         issue("Invoice", "USD", "70", day.minusDays(400), day.minusDays(365));
-        // Nothing owed: paid in full, a receipt, a draft, a void invoice and a
-        // quotation. Euros are owed in euros.
         pay(issue("Invoice", "USD", "80", day.minusDays(30), day.minusDays(20)), "80", "0", day);
         create("Receipt", "USD", "90", "0", day.minusDays(20), null, false);
         create("Invoice", "USD", "500", "0", day.minusDays(30), day.minusDays(20), true);
@@ -663,8 +595,6 @@ class OverviewIntegrationTest extends IntegrationTest {
         }
     }
 
-    // The bands add up to what is owed now: not due yet is the first, and the
-    // other four are what is overdue, in money and in invoices.
     private static void bandsAddUp(String body) {
         BigDecimal overdue = BigDecimal.ZERO;
         int late = 0;
@@ -683,12 +613,8 @@ class OverviewIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("the reports' last 30 and 90 days are the overview's, and bill, receive and earn as it does")
     void reportPeriods(ZoneId zone) throws Exception {
         LocalDate day = inZone(zone);
-        // On the first day of each period and the day before it: invoices
-        // paid, one with tax withheld and one credited and paid back, a
-        // receipt, and expenses.
         pay(issue("Invoice", "USD", "1000", day.minusDays(29), day.plusDays(10)), "300", "20", day.minusDays(29));
         pay(issue("Invoice", "USD", "500", day.minusDays(30), day.plusDays(10)), "500", "0", day.minusDays(30));
         String credited = issue("Invoice", "USD", "800", day.minusDays(89), day.plusDays(10));
@@ -699,7 +625,6 @@ class OverviewIntegrationTest extends IntegrationTest {
         create("Receipt", "USD", "60", "0", day, null, false);
         expense("USD", "40", "0", false, day.minusDays(29));
         expense("USD", "30", "0", false, day.minusDays(90));
-        // Never counted with dollars: euros, a quotation and a draft.
         pay(issue("Invoice", "EUR", "900", day, day.plusDays(5)), "900", "0", day);
         issue("Quotation", "USD", "5000", day, day.plusDays(5));
         create("Invoice", "USD", "6000", "0", day, null, true);
@@ -737,15 +662,12 @@ class OverviewIntegrationTest extends IntegrationTest {
                     .isEqualByComparingTo(amount(overview, "$.totals.profit.current"))
                     .isEqualByComparingTo(figures.get(index).get(2));
         }
-        // The other reports read the same days.
         for (String report : List.of("/api/v1/report/tax", "/api/v1/report/tds")) {
             send(get(report).param("period", "30d"), "")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.from").value(day.minusDays(29).toString()))
                     .andExpect(jsonPath("$.to").value(day.toString()));
         }
-        // The CSV gives each month the days of it the period covers, the
-        // first from the period's first day and the last to today.
         LocalDate first = day.minusDays(89);
         send(get("/api/v1/report/csv/income").param("period", "90d"), "")
                 .andExpect(status().isOk())
@@ -757,31 +679,20 @@ class OverviewIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("the tax in what was billed is the tax report's, in every period and currency, and the period"
-            + " before it counts the same way")
     void taxBilled(ZoneId zone) throws Exception {
         LocalDate day = inZone(zone);
-        // In the last 30 days: an invoice taxed 10%, a receipt taxed 18%, an
-        // invoice taxed 5% on their first day, and a credit note taking 18%
-        // off an invoice from the 90 days.
         create("Invoice", "USD", "1000", "10", day.minusDays(10), day.plusDays(20), false);
         create("Receipt", "USD", "200", "18", day.minusDays(3), null, false);
         create("Invoice", "USD", "300", "5", day.minusDays(29), day.plusDays(1), false);
         String older = create("Invoice", "USD", "500", "18", day.minusDays(60), day.minusDays(30), false);
         credit(older, "100", "18", day.minusDays(2));
-        // The day before the last 30 days, and the 90 days before the last 90.
         create("Invoice", "USD", "400", "10", day.minusDays(30), day.plusDays(1), false);
         create("Invoice", "USD", "700", "10", day.minusDays(100), day.minusDays(70), false);
-        // Never counted: a draft, a void invoice and a quotation. Euros count
-        // as euros.
         create("Invoice", "USD", "900", "18", day.minusDays(1), null, true);
         voided(create("Invoice", "USD", "800", "18", day.minusDays(1), day.plusDays(10), false));
         create("Quotation", "USD", "600", "18", day.minusDays(1), day.plusDays(10), false);
         create("Invoice", "EUR", "250", "20", day.minusDays(1), day.plusDays(10), false);
 
-        // The last 30 days: 100 + 36 + 15 - 18, with 40 the day before them.
-        // The last 90 days add that 40 and the older invoice's 90, with 70 in
-        // the 90 days before them.
         overview("USD", "30d")
                 .andExpect(jsonPath("$.totals.tax").value(133.0))
                 .andExpect(jsonPath("$.totals.previousTax").value(40.0));
@@ -799,8 +710,6 @@ class OverviewIntegrationTest extends IntegrationTest {
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
-                // A currency the report has nothing in, as early in January
-                // this year can be, had no tax.
                 List<Object> tax = JsonPath.read(report, "$.currencies[?(@.currency == '%s')].tax".formatted(currency));
                 assertThat(amount(overview, "$.totals.tax"))
                         .as(currency + " " + period)

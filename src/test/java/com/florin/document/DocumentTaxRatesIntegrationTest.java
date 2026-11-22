@@ -13,15 +13,12 @@ import com.florin.IntegrationTest;
 import com.jayway.jsonpath.JsonPath;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// Each line is taxed at its own rate, and a document charges the tax on each
-// rate's lines, rounded once per rate.
 class DocumentTaxRatesIntegrationTest extends IntegrationTest {
 
     private String session;
@@ -54,7 +51,6 @@ class DocumentTaxRatesIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("lines at different rates are taxed per rate, shown on the document and its share page")
     void ratePerLine() throws Exception {
         String id = JsonPath.read(
                 body(create("", """
@@ -80,7 +76,6 @@ class DocumentTaxRatesIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a rate sent with the document taxes lines that have none; on a draft it can retax every line")
     void documentRate() throws Exception {
         create(", \"rates\": \"12\"", "{\"itemName\": \"Work\", \"unitPrice\": 100, \"quantity\": 1}")
                 .andExpect(jsonPath("$.newDocument.billingItems[0].taxRate").value(12))
@@ -108,8 +103,7 @@ class DocumentTaxRatesIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the rates offered are the business's own, most used first, with its default rate among them")
-    void suggestions() throws Exception {
+    void suggestsMostUsedRates() throws Exception {
         send(put("/api/v1/settings"), """
                 {"defaultCurrency": "USD", "paymentTermsDays": 7, "defaultTaxRate": 18, "taxLabel": "Tax",
                  "timeZone": "UTC"}

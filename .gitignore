@@ -8,9 +8,7 @@ target/
 .vscode/
 .DS_Store
 
-# Local notes, kept out of the repository
 docs/
 uploads/
 
-# docker compose settings, with real secrets
 .env

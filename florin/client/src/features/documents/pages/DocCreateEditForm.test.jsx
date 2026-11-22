@@ -7,8 +7,6 @@ import { useGetSingleDocQuery } from "../documentsApiSlice";
 import { useGetSettingsQuery } from "../../settings/settingsApiSlice";
 import { dateInput } from "../../../components/workspace/Workspace";
 
-// The editor gets everything from these hooks, so it needs no store or
-// server; the signed-in shell around it is left out.
 const idle = () => [vi.fn(), { isLoading: false }];
 vi.mock("../documentsApiSlice", () => ({
   useCreateDocMutation: () => idle(),
@@ -81,9 +79,6 @@ const render = (doc) => {
   return container;
 };
 
-// A field by the start of its label, and what it says under it. A date
-// field's calendar keeps the native field the form checks beside its
-// button.
 const field = (container, label) => {
   const element = [...container.querySelectorAll("label")].find((candidate) =>
     candidate.textContent.startsWith(label),
@@ -101,7 +96,6 @@ const field = (container, label) => {
   return { input, hint: hint?.textContent };
 };
 
-// A day picked in a date field, as the browser sends it.
 const pick = (input, day) =>
   act(() => {
     Object.getOwnPropertyDescriptor(
@@ -111,13 +105,12 @@ const pick = (input, day) =>
     input.dispatchEvent(new Event("input", { bubbles: true }));
   });
 
-// Whether the browser would let the form be sent with this value.
 const takes = (input, value) => {
   input.value = value;
   return input.validity.valid;
 };
 
-it("takes a due date no earlier than the issue date, which is today unless chosen", () => {
+it("due date not before issue date", () => {
   inRegime("STANDARD");
   const container = render();
   const { input: due } = field(container, "Due date");
@@ -128,9 +121,7 @@ it("takes a due date no earlier than the issue date, which is today unless chose
   expect(due.validity.rangeUnderflow).toBe(true);
 });
 
-// The server dates and checks documents by the business's calendar. At 5 in
-// the morning of Oct 8 in Kolkata it is still Oct 7 in Los Angeles.
-it("dates a new document by the business's calendar, due the payment terms after it", () => {
+it("dates new document with terms", () => {
   inRegime("STANDARD");
   const zone = process.env.TZ;
   process.env.TZ = "Asia/Kolkata";
@@ -149,7 +140,7 @@ it("dates a new document by the business's calendar, due the payment terms after
   }
 });
 
-it("keeps a draft's due date saved before its issue date until either date changes", () => {
+it("keeps saved early due date", () => {
   inRegime("STANDARD");
   const container = render({
     _id: "d1",
@@ -168,7 +159,7 @@ it("keeps a draft's due date saved before its issue date until either date chang
   expect(due.validity.rangeUnderflow).toBe(true);
 });
 
-it("refuses a line with more decimals than the server keeps", () => {
+it("rejects too many decimals", () => {
   inRegime("STANDARD");
   const container = render();
   for (const label of [
@@ -188,7 +179,7 @@ it("refuses a line with more decimals than the server keeps", () => {
   expect(takes(rate, "0.0120481928")).toBe(true);
 });
 
-it("says a GST invoice needs a rate even when the draft kept one to another currency", () => {
+it("GST invoice needs a rate", () => {
   inRegime("GST_INDIA");
   const { hint } = field(
     render({

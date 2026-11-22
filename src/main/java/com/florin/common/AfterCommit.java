@@ -3,9 +3,6 @@ package com.florin.common;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-// Does something once the transaction under way commits, such as handing over
-// an email about the change it saves, so nothing is done for a change that
-// rolls back. Outside a transaction it is done at once.
 public final class AfterCommit {
 
     private AfterCommit() {}

@@ -17,19 +17,14 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// Money paid back when a credit note leaves an invoice or receipt overpaid:
-// never more than is due back, and counted wherever money received is.
 class RefundIntegrationTest extends IntegrationTest {
 
-    // UTC+14, the time zone furthest ahead: a day after its today is still to
-    // come everywhere.
     private static final ZoneId FURTHEST_AHEAD = ZoneId.of("Pacific/Kiritimati");
 
     private final LocalDate today = LocalDate.now(ZoneOffset.UTC);
@@ -100,8 +95,6 @@ class RefundIntegrationTest extends IntegrationTest {
                 """.formatted(zone.getId())).andExpect(status().isOk());
     }
 
-    // A time zone whose today isn't UTC's right now: fourteen hours ahead of
-    // UTC from 10:00 UTC, eleven hours behind it before then.
     private static ZoneId awayFromUtc() {
         return LocalDate.now(FURTHEST_AHEAD).equals(LocalDate.now(ZoneOffset.UTC))
                 ? ZoneId.of("Pacific/Pago_Pago")
@@ -109,8 +102,7 @@ class RefundIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a refund pays back what a credit note left overpaid, and never more")
-    void limits() throws Exception {
+    void refundCappedAtOverpayment() throws Exception {
         String invoice = paidInvoice("1000");
         credit(invoice, "300");
         send(get("/api/v1/document/{id}", invoice), "")
@@ -150,7 +142,6 @@ class RefundIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.message").value("Nothing is due back on INV-0001"));
         refund(invoice, "{\"amount\": 0}").andExpect(status().isBadRequest());
 
-        // The money received can't drop below what was paid back.
         String payment = JsonPath.read(
                 body(send(get("/api/v1/document/{id}", invoice), "")), "$.document.paymentRecords[0]._id");
         send(patch("/api/v1/document/{id}/payment/{payment}", invoice, payment), "{\"amountPaid\": 250}")
@@ -170,8 +161,7 @@ class RefundIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a receipt pays back what its credit notes took off, which stay while it does")
-    void receipts() throws Exception {
+    void receiptRefundsCreditedAmount() throws Exception {
         String receipt = document("Receipt", "500");
         String note = credit(receipt, "100");
         refund(receipt, "{\"amount\": 100}")
@@ -187,8 +177,7 @@ class RefundIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("reports, the overview, statements, PDFs and the CSVs count money paid back")
-    void everywhere() throws Exception {
+    void refundsCountedEverywhere() throws Exception {
         String invoice = paidInvoice("1000");
         credit(invoice, "300");
         send(get("/api/v1/document/{id}/pdf", invoice), "").andExpect(status().isOk());
@@ -241,7 +230,6 @@ class RefundIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a refund is dated no later than today somewhere, and today where the business is if no day is given")
     void notAfterToday() throws Exception {
         ZoneId zone = awayFromUtc();
         timeZone(zone);
@@ -263,16 +251,13 @@ class RefundIntegrationTest extends IntegrationTest {
                         "{\"dateRefunded\": \"%s\"}".formatted(tomorrowFurthestAhead))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("A refund can't be dated after today"));
-        // Without a day, it is dated today where the business is.
         refund(invoice, "{\"amount\": 50}")
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.document.refunds[1].dateRefunded").value(local.toString()));
     }
 
     @Test
-    @DisplayName("a refund dated today in UTC+14 is taken while it is still the day before where the business is")
-    void todayAheadOfTheBusiness() throws Exception {
-        // Ten hours behind UTC, so always a day behind UTC+14.
+    void acceptsDateAheadOfBusiness() throws Exception {
         timeZone(ZoneId.of("Pacific/Honolulu"));
         LocalDate latest = LocalDate.now(FURTHEST_AHEAD);
         String invoice = paidInvoice("1000");

@@ -9,14 +9,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.florin.IntegrationTest;
 import com.jayway.jsonpath.JsonPath;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// The app's form always sends a currency; the API may not.
 class DocumentCurrencyIntegrationTest extends IntegrationTest {
 
     private String session;
@@ -28,7 +26,6 @@ class DocumentCurrencyIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a document sent without a currency is in the business's own, and the client exports still add up")
     void withoutCurrency() throws Exception {
         session = bearer(createUser());
         send(put("/api/v1/settings"), """

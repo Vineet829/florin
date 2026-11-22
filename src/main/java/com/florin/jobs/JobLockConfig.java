@@ -9,10 +9,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-// With several app instances, a job first takes its named lock in the
-// shedlock table and an instance that finds it taken skips that run. The
-// database's clock decides, so instances whose clocks differ still agree.
-// The lock is only needed while the jobs are on, so it goes with them.
 @Configuration
 @EnableSchedulerLock(defaultLockAtMostFor = "PT2H")
 @ConditionalOnProperty(name = "app.jobs.enabled", havingValue = "true", matchIfMissing = true)

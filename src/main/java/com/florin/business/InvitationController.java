@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-// The invitations the business has sent that are still waiting.
 @RestController
 @RequestMapping("/api/v1/business/invitations")
 public class InvitationController {

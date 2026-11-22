@@ -7,7 +7,6 @@ on:
 permissions:
   contents: read
 
-# A newer push to the same branch makes the older run pointless.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -25,7 +24,6 @@ jobs:
           java-version: '21'
           cache: maven
 
-      # The integration tests start PostgreSQL through Testcontainers on the runner's Docker.
       - name: Build and run tests
         run: mvn -B -ntp verify
 
@@ -63,7 +61,6 @@ jobs:
       - name: Build
         run: npm run build
 
-  # Builds both images to prove the Dockerfiles still work; nothing is pushed.
   images:
     runs-on: ubuntu-24.04
     steps:

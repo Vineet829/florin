@@ -2,14 +2,12 @@ package com.florin.common;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class PagesTest {
 
     @Test
-    @DisplayName("a page number is at least the first, and at most the last a query can start at")
-    void number() {
+    void clampsPageNumber() {
         assertThat(Pages.number(0, 20)).isEqualTo(1);
         assertThat(Pages.number(-5, 20)).isEqualTo(1);
         assertThat(Pages.number(7, 20)).isEqualTo(7);

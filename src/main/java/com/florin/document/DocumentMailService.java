@@ -102,12 +102,6 @@ public class DocumentMailService {
                 to -> documentService.recordReminder(access, id, to, false));
     }
 
-    // An automatic reminder: no rate limit, since the reminder settings bound
-    // it, and a failure is thrown for the daily job to log.
-    // An automatic reminder is recorded first and goes out once that is
-    // saved, so a run that fails after sending it never sends it twice. One
-    // that fails to go out is logged by the run, and the next one follows on
-    // its own day.
     public void remindAutomatically(BusinessAccess access, String id) {
         DocumentEnvelope envelope = documentService.reminderEnvelope(access, id);
         DocumentPdf pdf = documentService.renderPdf(access, id);
@@ -124,9 +118,6 @@ public class DocumentMailService {
         });
     }
 
-    // A recurring invoice sent as it is made: the invoice email as the
-    // business wrote it, no rate limit, and a failure thrown for the daily job
-    // to log.
     public void emailAutomatically(BusinessAccess access, String id) throws MessagingException {
         DocumentPdf pdf = documentService.renderPdfToSend(access, id);
         EmailDraft draft = automaticDraft(access, pdf.envelope());
@@ -142,9 +133,6 @@ public class DocumentMailService {
         return draft(access, statementService.envelope(access, customerId));
     }
 
-    // What an email of a kind would say with the subject and message given,
-    // filled in from the business's latest document it could go with. A link
-    // not made yet shows where it will go.
     public EmailPreviewResponse preview(BusinessAccess access, String kindName, EmailTemplateRequest request) {
         EmailTemplateKind kind = EmailTemplateService.kind(kindName);
         EmailText text = EmailTemplateService.checked(kind, request);
@@ -158,9 +146,6 @@ public class DocumentMailService {
                 true, envelope.title(), envelope.recipientName(), draft.to(), draft.subject(), draft.message());
     }
 
-    // The email that gives a client their portal link. Like a document's,
-    // the link shows when it can be shown again; otherwise {link} stays, to
-    // be filled when the email is sent.
     public EmailDraft portalDraft(BusinessAccess access, String customerId) {
         Customer client = portalService.client(access, customerId);
         ShareService.EmailLink link = portalService.peekForEmail(access, customerId);
@@ -245,10 +230,6 @@ public class DocumentMailService {
                 ? defaults.subject()
                 : request.subject().replaceAll("[\\r\\n]+", " ").trim();
         String message = isBlank(request.message()) ? defaults.message() : request.message();
-        // A {link} still in the email becomes the document's link, made now
-        // if it has none. One that replaces a link that can't be shown again
-        // is made only once the email has gone, so an email that fails leaves
-        // the client's link working.
         DocumentEnvelope envelope = pdf.envelope();
         Optional<ShareService.SentLink> link = Optional.empty();
         if (envelope != null && linksIn(envelope, new EmailText(subject, message))) {
@@ -272,17 +253,11 @@ public class DocumentMailService {
         return businessService.require(access.businessPkid());
     }
 
-    // Replies go to the business, or to the person sending without one.
     private String replyTo(BusinessAccess access) {
         String email = seller(access).getEmail();
         return isBlank(email) ? access.user().getEmail() : email;
     }
 
-    // An email to look over before sending, as the business wrote its kind or
-    // as the standard text says, with the client's and business's names and
-    // the document's own values filled in. Its link shows when it can be shown
-    // again; otherwise {link} stays, to be filled when the email is sent, and
-    // a note says when that will replace an older link.
     private EmailDraft draft(BusinessAccess access, DocumentEnvelope envelope) {
         EmailText text = emailTemplates.text(access.businessPkid(), envelope.kind());
         return draft(
@@ -292,9 +267,6 @@ public class DocumentMailService {
                 linksIn(envelope, text) ? shareService.peekForEmail(access, envelope.documentId()) : NO_LINK);
     }
 
-    // An email sent on its own carries the document's link when it has one
-    // that can be shown again, or gets one without replacing another; the line
-    // with the link is left out otherwise.
     private EmailDraft automaticDraft(BusinessAccess access, DocumentEnvelope envelope) {
         EmailText text = emailTemplates.text(access.businessPkid(), envelope.kind());
         return draft(
@@ -329,7 +301,6 @@ public class DocumentMailService {
         return "Sending replaces " + link + " made on " + madeOn + ". The link in emails sent before stops working.";
     }
 
-    // Whether an email, as written, carries its document's link.
     private static boolean linksIn(DocumentEnvelope envelope, EmailText text) {
         return envelope.documentId() != null
                 && envelope.kind().fills("link")

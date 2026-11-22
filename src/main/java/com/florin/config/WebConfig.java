@@ -35,9 +35,6 @@ public class WebConfig implements WebMvcConfigurer {
         if (!location.endsWith("/")) {
             location = location + "/";
         }
-        // Only images are served, and in a sandbox should a browser ever read
-        // one as a page. Each upload gets a name of its own and is never
-        // written again, so browsers may keep it.
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations(location)
                 .setCacheControl(CacheControl.maxAge(Duration.ofDays(365)).cachePublic().immutable())

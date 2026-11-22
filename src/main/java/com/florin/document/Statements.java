@@ -68,8 +68,6 @@ final class Statements {
                     total,
                     null,
                     Kind.INVOICE));
-            // Tax the client withheld settles the invoice like a payment, on a
-            // line of its own.
             for (Payment payment : invoice.getPayments()) {
                 if (orZero(payment.getAmountPaid()).signum() > 0 || orZero(payment.getTdsAmount()).signum() == 0) {
                     entries.add(new Entry(
@@ -92,7 +90,6 @@ final class Statements {
                             Kind.PAYMENT));
                 }
             }
-            // A credit note settles the invoice like a payment, on its own date.
             for (Document note : invoice.getCreditNotes()) {
                 if (note.state() == DocumentState.ISSUED) {
                     entries.add(new Entry(
@@ -105,7 +102,6 @@ final class Statements {
                             Kind.CREDIT));
                 }
             }
-            // Money paid back is owed again, like a charge.
             for (Refund refund : invoice.getRefunds()) {
                 entries.add(new Entry(
                         refund.getDateRefunded(),

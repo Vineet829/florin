@@ -3,9 +3,6 @@ package com.florin.common;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
-// An amount as people read it in its currency: rupees grouped in lakhs and
-// crores (1,00,000.00), every other currency in thousands (100,000.00).
-// DecimalFormat can't group rupees: it knows only one group size.
 public final class MoneyFormat {
 
     private MoneyFormat() {}
@@ -18,7 +15,6 @@ public final class MoneyFormat {
         return (value.signum() < 0 ? "-" : "") + whole + digits.substring(point);
     }
 
-    // The last three digits, then groups of the given size.
     private static String grouped(String whole, int size) {
         StringBuilder out = new StringBuilder();
         int group = 3;

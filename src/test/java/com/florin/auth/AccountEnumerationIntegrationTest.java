@@ -13,7 +13,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.florin.IntegrationTest;
 import com.florin.user.User;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.http.MediaType;
@@ -21,9 +20,6 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.ResultActions;
 
-// Asking for a password reset or a new verification link gets the same answer
-// whatever the email, so neither form tells anyone who has an account, and a
-// sign-in without an account still checks a password, so it takes as long.
 class AccountEnumerationIntegrationTest extends IntegrationTest {
 
     @SpyBean
@@ -42,7 +38,6 @@ class AccountEnumerationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a password reset request gets one answer; only a verified account is sent a link")
     void resetRequests() throws Exception {
         for (String email : new String[] {"nobody@example.test", unverified().getEmail()}) {
             ask("reset_password_request", email)
@@ -58,7 +53,6 @@ class AccountEnumerationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a request for a new verification link gets one answer; only an unverified account is sent one")
     void verificationRequests() throws Exception {
         for (String email : new String[] {"nobody@example.test", createUser().getEmail()}) {
             ask("resend_email_token", email)
@@ -74,7 +68,6 @@ class AccountEnumerationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a sign-in with an email nobody uses still checks the password before it is refused")
     void signInWithoutAccount() throws Exception {
         clearInvocations(passwordEncoder);
 

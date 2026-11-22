@@ -15,7 +15,6 @@ import com.jayway.jsonpath.JsonPath;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -23,8 +22,6 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// A client's GSTIN is checked, sets their GST state, goes onto each document
-// as it is issued and is printed wherever the client is named.
 class CustomerGstinIntegrationTest extends IntegrationTest {
 
     private static final String GSTIN = "27AAPFU0939F1ZV";
@@ -56,8 +53,7 @@ class CustomerGstinIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a GSTIN is upper-cased and checked, and sets the client's state; a state alone is a GST code")
-    void validation() throws Exception {
+    void gstinSetsClientState() throws Exception {
         String client = JsonPath.read(
                 body(create("Acme", ", \"gstin\": \" 27aapfu0939f1zv \", \"stateCode\": \"29\"")
                         .andExpect(status().isOk())
@@ -91,7 +87,6 @@ class CustomerGstinIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("each document keeps the GSTIN as issued and prints it; the CSV, the share page and TDS PANs have it")
     void onDocuments() throws Exception {
         String client = JsonPath.read(
                 body(create("Acme", ", \"gstin\": \"%s\"".formatted(GSTIN))), "$.createdCustomer._id");
@@ -131,8 +126,7 @@ class CustomerGstinIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an import reads a GSTIN column and marks one that isn't valid")
-    void importing() throws Exception {
+    void importReadsGstinColumn() throws Exception {
         String tag = UUID.randomUUID().toString();
         byte[] file = ("Name,Email,Phone,GSTIN\r\n"
                         + "Good,good-%1$s@clients.test,+91 1,%2$s\r\n"

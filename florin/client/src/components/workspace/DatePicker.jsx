@@ -10,8 +10,6 @@ import {
   selectTrigger,
 } from "./pastel";
 
-// The calendar sits this far from its field and keeps this much of the
-// window's edge clear.
 const GAP = 6;
 const EDGE = 8;
 
@@ -22,13 +20,9 @@ const media = (query) => {
     return false;
   }
 };
-// A finger or a narrow window gets the sheet instead of the floating
-// calendar, as the dropdowns do.
 const usesSheet = () => media("(pointer: coarse)") || window.innerWidth < 700;
 
 const pad = (number) => String(number).padStart(2, "0");
-// A day travels as the yyyy-mm-dd text a native date field gives, and a
-// month as yyyy-mm, as a native month field does.
 const dayText = (date) =>
   `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 const monthText = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}`;
@@ -46,8 +40,6 @@ const startOfToday = () => {
 };
 const addDays = (date, days) =>
   new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
-// The same day in another month, or that month's last day when it is
-// shorter.
 const addMonths = (date, months) => {
   const last = new Date(
     date.getFullYear(),
@@ -83,9 +75,6 @@ const WEEKDAYS = [
   ["Sa", "Saturday"],
 ];
 
-// The weeks a month spans, from the Sunday on or before its first day to
-// the Saturday on or after its last, so the calendar is only as tall as
-// the month needs.
 const weeksOf = (month) => {
   const first = new Date(month.getFullYear(), month.getMonth(), 1);
   const last = new Date(month.getFullYear(), month.getMonth() + 1, 0);
@@ -96,13 +85,6 @@ const weeksOf = (month) => {
   );
 };
 
-// A date field drawn in the app's own style, in place of a native date or
-// month input: a button showing the chosen day, or month with
-// `type="month"`, that opens a calendar under it, or a sheet on a phone.
-// It reports the choice as the text a native field would to `onChange`,
-// keeps days outside `min` and `max` out of reach, lets an optional date
-// be cleared, and keeps a hidden native field in step so forms check and
-// read it as before.
 export const DatePicker = ({
   id: providedId,
   type = "date",
@@ -132,7 +114,6 @@ export const DatePicker = ({
     : today;
   const [open, setOpen] = useState(false);
   const [sheet, setSheet] = useState(false);
-  // The day, or month, that keys move from and the calendar shows.
   const [focused, setFocused] = useState(null);
   const [placement, setPlacement] = useState(null);
   const [missing, setMissing] = useState(false);
@@ -140,8 +121,6 @@ export const DatePicker = ({
   const panel = useRef(null);
   const sheetRef = useRef(null);
   const wrapper = useRef(null);
-  // Set when opening or the keys move the day, so focus goes to it; the
-  // arrows in the header keep focus where it is.
   const followFocus = useRef(false);
 
   const allowed = (date) => (!low || date >= low) && (!high || date <= high);
@@ -165,9 +144,6 @@ export const DatePicker = ({
     onChange?.(toText(date));
     close();
   };
-  // Keys move from the focused day: a day or a week either way, the start
-  // or end of the week, and a month or, with Shift, a year; on months, one
-  // or a row of three, and a year with the Page keys.
   const onGridKey = (event) => {
     const steps = monthly
       ? {
@@ -199,9 +175,6 @@ export const DatePicker = ({
   const showStep = (count) =>
     setFocused(addMonths(focused, monthly ? count * 12 : count));
 
-  // The calendar hangs under its field, flipping above when there is more
-  // room there, keeps inside the window, and follows the page as it
-  // scrolls.
   const shownKey =
     focused && (monthly ? focused.getFullYear() : monthText(focused));
   useLayoutEffect(() => {
@@ -241,9 +214,6 @@ export const DatePicker = ({
     };
   }, [open, sheet, shownKey]);
 
-  // Once the calendar is in place, the focused day takes focus, and keeps
-  // it as keys move it. The sheet opens as a modal in the browser's top
-  // layer.
   const placed = sheet || Boolean(placement);
   const focusedKey = focused && toText(focused);
   useEffect(() => {
@@ -266,8 +236,6 @@ export const DatePicker = ({
     };
   }, [open, sheet]);
 
-  // A press anywhere else closes the floating calendar and leaves the date
-  // alone.
   useEffect(() => {
     if (!open || sheet) return undefined;
     const onPress = (event) => {
@@ -285,8 +253,6 @@ export const DatePicker = ({
     document.addEventListener("mousedown", onPress);
     return () => document.removeEventListener("mousedown", onPress);
   }, [open, sheet]);
-  // Escape closes the floating calendar and goes back to the field, and
-  // Tab keeps within it.
   const onPanelKey = (event) => {
     if (event.key === "Escape") {
       event.preventDefault();
@@ -349,9 +315,6 @@ export const DatePicker = ({
       </span>
     </div>
   );
-  // One day, or month, of the calendar: faded and out of reach outside the
-  // limits, ringed when it is today or this month, and filled when chosen.
-  // Only the focused one is a stop for Tab; the keys move between the rest.
   const cell = (date, label, spoken, outside = false) => {
     const ok = allowed(date);
     const isChosen = Boolean(chosen) && toText(date) === toText(chosen);
@@ -527,9 +490,6 @@ export const DatePicker = ({
           <FiX aria-hidden="true" className="size-3.5" />
         </button>
       )}
-      {/* The native field the form checks and reads: under the button, so
-          the browser's message for a missing or out-of-range date shows
-          there, and a change made to it directly is a choice too. */}
       <input
         type={type}
         tabIndex={-1}
@@ -544,9 +504,6 @@ export const DatePicker = ({
         onChange={(event) => onChange?.(event.target.value)}
         onInvalid={() => setMissing(true)}
       />
-      {/* Drawn inside an open modal dialog when the field is in one, so it
-          shows above the backdrop, and otherwise at the app's root, where
-          the workspace styles apply. */}
       {calendar &&
         createPortal(
           <div className="dashboard-app">{calendar}</div>,

@@ -37,7 +37,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -124,10 +123,6 @@ class RecurringIntegrationTest extends IntegrationTest {
         return Instant.now().plus(Duration.ofDays(days));
     }
 
-    // Makes the invoices due while the business's settings are held, as by
-    // another document taking its number: the run locks its schedule, then
-    // waits to number the invoice. The request arrives then, and the settings
-    // are let go once it waits too. Gives the request's status.
     private int whileMaking(Instant now, Callable<ResultActions> request) throws Exception {
         ExecutorService pool = Executors.newFixedThreadPool(2);
         try (Connection holder = dataSource.getConnection()) {
@@ -149,8 +144,6 @@ class RecurringIntegrationTest extends IntegrationTest {
         }
     }
 
-    // Waits until that many connections to the test's database wait for a
-    // lock, or gives up after half a minute.
     private void awaitWaitingForLocks(int count) throws InterruptedException {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
         while (waitingForLocks() < count && System.nanoTime() < deadline) {
@@ -166,8 +159,7 @@ class RecurringIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an invoice repeats from its first date, each period once, telling the owner")
-    void monthly() throws Exception {
+    void repeatsOncePerPeriod() throws Exception {
         String invoice = document("Invoice");
         scheduleId(invoice, "\"frequency\": \"monthly\", \"startDate\": \"%s\", \"maxRuns\": 3".formatted(today));
 
@@ -198,9 +190,7 @@ class RecurringIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("each invoice is due as the payment terms say from its day, at noon in the business's time zone")
     void dueDate() throws Exception {
-        // Twelve or thirteen hours ahead of UTC, so its days are often not UTC's.
         ZoneId zone = ZoneId.of("Pacific/Auckland");
         mockMvc.perform(put("/api/v1/settings")
                         .header(HttpHeaders.AUTHORIZATION, bearer(owner))
@@ -226,7 +216,6 @@ class RecurringIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("missed periods are caught up to the most allowed, then the schedule is finished")
     void catchUpAndCount() throws Exception {
         String weekly = scheduleId(document("Invoice"),
                 "\"frequency\": \"WEEKLY\", \"startDate\": \"%s\", \"maxRuns\": 2".formatted(today));
@@ -241,7 +230,6 @@ class RecurringIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an end date stops a schedule, and a paused one makes nothing until resumed")
     void endDateAndPause() throws Exception {
         String id = scheduleId(
                 document("Invoice"),
@@ -261,13 +249,11 @@ class RecurringIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a schedule resumed after its dates passed skips them, and carries on from its next date")
     void resumeSkipsPassedDates() throws Exception {
         String id = scheduleId(
                 document("Invoice"), "\"frequency\": \"monthly\", \"startDate\": \"%s\"".formatted(today));
         mockMvc.perform(post("/api/v1/recurring/{id}/pause", id).header(HttpHeaders.AUTHORIZATION, bearer(owner)))
                 .andExpect(status().isOk());
-        // Paused before its first invoice, three months ago.
         LocalDate first = today.minusMonths(3).plusDays(5);
         jdbc.update(
                 "update recurring_schedules set start_date = ?, next_run = ? where id = ?::uuid", first, first, id);
@@ -284,8 +270,7 @@ class RecurringIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a schedule can't be moved onto a day it already made an invoice on, where it would never run")
-    void notOntoADayItRan() throws Exception {
+    void rescheduleRejectsDayAlreadyRun() throws Exception {
         String id = scheduleId(
                 document("Invoice"), "\"frequency\": \"monthly\", \"startDate\": \"%s\"".formatted(today));
         recurring.makeDue(Instant.now());
@@ -305,7 +290,6 @@ class RecurringIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a schedule can email each new invoice to the client")
     void emailsEachInvoice() throws Exception {
         when(mailSender.createMimeMessage()).thenAnswer(invocation -> new MimeMessage((Session) null));
         scheduleId(document("Invoice"),
@@ -324,8 +308,7 @@ class RecurringIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a schedule can leave each invoice as a draft to review, which is never emailed on its own")
-    void drafts() throws Exception {
+    void canLeaveDraftsToReview() throws Exception {
         schedule(document("Invoice"), """
                 "frequency": "monthly", "startDate": "%s", "issueAutomatically": false, "emailAutomatically": true
                 """.formatted(today))
@@ -357,8 +340,7 @@ class RecurringIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("changing a schedule counts its dates from the new first one, keeping what was made")
-    void edit() throws Exception {
+    void editRestartsFromNewDate() throws Exception {
         String invoice = document("Invoice");
         String id = scheduleId(
                 invoice, "\"frequency\": \"monthly\", \"startDate\": \"%s\", \"maxRuns\": 3".formatted(today));
@@ -379,8 +361,7 @@ class RecurringIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("only an owner's invoices repeat, once each, from today on, and schedules can be removed")
-    void rules() throws Exception {
+    void repeatRulesAndRemoval() throws Exception {
         String invoice = document("Invoice");
         String start = "\"frequency\": \"monthly\", \"startDate\": \"%s\"".formatted(today);
 
@@ -411,7 +392,6 @@ class RecurringIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a schedule paused while it makes an invoice counts that invoice, and makes the next once resumed")
     void pauseWhileMaking() throws Exception {
         String id = scheduleId(
                 document("Invoice"), "\"frequency\": \"monthly\", \"startDate\": \"%s\"".formatted(today));
@@ -432,7 +412,6 @@ class RecurringIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a schedule changed while it makes an invoice counts that invoice toward the most allowed")
     void editWhileMaking() throws Exception {
         String id = scheduleId(
                 document("Invoice"), "\"frequency\": \"monthly\", \"startDate\": \"%s\"".formatted(today));
@@ -453,9 +432,7 @@ class RecurringIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("changing a schedule but not its next date keeps it on the day it started, past a short month")
     void editKeepsMonthEnds() throws Exception {
-        // The next 31st of a month followed by a shorter one: Jan, Mar, May, Aug or Oct.
         LocalDate month = today.withDayOfMonth(1);
         while (month.lengthOfMonth() < 31
                 || month.plusMonths(1).lengthOfMonth() == 31
@@ -469,7 +446,6 @@ class RecurringIntegrationTest extends IntegrationTest {
         LocalDate next = start.plusMonths(1);
         list().andExpect(jsonPath("$.schedules[0].nextRun").value(next.toString()));
 
-        // Its dialog sends the next date as it shows it, here with at most 12 invoices.
         mockMvc.perform(patch("/api/v1/recurring/{id}", id)
                         .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                         .contentType(MediaType.APPLICATION_JSON)

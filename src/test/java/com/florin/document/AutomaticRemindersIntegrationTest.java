@@ -31,7 +31,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -114,14 +113,12 @@ class AutomaticRemindersIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("reminders go out on the planned days, once a day, for owners who turned them on")
     void plannedDays() throws Exception {
         User owner = createUser();
         turnOnReminders(owner);
         Invoice soon = invoice(owner, today.plusDays(3));
         Invoice dueToday = invoice(owner, today);
         Invoice weekLate = invoice(owner, today.minusDays(7));
-        // Issued today and due tomorrow, so its reminder three days before fell before it was issued.
         Invoice issuedLate = invoice(owner, today.plusDays(1));
         Invoice paid = invoice(owner, today);
         mockMvc.perform(post("/api/v1/document/{id}/payment", paid.id())
@@ -153,13 +150,10 @@ class AutomaticRemindersIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("two runs at once send a due reminder once")
     void twoRunsAtOnce() throws Exception {
         User owner = createUser();
         turnOnReminders(owner);
         Invoice due = invoice(owner, today);
-        // A send to this client waits, a few seconds at most, for a second
-        // one, so two runs that both found the reminder due both send it.
         CountDownLatch bothSending = new CountDownLatch(2);
         doAnswer(invocation -> {
                     MimeMessage message = invocation.getArgument(0);
@@ -187,7 +181,6 @@ class AutomaticRemindersIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a reminder is recorded before it goes, so one whose email failed isn't sent again the next run")
     void recordedBeforeSending() throws Exception {
         User owner = createUser();
         turnOnReminders(owner);
@@ -210,7 +203,6 @@ class AutomaticRemindersIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the shared demo account never sends automatic reminders")
     void demoAccount() throws Exception {
         User demo = demoUser();
         turnOnReminders(demo);

@@ -5,8 +5,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 
-// A payment the client reported, and whether the business confirmed it. Any
-// reason for dismissing it stays with the business.
 public record PublicPaymentReport(
         BigDecimal amount, LocalDate paidOn, String method, PaymentClaim.Status status, Instant reportedAt) {
 

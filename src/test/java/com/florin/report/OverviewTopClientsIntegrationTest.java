@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -35,9 +34,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// The overview's top clients: the five its period billed most in its currency,
-// as its billed total counts them, each with what it owes now on invoices of
-// any date and how many documents billed it.
 class OverviewTopClientsIntegrationTest extends IntegrationTest {
 
     @Autowired
@@ -52,7 +48,6 @@ class OverviewTopClientsIntegrationTest extends IntegrationTest {
         today = LocalDate.now(ZoneOffset.UTC);
     }
 
-    // Puts the business in the time zone, and dates what follows from its today.
     private void inZone(ZoneId zone) throws Exception {
         send(put("/api/v1/settings"), """
                 {"defaultCurrency": "USD", "paymentTermsDays": 15, "defaultTaxRate": 0,
@@ -80,8 +75,6 @@ class OverviewTopClientsIntegrationTest extends IntegrationTest {
                 "$.createdCustomer._id");
     }
 
-    // A document for the client dated the day, for one amount; a draft is
-    // only planned for that day.
     private String create(String type, String client, String currency, String amount, LocalDate issued, boolean draft)
             throws Exception {
         return JsonPath.read(
@@ -105,7 +98,6 @@ class OverviewTopClientsIntegrationTest extends IntegrationTest {
                 .andExpect(status().isCreated());
     }
 
-    // A credit note taking the amount off the document, dated the given day.
     private void credit(String document, String amount, LocalDate issued) throws Exception {
         String note = JsonPath.read(
                 body(send(post("/api/v1/document/{id}/credit-note", document), "").andExpect(status().isCreated())),
@@ -131,7 +123,6 @@ class OverviewTopClientsIntegrationTest extends IntegrationTest {
         return send(request, "");
     }
 
-    // The amounts at the path added up.
     private static BigDecimal sum(String body, String path) {
         List<Object> amounts = JsonPath.read(body, path);
         return amounts.stream()
@@ -141,8 +132,6 @@ class OverviewTopClientsIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("the five clients the period billed most come first, each with what it owes now and how many"
-            + " documents billed it")
     void topFive(ZoneId zone) throws Exception {
         inZone(zone);
         String acme = client("Acme");
@@ -151,22 +140,17 @@ class OverviewTopClientsIntegrationTest extends IntegrationTest {
         String delta = client("Delta Foods");
         String elm = client("Elm Dental");
         String fir = client("Fir Logistics");
-        // Acme: an invoice and a receipt, and an older invoice it still owes.
         issue("Invoice", acme, "1000", today.minusDays(1));
         issue("Receipt", acme, "500", today.minusDays(10));
         issue("Invoice", acme, "300", today.minusDays(200));
-        // Birch Studio: an invoice on the period's first day, mostly paid, and
-        // a credit note on it.
         String birchInvoice = issue("Invoice", birch, "2000", today.minusDays(89));
         pay(birchInvoice, "1500", today.minusDays(89));
         credit(birchInvoice, "200", today.minusDays(5));
         issue("Invoice", cedar, "900", today);
-        // Delta Foods: a receipt, and an invoice it owes from the day before the period.
         issue("Receipt", delta, "700", today.minusDays(30));
         issue("Invoice", delta, "3000", today.minusDays(90));
         pay(issue("Invoice", elm, "400", today.minusDays(60)), "400", today.minusDays(60));
         issue("Invoice", fir, "100", today.minusDays(2));
-        // Never counted: a quotation, a draft, a void invoice, and money in euros.
         issue("Quotation", fir, "5000", today);
         create("Invoice", elm, "USD", "6000", today, true);
         voided(issue("Invoice", cedar, "7000", today));
@@ -184,17 +168,12 @@ class OverviewTopClientsIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.topClients[*].documents", contains(2, 2, 1, 1, 1)))
                 .andExpect(content().string(containsString("\"client\":\"Elm Dental\",\"billed\":400.00,"
                         + "\"owed\":0.00,\"documents\":1}")));
-        // The last 30 days start the day after Delta Foods' receipt. Of Birch
-        // Studio's documents they hold only the credit note, which takes its
-        // amount off what Birch Studio was billed.
         overview("period", "30d")
                 .andExpect(jsonPath(
                         "$.topClients[*].client", contains("Acme", "Cedar Works", "Fir Logistics", "Birch Studio")))
                 .andExpect(jsonPath("$.topClients[*].billed", contains(1500.0, 900.0, 100.0, -200.0)))
                 .andExpect(jsonPath("$.topClients[*].owed", contains(1300.0, 900.0, 100.0, 300.0)))
                 .andExpect(jsonPath("$.topClients[*].documents", contains(2, 1, 1, 1)));
-        // The last 12 months hold Acme's older invoice and Delta Foods' too;
-        // Acme and Birch Studio were billed the same, and go by name.
         overview("period", "12m")
                 .andExpect(jsonPath(
                         "$.topClients[*].client",
@@ -205,8 +184,6 @@ class OverviewTopClientsIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("in every period the clients add up to what the period billed, and each to the documents the"
-            + " documents list bills it for the same days")
     void addsUp(ZoneId zone) throws Exception {
         inZone(zone);
         String acme = client("Acme");
@@ -214,7 +191,6 @@ class OverviewTopClientsIntegrationTest extends IntegrationTest {
         String cedar = client("Cedar Works");
         LocalDate year = today.minusMonths(12).plusDays(1);
         LocalDate january = today.withDayOfYear(1);
-        // Documents on the first day of each period and the day before it.
         List<LocalDate> days = List.of(
                 today,
                 today.minusDays(29),
@@ -261,9 +237,6 @@ class OverviewTopClientsIntegrationTest extends IntegrationTest {
         }
     }
 
-    // The documents list's invoices, receipts and credit notes in dollars for
-    // the client, over the days one of the overview's periods covers: this
-    // year to date is a pair of dates there.
     private ResultActions billedIn(String period, String client) throws Exception {
         MockHttpServletRequestBuilder request = get("/api/v1/document/all")
                 .param("size", "100")
@@ -278,7 +251,6 @@ class OverviewTopClientsIntegrationTest extends IntegrationTest {
         return send(request, "").andExpect(status().isOk());
     }
 
-    // The documents list's invoices the client still owes dollars on, of any date.
     private ResultActions outstanding(String client) throws Exception {
         return send(
                         get("/api/v1/document/all")
@@ -290,8 +262,7 @@ class OverviewTopClientsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("clients billed the same go by name, whatever its case, and the sixth is left out")
-    void ties() throws Exception {
+    void tiesSortedByName() throws Exception {
         for (String name : List.of("delta", "Acme", "echo", "birch", "Cedar")) {
             issue("Invoice", client(name), "100", today);
         }
@@ -304,8 +275,6 @@ class OverviewTopClientsIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("documents of a client deleted since are one client by the name they were saved with, with no id,"
-            + " owing what they still do")
     void deletedClient(ZoneId zone) throws Exception {
         inZone(zone);
         String cedar = client("Cedar Works");
@@ -316,7 +285,6 @@ class OverviewTopClientsIntegrationTest extends IntegrationTest {
         issue("Invoice", oak, "80", today);
         send(delete("/api/v1/customer/{id}", cedar), "").andExpect(status().isOk());
         send(delete("/api/v1/customer/{id}", oak), "").andExpect(status().isOk());
-        // A client added since under the same name is a client of its own.
         String again = client("Cedar Works");
         issue("Invoice", again, "50", today);
 
@@ -332,14 +300,11 @@ class OverviewTopClientsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("documents linked to no client and saved without a name are one client, with no name or id, owing"
-            + " what they still do")
     void noName() throws Exception {
         String cedar = client("Cedar Works");
         String invoice = issue("Invoice", cedar, "500", today.minusDays(3));
         String receipt = issue("Receipt", cedar, "300", today.minusDays(1));
         issue("Invoice", client("Oak Joinery"), "80", today);
-        // Saved before a client was named or linked, as the oldest documents were.
         for (String document : List.of(invoice, receipt)) {
             jdbcTemplate.update(
                     "update documents set customer_pkid = null, customer_name = null where id = ?",
@@ -358,9 +323,7 @@ class OverviewTopClientsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("clients are billed and owe in the overview's currency: the one asked for when the business bills"
-            + " in it")
-    void currency() throws Exception {
+    void listsClientsPerCurrency() throws Exception {
         String acme = client("Acme");
         String birch = client("Birch Studio");
         issue("Invoice", acme, "1000", today);
@@ -381,8 +344,7 @@ class OverviewTopClientsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a period no one was billed in lists no one")
-    void empty() throws Exception {
+    void emptyPeriodListsNoOne() throws Exception {
         overview().andExpect(content().string(containsString("\"topClients\":[]")));
 
         String acme = client("Acme");

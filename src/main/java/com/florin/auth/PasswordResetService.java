@@ -51,9 +51,6 @@ public class PasswordResetService {
         this.clock = clock;
     }
 
-    // The answer is the same whether or not the email has an account, so the
-    // form can't be used to find out who has one. Only a verified account is
-    // sent a link.
     @Transactional
     public String requestReset(String email) {
         if (email == null || email.isBlank()) {

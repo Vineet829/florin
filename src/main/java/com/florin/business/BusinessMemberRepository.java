@@ -31,8 +31,6 @@ public interface BusinessMemberRepository extends JpaRepository<BusinessMember, 
     List<BusinessMember> findInRoles(
             @Param("businessPkid") Long businessPkid, @Param("roles") Collection<BusinessRole> roles);
 
-    // The business someone last worked in comes first, then the one they
-    // joined first.
     @EntityGraph(attributePaths = "business")
     @Query("""
             select m from BusinessMember m where m.user.pkid = :userPkid

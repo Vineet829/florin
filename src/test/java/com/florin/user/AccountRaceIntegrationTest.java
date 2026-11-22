@@ -7,7 +7,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import com.florin.IntegrationTest;
 import com.florin.Uncommitted;
 import javax.sql.DataSource;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -15,9 +14,6 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-// The flows that change an account write back only what they changed, so a
-// change that lands while another is under way, such as an admin's
-// deactivation or a new password, stays.
 class AccountRaceIntegrationTest extends IntegrationTest {
 
     private static final String PASSWORD = "Str0ng!pass";
@@ -35,7 +31,7 @@ class AccountRaceIntegrationTest extends IntegrationTest {
         return mockMvc.perform(patch("/api/v1/user/profile")
                         .header(HttpHeaders.AUTHORIZATION, authorization)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"firstName\": \"Grace\"}"))
+                        .content("{\"firstName\": \"Priya\"}"))
                 .andReturn().getResponse().getStatus();
     }
 
@@ -44,7 +40,6 @@ class AccountRaceIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an account deactivated while its profile is being saved stays deactivated, with the new name")
     void deactivatedWhileProfileSaved() throws Exception {
         User user = createUser();
         String session = bearer(user);
@@ -56,11 +51,10 @@ class AccountRaceIntegrationTest extends IntegrationTest {
         assertThat(status).isEqualTo(200);
         assertThat(active(user)).isFalse();
         assertThat(jdbc.queryForObject("select first_name from users where pkid = ?", String.class, user.getPkid()))
-                .isEqualTo("Grace");
+                .isEqualTo("Priya");
     }
 
     @Test
-    @DisplayName("a password reset while the profile is being saved keeps the new password")
     void newPasswordWhileProfileSaved() throws Exception {
         User user = createUser();
         String session = bearer(user);
@@ -76,7 +70,6 @@ class AccountRaceIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an account deactivated while its password is being changed stays deactivated")
     void deactivatedWhilePasswordChanged() throws Exception {
         User user = createUser();
         user.setPassword(passwordEncoder.encode(PASSWORD));

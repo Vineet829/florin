@@ -28,8 +28,8 @@ const columns = [
 const rows = [
   {
     _id: "a",
-    name: "Verdant Farms",
-    email: "office@verdantfarms.example",
+    name: "Nisarg Organic Farms",
+    email: "farm@nisargorganic.example",
     documents: 4,
     balance: "14,671.81",
   },
@@ -48,24 +48,20 @@ const cells = () =>
     ]),
   );
 
-it("lays every table on one grid of columns as wide as their entries, the gaps between them even", async () => {
+it("uses one grid with even gaps", async () => {
   await draw();
   const table = container.querySelector("table");
   expect(table.style.gridTemplateColumns).toBe("auto auto auto auto auto auto");
-  // The grid holds while the panel is wide enough for a table; narrower,
-  // the rows are cards.
   expect(table.className).toContain("tabled:grid");
   expect(table.className).toContain("tabled:justify-between");
   expect(table.className).toContain("stacked:block");
-  // The rows, not the cells, carry the borders and the hover, which the
-  // gaps would break.
   const row = container.querySelector("tbody tr");
   expect(row.className).toContain("tabled:grid-cols-subgrid");
   expect(row.className).toContain("tabled:hover:bg-[#5b47a00a]");
   expect(row.className).toContain("tabled:[&:hover>*]:bg-transparent");
 });
 
-it("sets every cell of a row, and every heading, on one baseline, the row 46px or taller", async () => {
+it("aligns row cells on a baseline", async () => {
   await draw();
   const row = container.querySelector("tbody tr");
   expect(row.className).toContain("tabled:items-baseline");
@@ -80,7 +76,7 @@ it("sets every cell of a row, and every heading, on one baseline, the row 46px o
   }
 });
 
-it("right-aligns every figure and its heading: row numbers, counts and amounts", async () => {
+it("right-aligns figures and their headings", async () => {
   await draw();
   const [index, , , documents, balance] = container.querySelectorAll("th");
   for (const heading of [index, documents, balance])
@@ -93,7 +89,7 @@ it("right-aligns every figure and its heading: row numbers, counts and amounts",
   expect(count.textContent).toBe("4");
 });
 
-it("centres an action column's heading and its buttons on one line", async () => {
+it("centres the action column", async () => {
   await draw();
   const headings = [...container.querySelectorAll("th")];
   expect(headings.at(-1).textContent).toBe("Delete");
@@ -101,7 +97,7 @@ it("centres an action column's heading and its buttons on one line", async () =>
   expect(cells().Delete).toContain("tabled:text-center");
 });
 
-it("draws each kind of column at one size in every table, larger from 1536px wide", async () => {
+it("sizes each column kind consistently", async () => {
   await draw();
   expect(cells().Name).toContain("text-[15px]");
   expect(cells().Name).toContain("min-[1536px]:text-[17px]");
@@ -112,11 +108,10 @@ it("draws each kind of column at one size in every table, larger from 1536px wid
   expect(cells().Balance).toContain("min-[1536px]:text-[20px]");
   for (const heading of container.querySelectorAll("th"))
     expect(heading.className).toContain("min-[1536px]:text-[14px]");
-  // Nothing grows with the panel's size.
   expect(container.innerHTML).not.toMatch(/roomy:|fill-grow/);
 });
 
-it("lets text wrap but keeps figures, addresses, actions and nowrap columns whole", async () => {
+it("wraps only text columns", async () => {
   await act(async () =>
     root.render(
       <DataTable
@@ -140,11 +135,10 @@ it("lets text wrap but keeps figures, addresses, actions and nowrap columns whol
     "Status",
   ])
     expect(cells()[label]).toContain("tabled:min-w-max");
-  // An address keeps to one line while the list is a table.
   expect(cells().Email).toContain("tabled:whitespace-nowrap");
 });
 
-it("gives a column the track it asks for", async () => {
+it("uses a column's own track", async () => {
   await act(async () =>
     root.render(
       <DataTable
@@ -159,7 +153,7 @@ it("gives a column the track it asks for", async () => {
   );
 });
 
-it("keeps a narrow table a table in narrower panels, and a wide one only in wider ones", async () => {
+it("sets container by table width", async () => {
   const wrapper = () => container.querySelector("table").parentElement;
   await draw();
   expect(wrapper().className).toContain("[container-name:table]");
@@ -169,7 +163,7 @@ it("keeps a narrow table a table in narrower panels, and a wide one only in wide
   expect(wrapper().className).toContain("[container-name:broad-table]");
 });
 
-it("fills its panel with rows of at least 46px, and is as tall as all of them, so none is ever cut off", async () => {
+it("fills panel without cutting rows", async () => {
   await draw({ fillRows: 25 });
   const wrapper = container.querySelector("table").parentElement;
   expect(wrapper.style.getPropertyValue("--fill-rows")).toBe("25");
@@ -184,7 +178,7 @@ it("fills its panel with rows of at least 46px, and is as tall as all of them, s
   );
 });
 
-it("puts a row action's label and a badge's text, not their icon or dot, on the baseline", async () => {
+it("aligns action and badge text", async () => {
   expect(rowAction).toContain("items-baseline");
   expect(rowAction).toContain("[&>svg]:self-center");
   await act(async () => root.render(<Badge tone="paid">Paid</Badge>));

@@ -1,6 +1,5 @@
 import { useEffect, useRef } from "react";
 
-// Each card uses one of the overview's financial summary colours.
 const STAT_CARDS = [
   {
     label: "40%",
@@ -34,7 +33,6 @@ const TABLE_ROWS = [
   { a: "46%", b: "16%", status: "draft", rd: "1.75s", sd: "0.75s" },
 ];
 
-// The overview's status colours: violet, lilac and coral.
 const BADGES = {
   paid: "bg-spot-violet/30",
   pending: "bg-spot-lilac/45",
@@ -139,8 +137,6 @@ const ui = {
 
 const delay = (d, extra) => ({ "--d": `${d}s`, ...extra });
 
-// The sign-in pages' picture of the app. Its address bar shows the address
-// the app is served from, as the visitor's own bar does.
 const AuthVisual = ({ headline, subtext, loaderLabel }) => {
   const panelRef = useRef(null);
 

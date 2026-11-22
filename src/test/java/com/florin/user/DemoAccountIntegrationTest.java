@@ -18,7 +18,6 @@ import com.florin.upload.TestImages;
 import com.jayway.jsonpath.JsonPath;
 import jakarta.mail.internet.MimeMessage;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -28,7 +27,6 @@ import org.springframework.mock.web.MockMultipartFile;
 class DemoAccountIntegrationTest extends IntegrationTest {
 
     @Test
-    @DisplayName("the profile says whether this is the shared demo account")
     void profileFlag() throws Exception {
         mockMvc.perform(get("/api/v1/user/profile").header(HttpHeaders.AUTHORIZATION, bearer(demoUser())))
                 .andExpect(status().isOk())
@@ -38,7 +36,6 @@ class DemoAccountIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the demo account's profile can't be renamed by whoever is trying it; anyone else's can")
     void profileStays() throws Exception {
         User demo = demoUser();
         String name = demo.getFirstName();
@@ -59,7 +56,6 @@ class DemoAccountIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the demo business's details, logo and payment details stay as they are for every visitor")
     void businessStays() throws Exception {
         String demo = bearer(demoUser());
         String name = businessOf(demoUser()).getName();
@@ -86,7 +82,6 @@ class DemoAccountIntegrationTest extends IntegrationTest {
                         .value("This is a shared demo account, so uploading a logo is turned off"));
         assertThat(businessOf(demoUser()).getName()).isEqualTo(name);
 
-        // Its clients and documents are there to try, and are renewed each day.
         mockMvc.perform(post("/api/v1/customer/create")
                         .header(HttpHeaders.AUTHORIZATION, demo)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -96,7 +91,6 @@ class DemoAccountIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the demo account can't delete itself")
     void cannotDeleteItself() throws Exception {
         User demo = demoUser();
 
@@ -107,7 +101,6 @@ class DemoAccountIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the demo account can't send email")
     void cannotEmail() throws Exception {
         User demo = demoUser();
         String customer = mockMvc.perform(post("/api/v1/customer/create")
@@ -135,7 +128,6 @@ class DemoAccountIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an admin can neither delete nor deactivate the demo account, and the list marks it")
     void adminCannotRemoveIt() throws Exception {
         User demo = demoUser();
         String admin = bearer(createAdmin());

@@ -7,7 +7,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class StatementsTest {
@@ -42,8 +41,7 @@ class StatementsTest {
     }
 
     @Test
-    @DisplayName("invoices and payments run in date order, with the balance after each")
-    void ledger() {
+    void ledgerRunsInDateOrder() {
         Document first = invoice("INV-1", "USD", "100.00", "2026-08-01", "2026-08-15");
         Document second = invoice("INV-2", "USD", "50.00", "2026-09-10", "2026-10-10");
         pay(first, "40.00", "2026-09-10", PaymentMethod.BANK_TRANSFER);
@@ -64,8 +62,7 @@ class StatementsTest {
     }
 
     @Test
-    @DisplayName("each currency gets its own account, and a paid invoice is never overdue")
-    void currencies() {
+    void accountPerCurrency() {
         Document dollars = invoice("INV-1", "USD", "80.00", "2026-07-01", "2026-07-15");
         pay(dollars, "80.00", "2026-07-20", PaymentMethod.CASH);
         Document euros = invoice("INV-2", "EUR", "30.00", "2026-07-02", "2026-07-16");
@@ -80,7 +77,6 @@ class StatementsTest {
     }
 
     @Test
-    @DisplayName("an invoice is listed on the day it is dated, not the day it was typed in")
     void issueDate() {
         Document late = invoice("INV-1", "USD", "10.00", "2026-09-01", "2026-09-30");
         late.setCreatedAt(Instant.parse("2026-09-20T10:00:00Z"));

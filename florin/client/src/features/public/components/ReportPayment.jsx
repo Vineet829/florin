@@ -22,7 +22,6 @@ const METHODS = [
   ["OTHER", "Another way"],
 ];
 
-// How the business answered each report.
 const STATUS = {
   PENDING: ["Waiting to be confirmed", "partial"],
   CONFIRMED: ["Confirmed", "paid"],
@@ -55,7 +54,7 @@ const ReportForm = ({ doc, report, onClose }) => {
       );
       onClose();
     } catch (error) {
-      toast.error(errorMessage(error, "Your payment could not be reported."));
+      toast.error(errorMessage(error, "Your payment couldn't be reported."));
       setSending(false);
     }
   };
@@ -123,16 +122,13 @@ const ReportForm = ({ doc, report, onClose }) => {
         </button>
         <button type="submit" className={primaryButton} disabled={sending}>
           <FiCheckSquare aria-hidden="true" />
-          {sending ? "Reporting…" : "Report payment"}
+          {sending ? "Reporting..." : "Report payment"}
         </button>
       </div>
     </form>
   );
 };
 
-// Lets the client of an unpaid invoice say they paid, and shows what they
-// reported and whether the business confirmed it. `report` sends a report by
-// whichever link the client came.
 const ReportPayment = ({ doc, report, heading, line }) => {
   const [open, setOpen] = useState(false);
   const reports = doc.paymentReports || [];
@@ -149,7 +145,7 @@ const ReportPayment = ({ doc, report, heading, line }) => {
           </h2>
           {doc.canReportPayment && (
             <p className={line}>
-              Let {doc.business.name} know, and they’ll confirm it.
+              Let {doc.business.name} know, and they'll confirm it.
             </p>
           )}
         </div>

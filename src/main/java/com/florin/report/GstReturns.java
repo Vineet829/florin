@@ -42,19 +42,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
-// Helper files for India's GST returns, from the invoices, receipts and credit
-// notes issued in GST mode and dated in the chosen months: the GSTR-1 tables
-// in the columns of the GST offline tool's templates, and the GSTR-3B figures
-// they add up to. Amounts are in rupees; a document in another currency is
-// valued at its own rate, each rate's taxable value rounded to the paisa and
-// its tax worked out on that. They are a starting point to check against the
-// books and the GST portal, not a return.
 @Service
 public class GstReturns {
 
-    // Above this, an invoice to an unregistered buyer in another state is a
-    // B2C large one; its credit notes follow it. Invoices dated before August
-    // 2024 count by the limit of their time, 2,50,000.
     public static final BigDecimal B2CL_LIMIT = new BigDecimal("100000");
     static final BigDecimal B2CL_LIMIT_BEFORE = new BigDecimal("250000");
     static final LocalDate B2CL_LIMIT_LOWERED = LocalDate.of(2024, 8, 1);
@@ -70,7 +60,6 @@ public class GstReturns {
             "Total Value", "Rate", "Taxable Value", "Integrated Tax Amount", "Central Tax Amount",
             "State/UT Tax Amount", "Cess Amount");
 
-    // The files, by the key their address uses.
     enum Section {
         B2B("b2b", "gstr1-b2b", "B2B invoices (4A, 4B, 6B, 6C)"),
         B2CL("b2cl", "gstr1-b2cl", "B2C large invoices (5A, 5B)"),
@@ -100,8 +89,6 @@ public class GstReturns {
         }
     }
 
-    // Where an invoice or receipt goes in GSTR-1; a credit note goes where the
-    // document it credits went.
     private enum Kind {
         B2B,
         B2CL,
@@ -109,7 +96,6 @@ public class GstReturns {
         EXPORT
     }
 
-    // The months a set of files covers, first to last.
     record Months(YearMonth first, YearMonth last) {
 
         LocalDate from() {
@@ -125,7 +111,6 @@ public class GstReturns {
         }
     }
 
-    // A rate's taxable value and tax in rupees.
     private record Rated(BigDecimal rate, BigDecimal taxable, BigDecimal cgst, BigDecimal sgst, BigDecimal igst) {
 
         BigDecimal tax() {
@@ -133,17 +118,12 @@ public class GstReturns {
         }
     }
 
-    // A document as the returns see it, with its value in rupees: what it was
-    // billed for, tax included unless the client pays it under reverse charge.
-    // `placed` is the document that decides where it goes: itself, or the one
-    // a credit note credits.
     private record Entry(Document document, Document placed, Kind kind, BigDecimal value, List<Rated> rates) {
 
         boolean creditNote() {
             return document.getDocumentType() == DocumentType.CREDIT_NOTE;
         }
 
-        // Invoices and receipts add to a total; credit notes take off it.
         BigDecimal signed(BigDecimal amount) {
             return creditNote() ? amount.negate() : amount;
         }
@@ -153,8 +133,6 @@ public class GstReturns {
         }
     }
 
-    // One row of the HSN summary, as it adds up; codes in order, lines
-    // without one last.
     private record HsnKey(String hsn, String uqc, BigDecimal rate) {}
 
     private static final Comparator<HsnKey> HSN_ORDER = Comparator
@@ -248,8 +226,6 @@ public class GstReturns {
         return new Returns(months, entries, skipped, unconverted, missingHsn);
     }
 
-    // The months asked for, last month when none were; one alone is both
-    // first and last.
     static Months months(String from, String to, YearMonth current) {
         YearMonth first = month(from);
         YearMonth last = month(to);
@@ -287,8 +263,6 @@ public class GstReturns {
         }
     }
 
-    // A document in another currency counts once it has a rate to rupees,
-    // which GST mode asks for before issuing it.
     private static boolean inRupees(Document document) {
         return document.getCurrency() == null
                 || "INR".equals(document.getCurrency())
@@ -301,8 +275,6 @@ public class GstReturns {
                 : document.getExchangeRate();
     }
 
-    // Each rate's value and tax as charged, or in rupees at the document's
-    // rate: the taxable value rounded first, and the tax worked out on it.
     private static List<Rated> rates(Document document) {
         BigDecimal fx = rateToRupees(document);
         return document.getTaxSummaries().stream()
@@ -334,8 +306,6 @@ public class GstReturns {
         return value;
     }
 
-    // An export; a sale to a registered buyer; a large one to an unregistered
-    // buyer in another state; or any other sale to an unregistered buyer.
     private static Kind kind(Document document) {
         if (document.getSupplyType().export()) {
             return Kind.EXPORT;
@@ -410,14 +380,12 @@ public class GstReturns {
                 rate.taxable(), "", "");
     }
 
-    // With IGST paid, or under the business's letter of undertaking.
     private static List<Object> exp(Entry entry, Rated rate) {
         return List.of(
                 entry.supply() == SupplyType.EXPORT_IGST ? "WPAY" : "WOPAY", entry.document().getDocumentNumber(),
                 date(entry), entry.value(), "", "", "", plain(rate.rate()), rate.taxable(), "");
     }
 
-    // The buyer's GSTIN is the one on the invoice credited.
     private static List<Object> cdnr(Entry entry, Rated rate) {
         Document document = entry.document();
         return List.of(
@@ -426,7 +394,6 @@ public class GstReturns {
                 rate.taxable(), "");
     }
 
-    // On a B2C large invoice, or on an export with or without IGST paid.
     private static List<Object> cdnur(Entry entry, Rated rate) {
         Document document = entry.document();
         boolean large = entry.kind() == Kind.B2CL;
@@ -436,7 +403,6 @@ public class GstReturns {
                 plain(rate.rate()), rate.taxable(), "");
     }
 
-    // A row per document and rate, in date order.
     private static List<List<Object>> perRate(
             List<Entry> entries, Predicate<Entry> included, BiFunction<Entry, Rated, List<Object>> row) {
         return entries.stream()
@@ -445,8 +411,6 @@ public class GstReturns {
                 .toList();
     }
 
-    // Small sales to unregistered buyers, per place of supply and rate, less
-    // the credit notes on them; a total of nothing is left out.
     private static List<List<Object>> b2cs(List<Entry> entries) {
         Map<String, Map<BigDecimal, BigDecimal>> places = new TreeMap<>();
         for (Entry entry : entries) {
@@ -467,10 +431,6 @@ public class GstReturns {
         return rows;
     }
 
-    // Every line by HSN or SAC code, unit quantity code and rate, for sales to
-    // registered buyers or to everyone else, less credit notes. Each rate's
-    // taxable value and tax are apportioned among a document's codes, so the
-    // rows add up to the documents.
     private static List<List<Object>> hsn(List<Entry> entries, boolean registered) {
         Map<HsnKey, HsnSum> sums = new TreeMap<>(HSN_ORDER);
         for (Entry entry : entries) {
@@ -517,9 +477,6 @@ public class GstReturns {
                 key.hsn(),
                 "",
                 key.uqc(),
-                // A number, not text: credit notes can leave it below nothing,
-                // and text starting with a minus is kept from being read as a
-                // formula.
                 BillingItemResponse.plain(sum.quantity),
                 sum.taxable.add(sum.igst).add(sum.cgst).add(sum.sgst),
                 key.rate().toPlainString(),
@@ -531,10 +488,6 @@ public class GstReturns {
         return rows;
     }
 
-    // The outward supplies GSTR-3B asks for, less credit notes: taxable ones,
-    // exports, nil-rated or exempt ones, and of the taxable ones, those to
-    // unregistered buyers in other states by place of supply. Supplies whose
-    // tax the client pays under reverse charge are listed apart.
     private static List<Gstr3bRow> gstr3b(List<Entry> entries) {
         BigDecimal[] taxable = {ZERO, ZERO, ZERO, ZERO, ZERO};
         BigDecimal[] taxed = {ZERO, ZERO, ZERO, ZERO};
@@ -595,8 +548,6 @@ public class GstReturns {
         return entry.document().isReverseCharge() ? "Y" : "N";
     }
 
-    // As the offline tool writes it: "27-Maharashtra"; exports go to "96-Other
-    // Countries".
     private static String place(Document document) {
         String code = document.getPlaceOfSupply();
         if (code == null) {

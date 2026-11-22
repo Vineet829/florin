@@ -15,11 +15,6 @@ import java.util.Set;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
-// For the daily jobs: removes logos nothing uses any more, such as one
-// replaced by another, one uploaded but never saved, or one whose business is
-// gone. A logo stays while a business shows it or a document was made with
-// it, and for a day after it was uploaded, so that one just uploaded isn't
-// removed before its business is saved.
 @Component
 public class UploadCleanup {
 
@@ -37,7 +32,6 @@ public class UploadCleanup {
         this.clock = clock;
     }
 
-    // How many files were removed.
     public int removeUnused() {
         if (!Files.isDirectory(uploadDir)) {
             return 0;

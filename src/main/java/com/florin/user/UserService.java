@@ -88,7 +88,6 @@ public class UserService {
         }
 
         User user = require(pkid);
-        // Everyone who tries the demo shares this account, so nobody renames it.
         demoAccountGuard.requireNotDemo(user, "changing its profile");
         if (request.username() != null) {
             user.setUsername(request.username());
@@ -115,8 +114,6 @@ public class UserService {
         requireNotLastAdmin(checked, "deleted");
         requireNoSharedBusinesses(checked, "You own ", "Hand it over or remove them first");
         identityCheck.require(checked, confirmation);
-        // A recovery code the check used is written now, and nothing the
-        // check loaded is kept, as all of it goes with the account.
         entityManager.flush();
         entityManager.clear();
         User user = require(pkid);
@@ -125,7 +122,6 @@ public class UserService {
         userRepository.delete(user);
     }
 
-    // Newest accounts first, searched by name, email or username.
     @Transactional(readOnly = true)
     public UserPageResponse listUsers(int pageNumber, int size, String query) {
         int page = Pages.number(pageNumber, Math.min(Math.max(size, 1), MOST_PER_PAGE));
@@ -204,8 +200,6 @@ public class UserService {
         return UserSummaryResponse.from(user, demoAccountGuard.isDemo(user));
     }
 
-    // Admins can see and change every account, so the shared demo account is
-    // never one, and there is always at least one.
     @Transactional
     public UserSummaryResponse setAdmin(String id, User admin, boolean makeAdmin) {
         User user = requireExternal(id);
@@ -229,8 +223,6 @@ public class UserService {
         return UserSummaryResponse.from(user, demoAccountGuard.isDemo(user));
     }
 
-    // An account can't go while it owns a business that others work in; the
-    // business would be left without an owner.
     private void requireNoSharedBusinesses(User user, String opening, String closing) {
         List<String> shared = businessService.sharedOwnedBy(user.getPkid());
         if (!shared.isEmpty()) {

@@ -14,8 +14,6 @@ import java.io.UncheckedIOException;
 import java.util.Base64;
 import javax.imageio.ImageIO;
 
-// What a QR code says, read back the way a scanner would, so tests check a
-// code by what it holds.
 public final class QrText {
 
     private QrText() {}

@@ -24,7 +24,6 @@ import {
 import { PAYMENT_METHODS } from "../paymentMethods";
 import { TAX_WITHHELD_HINT, TAX_WITHHELD_LABEL } from "../taxWithheld";
 
-// The method a report's payment is recorded with, unless changed.
 const RECORDED_AS = {
   UPI: "UPI",
   BANK_TRANSFER: "Bank Transfer",
@@ -55,13 +54,13 @@ const ConfirmForm = ({ document, claim, onClose }) => {
       toast.success(result.message || "The payment was recorded.");
       onClose();
     } catch (error) {
-      toast.error(errorMessage(error, "The payment could not be recorded."));
+      toast.error(errorMessage(error, "The payment couldn't be recorded."));
     }
   };
   return (
     <form className="mt-3 flex flex-col gap-5" onSubmit={submit}>
       <p className="text-[14px] leading-[1.6] text-spot-body">
-        Check it reached you first. It is recorded as below, which you can
+        Check it reached you first. It's recorded as below, which you can
         change.
       </p>
       <div className="grid grid-cols-2 gap-5 max-[560px]:grid-cols-1">
@@ -127,7 +126,7 @@ const ConfirmForm = ({ document, claim, onClose }) => {
         </button>
         <button type="submit" className={primaryButton} disabled={saving}>
           <FiCheck aria-hidden="true" />
-          {saving ? "Recording…" : "Record payment"}
+          {saving ? "Recording..." : "Record payment"}
         </button>
       </div>
     </form>
@@ -148,13 +147,13 @@ const DismissForm = ({ document, claim, onClose }) => {
       toast.success(result.message || "The payment report was dismissed.");
       onClose();
     } catch (error) {
-      toast.error(errorMessage(error, "The report could not be dismissed."));
+      toast.error(errorMessage(error, "The report couldn't be dismissed."));
     }
   };
   return (
     <form className="mt-3 flex flex-col gap-5" onSubmit={submit}>
       <p className="text-[14px] leading-[1.6] text-spot-body">
-        Nothing is recorded, and the client sees it wasn’t confirmed. The reason
+        Nothing is recorded, and the client sees it wasn't confirmed. The reason
         stays with your team.
       </p>
       <Field
@@ -178,16 +177,13 @@ const DismissForm = ({ document, claim, onClose }) => {
         </button>
         <button type="submit" className={primaryButton} disabled={saving}>
           <FiX aria-hidden="true" />
-          {saving ? "Dismissing…" : "Dismiss report"}
+          {saving ? "Dismissing..." : "Dismiss report"}
         </button>
       </div>
     </form>
   );
 };
 
-// Payments the client reported from the share page, waiting for someone to
-// confirm them as payments or dismiss them. Nothing they owe changes until
-// then.
 const PaymentClaims = ({ document, refusal }) => {
   const query = useGetPaymentClaimsQuery(document._id);
   const [confirming, setConfirming] = useState(null);

@@ -2,8 +2,6 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createRoot } from "react-dom/client";
 import { act } from "react-dom/test-utils";
 
-// The page as the app draws it, through its own store and RTK Query, with
-// only fetch faked. The signed-in shell is left out.
 vi.mock("../../dashboard/components/DashboardShell", () => ({
   default: ({ children }) => children,
 }));
@@ -29,13 +27,12 @@ const json = (body, status = 200) =>
     headers: { "content-type": "application/json" },
   });
 
-// One line at 4,600.00 with 7.25% tax, as the demo's quotations have it.
 const priced = {
   state: "issued",
   currency: "USD",
   issueDate: "2026-09-02",
   dueDate: "2026-09-16",
-  customer: { name: "Lumen Health" },
+  customer: { name: "Bhide Nursing Home" },
   billingItems: [
     {
       itemName: "Brand strategy workshop",
@@ -51,7 +48,6 @@ const priced = {
   paymentRecords: [],
 };
 
-// Answers each request by its path, with the document asked for.
 const serve = (doc) =>
   vi.stubGlobal(
     "fetch",
@@ -97,7 +93,6 @@ const open = async (doc) => {
   return container;
 };
 
-// The cost summary's rows, as label and amount, and its last, larger row.
 const costSummary = (page) =>
   [...page.querySelectorAll("h2")]
     .find((heading) => heading.textContent === "Cost summary")
@@ -112,7 +107,7 @@ const largest = (page) =>
     .find((row) => row.className.includes("border-t"))
     .querySelector("dt").textContent;
 
-it("ends a quotation's summary at its total, with nothing paid or owed on it", async () => {
+it("quotation summary ends at total", async () => {
   const page = await open({
     ...priced,
     _id: "q1",
@@ -157,17 +152,14 @@ it.each([
     ["Amount paid", "USD4,933.50"],
     ["Balance", "USD0.00"],
   ],
-])(
-  "calls %s's total Total, as its PDF does, above what was paid and what is left",
-  async (_case, fields, paid, left) => {
-    const page = await open({ ...priced, _id: "d1", ...fields });
-    expect(rows(page)).toEqual([
-      ["Subtotal", "USD4,600.00"],
-      ["Tax (7.25%)", "USD333.50"],
-      ["Total", "USD4,933.50"],
-      paid,
-      left,
-    ]);
-    expect(largest(page)).toBe("Balance");
-  },
-);
+])("%s total label matches PDF", async (_case, fields, paid, left) => {
+  const page = await open({ ...priced, _id: "d1", ...fields });
+  expect(rows(page)).toEqual([
+    ["Subtotal", "USD4,600.00"],
+    ["Tax (7.25%)", "USD333.50"],
+    ["Total", "USD4,933.50"],
+    paid,
+    left,
+  ]);
+  expect(largest(page)).toBe("Balance");
+});

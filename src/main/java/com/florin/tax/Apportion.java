@@ -5,11 +5,6 @@ import java.math.RoundingMode;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-// Shares an amount out among parts by their values: each part gets its value
-// times the factor, rounded half up to the paisa, and what rounding leaves
-// over goes to the part with the largest value (the first in the map's order
-// on a tie), so the parts add up to the amount exactly. An amount of nothing
-// gives every part nothing.
 public final class Apportion {
 
     private static final BigDecimal ZERO = BigDecimal.ZERO.setScale(2);

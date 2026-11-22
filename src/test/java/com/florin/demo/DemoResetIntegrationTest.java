@@ -18,7 +18,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -28,14 +27,10 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.transaction.support.TransactionTemplate;
 
-// Renewing the demo: its business is cleared of everything the sample data
-// and its visitors put in it, and seeded afresh, and no other business is
-// touched.
 class DemoResetIntegrationTest extends IntegrationTest {
 
-    private static final ZoneId ZONE = ZoneId.of("America/Los_Angeles");
+    private static final ZoneId ZONE = ZoneId.of("Asia/Kolkata");
 
-    // The tables a business's records are in, by business or by document.
     private static final List<String> BY_BUSINESS = List.of(
             "documents", "customers", "catalog_items", "expenses", "email_templates", "business_settings",
             "notifications", "payment_claims", "portal_links", "recurring_schedules");
@@ -69,9 +64,6 @@ class DemoResetIntegrationTest extends IntegrationTest {
         return result.andReturn().getResponse().getContentAsString();
     }
 
-    // What someone trying the demo might add: a client of their own with an
-    // invoice paid in part, shared, and a credit note on it left a draft; a
-    // portal link for the client; an expense; and settings of their own.
     private void visit(User user) throws Exception {
         String client = JsonPath.read(
                 body(send(user, post("/api/v1/customer/create"), """
@@ -81,7 +73,7 @@ class DemoResetIntegrationTest extends IntegrationTest {
                 "$.createdCustomer._id");
         String invoice = JsonPath.read(
                 body(send(user, post("/api/v1/document/create"), """
-                                {"customerId": "%s", "documentType": "Invoice", "currency": "USD",
+                                {"customerId": "%s", "documentType": "Invoice", "currency": "INR",
                                  "billingItems": [{"itemName": "Visit", "unitPrice": 250, "quantity": 2}]}
                                 """.formatted(client))
                         .andExpect(status().isOk())),
@@ -100,14 +92,11 @@ class DemoResetIntegrationTest extends IntegrationTest {
                 .andExpect(status().isCreated());
         send(user, put("/api/v1/settings"), """
                 {"defaultCurrency": "EUR", "paymentTermsDays": 30, "defaultTaxRate": 20,
-                 "taxLabel": "VAT", "timeZone": "Asia/Kolkata"}
+                 "taxLabel": "VAT", "timeZone": "Europe/London"}
                 """)
                 .andExpect(status().isOk());
     }
 
-    // How many records of each kind a business has, what its documents,
-    // payments and expenses come to, its documents' numbers, and the settings
-    // they are numbered and dated by.
     private Map<String, Object> snapshot(Long business) {
         Map<String, Object> figures = new LinkedHashMap<>();
         for (String table : BY_BUSINESS) {
@@ -156,9 +145,7 @@ class DemoResetIntegrationTest extends IntegrationTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    @DisplayName("renewing leaves the demo business as a fresh seed makes it, whatever visitors added, and no other"
-            + " business is touched")
-    void renews() throws Exception {
+    void renewRestoresFreshData() throws Exception {
         User demo = createUser();
         Long business = businessOf(demo).getPkid();
         DemoSeedRunner runner = runner(demo, true);
@@ -169,11 +156,9 @@ class DemoResetIntegrationTest extends IntegrationTest {
                 .containsEntry("expenses", 14)
                 .containsEntry("recurring_schedules", 3);
         assertThat((List<Object>) fresh.get("settings")).singleElement().asString().startsWith(
-                "USD America/Los_Angeles Sales tax ");
+                "INR Asia/Kolkata GST ");
         assertThat((List<Object>) fresh.get("numbers")).contains("INV-1001", "QUO-0201", "REC-0301");
 
-        // Someone else's business, with records of its own, and someone
-        // trying the demo.
         User other = createUser();
         Long theirs = businessOf(other).getPkid();
         visit(other);
@@ -186,19 +171,16 @@ class DemoResetIntegrationTest extends IntegrationTest {
 
         assertThat(snapshot(business)).isEqualTo(fresh);
         assertThat(snapshot(theirs)).isEqualTo(before);
-        // The business, its owner, the account and the audit log stay.
         assertThat(count("select count(*) from businesses where pkid = ?", business)).isOne();
         assertThat(count("select count(*) from business_members where business_pkid = ?", business)).isOne();
         assertThat(userRepository.findById(demo.getPkid())).isPresent();
         assertThat(auditEvents(business)).containsAll(audit);
-        // Starting up again renews it the same way.
         visit(demo);
         runner.run(null);
         assertThat(snapshot(business)).isEqualTo(fresh);
     }
 
     @Test
-    @DisplayName("clearing touches only the demo account's own business")
     void clearsOnlyTheDemoBusiness() throws Exception {
         User demo = createUser();
         User other = createUser();
@@ -221,7 +203,6 @@ class DemoResetIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an account named as the demo that holds records of its own is never cleared or given sample data")
     void realAccountLeftAlone() throws Exception {
         User someone = createUser();
         Long business = businessOf(someone).getPkid();
@@ -229,7 +210,7 @@ class DemoResetIntegrationTest extends IntegrationTest {
         Map<String, Object> theirs = snapshot(business);
 
         assertThat(reset.clear(someone.getEmail())).isEqualTo(new DemoReset.Result(
-                false, "the account " + someone.getEmail() + " holds no sample data, so it was left as it was", 0));
+                false, "the account " + someone.getEmail() + " holds no sample data", 0));
         runner(someone, true).run(null);
         runner(someone, true).renew();
 
@@ -237,7 +218,6 @@ class DemoResetIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a visitor deleting or renaming the sample clients doesn't stop the demo renewing")
     void sampleClientsChanged() throws Exception {
         User demo = createUser();
         Long business = businessOf(demo).getPkid();
@@ -261,7 +241,6 @@ class DemoResetIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an account named as the demo with clients but no expenses or schedules gets no sample ones")
     void ownClientsOnly() throws Exception {
         User someone = createUser();
         Long business = businessOf(someone).getPkid();
@@ -278,7 +257,6 @@ class DemoResetIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("with reset off, starting up clears nothing and adds no sample data over a visitor's records")
     void resetOff() throws Exception {
         User demo = createUser();
         Long business = businessOf(demo).getPkid();

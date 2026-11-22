@@ -36,10 +36,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-// Reads clients from a CSV file whose first row names the columns, in any
-// order; a clients file exported from the app reads as it is. The preview and
-// the import read the same file the same way, so the preview shows exactly
-// which rows are added and which are skipped, and why.
 @Service
 public class CustomerImport {
 
@@ -94,9 +90,6 @@ public class CustomerImport {
         return new ImportPreviewResponse(true, rows.size(), (int) rows.stream().filter(ImportRow::ready).count(), rows);
     }
 
-    // Adds every row that is ready and skips the rest; nothing is added when
-    // no row is ready. Imports into one business take turns, so two at once
-    // never each wait for a client the other is adding.
     @Transactional
     public ImportResultResponse importAll(BusinessAccess access, MultipartFile file) {
         businessRepository
@@ -118,8 +111,6 @@ public class CustomerImport {
 
     private List<ImportRow> read(Long businessPkid, MultipartFile file) {
         String text = decode(file);
-        // Blank lines stay records, so each record's number is its row in the
-        // sheet; blank rows are left out after.
         CSVFormat format = CSVFormat.RFC4180.builder()
                 .setDelimiter(delimiter(text))
                 .setIgnoreEmptyLines(false)
@@ -186,7 +177,6 @@ public class CustomerImport {
         return rows;
     }
 
-    // What stops a row from becoming a client, in the order of its fields.
     private List<String> problems(CreateCustomerRequest request) {
         List<String> problems = new ArrayList<>();
         if (request.name() == null) {
@@ -220,9 +210,6 @@ public class CustomerImport {
         return columns;
     }
 
-    // A cell as typed: trimmed, empty as missing, and without the apostrophe
-    // an export puts before text a spreadsheet would read as a formula, and
-    // before text already starting with apostrophes ahead of such a character.
     private static String cell(CSVRecord record, int index) {
         if (index >= record.size()) {
             return null;
@@ -238,9 +225,6 @@ public class CustomerImport {
         return record.stream().allMatch(String::isBlank);
     }
 
-    // Spreadsheets set to a comma for decimals save with semicolons. A file is
-    // read with semicolons when its first row, split at them, names the
-    // columns; counting the characters can't tell, as a heading may hold either.
     private static char delimiter(String text) {
         try (CSVParser parser = CSVParser.parse(text, CSVFormat.RFC4180.builder().setDelimiter(';').get())) {
             Iterator<CSVRecord> records = parser.iterator();
@@ -250,7 +234,6 @@ public class CustomerImport {
         }
     }
 
-    // Whether a first row names at least the Name and Email columns.
     private static boolean named(Map<String, Integer> columns) {
         return columns.containsKey("name") && columns.containsKey("email");
     }

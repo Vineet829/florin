@@ -6,14 +6,14 @@ const taxes = [
   { rate: 5, tax: 5.06, cgst: 2.53, sgst: 2.53, igst: 0 },
 ];
 
-it("shows one row per rate for standard tax", () => {
+it("one row per rate", () => {
   expect(taxRows(taxes, undefined, "VAT")).toEqual([
     ["VAT (0%)", 0],
     ["VAT (5%)", 5.06],
   ]);
 });
 
-it("halves the rate into CGST and SGST within the state, or UTGST in a union territory", () => {
+it("splits intra-state GST in half", () => {
   expect(taxRows(taxes, { supplyType: "INTRA" }, "GST")).toEqual([
     ["CGST 2.5%", 2.53],
     ["SGST 2.5%", 2.53],
@@ -23,7 +23,7 @@ it("halves the rate into CGST and SGST within the state, or UTGST in a union ter
   ).toBe("UTGST 2.5%");
 });
 
-it("shows IGST at the full rate otherwise, marked when the recipient pays", () => {
+it("full IGST for inter-state supply", () => {
   expect(
     taxRows(
       [{ rate: 18, tax: 180, cgst: 0, sgst: 0, igst: 180 }],

@@ -36,18 +36,10 @@ import { Select } from "../../../components/workspace/Select";
 
 const NO_CLIENTS = [];
 
-// The totals row's figures stand out a little from the clients' own.
 const totalAmount = "font-normal tracking-[-0.03em]";
 
-// Clients › Sales by customer: every client billed in the period, with the
-// documents billed, what that came to, what they paid on it and what they
-// still owe, as the Reports page's Top clients counts them, with the totals
-// for all of them under each page. A client's name opens the client. The
-// table keeps its rows' own height, like the Reports page's, so the totals
-// are always in sight under the page's rows. The period, currency, order
-// and page are kept in the address.
 const CustomerSalesPage = () => {
-  useTitle("Sales by customer — Florin");
+  useTitle("Sales by customer - Florin");
   const [list, update] = useListState(readCustomerSales, customerSalesSearch);
   const query = useGetCustomerSalesQuery(customerSalesQuery(list), {
     refetchOnMountOrArgChange: 60,
@@ -62,7 +54,6 @@ const CustomerSalesPage = () => {
     setPage: (page) => update({ page: page + 1 }),
     setSize: (size) => update({ size, page: 1 }),
   });
-  // A page past the end, from an old link, shows the last.
   const pages = query.currentData?.numberOfPages;
   useEffect(() => {
     if (pages && list.page > pages) update({ page: pages });
@@ -128,7 +119,7 @@ const CustomerSalesPage = () => {
     <WorkspacePage section="Clients">
       <PageHeader
         title="Clients"
-        description="The people behind your work. Keep their details close at hand."
+        description="Your clients and what they owe."
         actions={
           <>
             <ClientsTabs />
@@ -146,8 +137,8 @@ const CustomerSalesPage = () => {
             <h2 className="sr-only">Sales by customer</h2>
             {sales && (
               <p className={panelNote}>
-                What each client was billed on the documents {days}, what they
-                have paid on them, and what they still owe.
+                What each client was billed on the documents {days}, what
+                they've paid on them, and what they still owe.
               </p>
             )}
             <div className="flex min-w-0 flex-wrap items-center gap-2.5 max-[700px]:w-full">

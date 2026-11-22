@@ -23,10 +23,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
-// Profit and loss for a period, in each currency, before tax: what issued
-// invoices and receipts earned, less credit notes, by the day each is dated;
-// and what expenses cost, by the day each was paid, with the tax on them
-// only when it can't be claimed back.
 @Service
 public class ProfitReport {
 
@@ -64,8 +60,6 @@ public class ProfitReport {
                         .toList());
     }
 
-    // The months with income or expenses, in order, and what each category
-    // cost, largest first.
     private static ProfitCurrency currency(
             String currency,
             List<ReportQueries.Earned> earned,
@@ -103,10 +97,6 @@ public class ProfitReport {
                         .toList());
     }
 
-    // The largest amounts first, and by name, whatever its case, when two are
-    // the same, then by spelling, so that none comes in whatever order the
-    // database read it: categories as they are listed here, and the clients
-    // and items the overview lists.
     static <T> Comparator<T> largestFirst(Function<T, BigDecimal> amount, Function<T, String> name) {
         return Comparator.comparing(amount, Comparator.<BigDecimal>reverseOrder())
                 .thenComparing(row -> name.apply(row).toLowerCase(Locale.ROOT))

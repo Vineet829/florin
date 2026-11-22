@@ -4,8 +4,6 @@ import { act } from "react-dom/test-utils";
 import { GUEST_CREDENTIALS } from "../features/auth/components/authCommon";
 import { isValidGstin } from "../features/gst/gstin";
 
-// The homepage as the app draws it, through its own store and RTK Query,
-// with only fetch faked.
 window.IS_REACT_ACT_ENVIRONMENT = true;
 
 const encode = (value) =>
@@ -45,8 +43,6 @@ const json = (body, status = 200) =>
     headers: { "content-type": "application/json" },
   });
 
-// Answers the sign-in request with `login`, a body or a Response, and
-// records every request's method, path and body.
 const serve = (login) =>
   vi.stubGlobal(
     "fetch",
@@ -62,7 +58,6 @@ const serve = (login) =>
     }),
   );
 
-// The page at `path`, with the paths it moves to and the store.
 const open = async (path = "/", { login, signedIn = false } = {}) => {
   serve(login);
   const { Provider } = await import("react-redux");
@@ -110,8 +105,6 @@ const click = (element) =>
     );
   });
 
-// The clock, faked before the page mounts so the tour, the headline and
-// the steps can be driven by it; `pass` moves it on.
 const clock = () =>
   vi.useFakeTimers({
     toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval"],
@@ -121,14 +114,12 @@ const pass = (ms) =>
     vi.advanceTimersByTime(ms);
   });
 
-// Whether the visitor prefers less motion.
 const stillVisitor = () =>
   vi.stubGlobal(
     "matchMedia",
     vi.fn((query) => ({ matches: query.includes("reduce") })),
   );
 
-// Whether the tab is being looked at.
 const tab = (visibilityState) => {
   Object.defineProperty(document, "visibilityState", {
     value: visibilityState,
@@ -139,8 +130,6 @@ const tab = (visibilityState) => {
   });
 };
 
-// An observer the test drives: it records what it was asked to watch and
-// reports it on screen, or not, on `report`.
 let observers;
 class Observer {
   constructor(callback, options) {
@@ -162,7 +151,6 @@ const watch = () => {
   vi.stubGlobal("IntersectionObserver", Observer);
 };
 
-// The hero, and the parts of its tour.
 const hero = (page) => page.querySelector("[aria-labelledby=hero-title]");
 const screens = (page) => [...hero(page).querySelectorAll("img")];
 const shown = (page) =>
@@ -185,7 +173,6 @@ const area = (element) => [
   element.style.height,
 ];
 const ticker = (page) => page.querySelector("h1 [aria-hidden=true] > span");
-// The step the page is on, by its title.
 const currentStep = (page) =>
   page.querySelector("#get-paid [aria-current=step]").lastElementChild
     .firstElementChild.textContent;
@@ -202,13 +189,12 @@ it("links sign-up and sign-in", async () => {
     expect(link.getAttribute("href")).toBe("/register"),
   );
   expect(links(page, "Log in")[0].getAttribute("href")).toBe("/login");
-  // The hero offers sign-up, so the header keeps to Log in.
   const header = page.querySelector("header");
   expect(links(header, "Start for free")).toHaveLength(0);
   expect(links(header, "Log in")).toHaveLength(1);
 });
 
-it("ends the headline one way at a time, and reads it to assistive technology once", async () => {
+it("rotates the headline ending", async () => {
   clock();
   const { page } = await open();
   const h1 = page.querySelector("h1");
@@ -229,7 +215,7 @@ it("ends the headline one way at a time, and reads it to assistive technology on
   expect(ticker(page).style.transform).toBe("translateY(0em)");
 });
 
-it("links each section of the page from the header", async () => {
+it("header links each section", async () => {
   const { page } = await open();
   for (const [name, id, title] of [
     ["How it works", "get-paid", "paid-title"],
@@ -245,7 +231,7 @@ it("links each section of the page from the header", async () => {
   }
 });
 
-it("signs in as the guest and opens the dashboard", async () => {
+it("guest sign-in opens dashboard", async () => {
   const { page, seen, store } = await open("/", {
     login: { username: "guest", accessToken: token },
   });
@@ -257,7 +243,7 @@ it("signs in as the guest and opens the dashboard", async () => {
   expect(store.getState().auth.user.username).toBe("guest");
 });
 
-it("says when the guest sign-in fails", async () => {
+it("guest sign-in failure message", async () => {
   const { page, seen } = await open("/", {
     login: json({ message: "The sample business is resting" }, 503),
   });
@@ -270,14 +256,14 @@ it("says when the guest sign-in fails", async () => {
   expect(seen.at(-1)).toBe("/");
 });
 
-it("opens the dashboard straight away when already signed in", async () => {
+it("redirects signed-in users", async () => {
   const { page, seen } = await open("/", { signedIn: true });
   await click(button(page, "See the live demo"));
   expect(seen.at(-1)).toBe("/dashboard");
   expect(requests).toEqual([]);
 });
 
-it("shows the tour's four screens, the first one eagerly and sized", async () => {
+it("shows the four tour screens", async () => {
   const { page } = await open();
   expect(screens(page).map((img) => img.alt)).toEqual([
     "The Overview: total receivables by age, billed with its tax, received and profit.",
@@ -298,18 +284,18 @@ it("shows the tour's four screens, the first one eagerly and sized", async () =>
   expect(shown(page)).toEqual([true, false, false, false]);
 });
 
-it("plays the tour: the pointer clicks one thing on each screen, then the next follows", async () => {
+it("plays the tour", async () => {
   clock();
   const { page } = await open();
   expect(overlay(page).getAttribute("aria-hidden")).toBe("true");
   expect(place(pointer(page))).toEqual(["84%", "90%"]);
   expect(highlight(page)).toBeNull();
   await pass(700);
-  expect(place(pointer(page))).toEqual(["44%", "48%"]);
+  expect(place(pointer(page))).toEqual(["40%", "91%"]);
   expect(highlight(page)).toBeNull();
   await pass(1200);
-  expect(area(highlight(page))).toEqual(["37.5%", "41%", "15%", "11%"]);
-  expect(note(page)).toBe("3 invoices overdue · $6,326.03");
+  expect(area(highlight(page))).toEqual(["33.5%", "84%", "11%", "14%"]);
+  expect(note(page)).toBe("7 invoices overdue · ₹\u00a02,86,577.16");
   expect(screenName(page).textContent).toBe("Overview");
   expect(screenName(page).getAttribute("aria-live")).toBe("off");
   await pass(2900);
@@ -320,9 +306,9 @@ it("plays the tour: the pointer clicks one thing on each screen, then the next f
   expect(dot(page, "Receivables").getAttribute("aria-pressed")).toBe("true");
   expect(dot(page, "Overview").getAttribute("aria-pressed")).toBe("false");
   await pass(1900);
-  expect(place(pointer(page))).toEqual(["93%", "73%"]);
-  expect(area(highlight(page))).toEqual(["21.5%", "69.5%", "76.5%", "6.5%"]);
-  expect(note(page)).toBe("Reminder ready for INV-1026");
+  expect(place(pointer(page))).toEqual(["93%", "85%"]);
+  expect(area(highlight(page))).toEqual(["21.5%", "82%", "76.5%", "6.5%"]);
+  expect(note(page)).toBe("Reminder ready for INV-1005");
   await pass(2900);
   expect(shown(page)).toEqual([false, false, true, false]);
   await pass(4800);
@@ -331,7 +317,7 @@ it("plays the tour: the pointer clicks one thing on each screen, then the next f
   expect(shown(page)).toEqual([true, false, false, false]);
 });
 
-it("stops the tour on the screen a dot picks, and says which", async () => {
+it("dots pick a tour screen", async () => {
   clock();
   const { page } = await open();
   await pass(1000);
@@ -342,30 +328,29 @@ it("stops the tour on the screen a dot picks, and says which", async () => {
   expect(screenName(page).getAttribute("aria-live")).toBe("polite");
   expect(place(pointer(page))).toEqual(["80%", "43%"]);
   expect(area(highlight(page))).toEqual(["60.5%", "31%", "37.5%", "19.5%"]);
-  expect(note(page)).toBe("$4,654.08 sales tax at 7.25%");
+  expect(note(page)).toBe("₹\u00a01,32,336.00 GST at 18%");
   await pass(20000);
   expect(shown(page)).toEqual([false, false, true, false]);
-  expect(note(page)).toBe("$4,654.08 sales tax at 7.25%");
+  expect(note(page)).toBe("₹\u00a01,32,336.00 GST at 18%");
   await click(dot(page, "Payments"));
   expect(shown(page)).toEqual([false, false, false, true]);
-  expect(area(highlight(page))).toEqual(["60.5%", "55.5%", "37.5%", "6.5%"]);
-  expect(note(page)).toBe("Top payer: Quill & Co. · $11,490.77");
+  expect(area(highlight(page))).toEqual(["60.5%", "56%", "37.5%", "6.5%"]);
+  expect(note(page)).toBe("Top payer: Shinde · ₹\u00a01,48,246.94");
 });
 
-it("holds the first screen still, with no pointer, for a visitor who prefers less motion", async () => {
+it("static tour with reduced motion", async () => {
   stillVisitor();
   clock();
   const { page } = await open();
   expect(page.querySelectorAll("[class*='animate-']")).toHaveLength(0);
   expect(pointer(page)).toBeNull();
-  expect(area(highlight(page))).toEqual(["37.5%", "41%", "15%", "11%"]);
-  expect(note(page)).toBe("3 invoices overdue · $6,326.03");
+  expect(area(highlight(page))).toEqual(["33.5%", "84%", "11%", "14%"]);
+  expect(note(page)).toBe("7 invoices overdue · ₹\u00a02,86,577.16");
   await pass(20000);
   expect(shown(page)).toEqual([true, false, false, false]);
-  expect(note(page)).toBe("3 invoices overdue · $6,326.03");
+  expect(note(page)).toBe("7 invoices overdue · ₹\u00a02,86,577.16");
   expect(ticker(page).style.transform).toBe("translateY(0em)");
   expect(currentStep(page)).toBe("Send");
-  // The step's bar is there, full and still.
   const stepBar = page.querySelector(
     "#get-paid [aria-current=step] [aria-hidden=true]",
   );
@@ -373,40 +358,37 @@ it("holds the first screen still, with no pointer, for a visitor who prefers les
   expect(stepBar.firstElementChild.className).not.toContain("animate-");
   await click(dot(page, "Payments"));
   expect(shown(page)).toEqual([false, false, false, true]);
-  expect(note(page)).toBe("Top payer: Quill & Co. · $11,490.77");
+  expect(note(page)).toBe("Top payer: Shinde · ₹\u00a01,48,246.94");
   expect(pointer(page)).toBeNull();
 });
 
-it("pauses the tour and the headline while the hero is off screen or the tab is hidden", async () => {
+it("pauses when hidden", async () => {
   watch();
   clock();
   const { page } = await open();
   const watcher = observers.find((observer) =>
     observer.watched.includes(hero(page)),
   );
-  // Nothing moves until the hero is seen on screen.
   await pass(5000);
   expect(place(pointer(page))).toEqual(["84%", "90%"]);
   expect(ticker(page).style.transform).toBe("translateY(0em)");
   await watcher.report(true);
   await pass(700);
-  expect(place(pointer(page))).toEqual(["44%", "48%"]);
-  // Scrolled away, the step stops where it is, and starts over on return.
+  expect(place(pointer(page))).toEqual(["40%", "91%"]);
   await watcher.report(false);
   await pass(5000);
-  expect(place(pointer(page))).toEqual(["44%", "48%"]);
+  expect(place(pointer(page))).toEqual(["40%", "91%"]);
   expect(highlight(page)).toBeNull();
   expect(ticker(page).style.transform).toBe("translateY(0em)");
   await watcher.report(true);
   expect(place(pointer(page))).toEqual(["84%", "90%"]);
   await pass(1900);
-  expect(note(page)).toBe("3 invoices overdue · $6,326.03");
+  expect(note(page)).toBe("7 invoices overdue · ₹\u00a02,86,577.16");
   await pass(900);
   expect(ticker(page).style.transform).toBe("translateY(-1.08em)");
-  // In a tab that is not being looked at, the same.
   await tab("hidden");
   await pass(10000);
-  expect(note(page)).toBe("3 invoices overdue · $6,326.03");
+  expect(note(page)).toBe("7 invoices overdue · ₹\u00a02,86,577.16");
   expect(ticker(page).style.transform).toBe("translateY(-1.08em)");
   await tab("visible");
   await pass(4800);
@@ -414,8 +396,7 @@ it("pauses the tour and the headline while the hero is off screen or the tab is 
   expect(ticker(page).style.transform).toBe("translateY(-2.16em)");
 });
 
-it("shows the client's phone as one picture, and what is on it", async () => {
-  // Two weeks after the visitor's today, Oct 8, 2026.
+it("shows the client's phone", async () => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date(2026, 9, 8, 10, 0));
   const { page } = await open();
@@ -424,7 +405,7 @@ it("shows the client's phone as one picture, and what is on it", async () => {
     "What your client sees on their phone: the invoice, a UPI QR, Open in UPI app and Report a payment.",
   );
   for (const line of [
-    "Tester Studio",
+    "Apte Design Studio",
     "INV-0042",
     "Due Oct 22, 2026",
     "Amount due",
@@ -438,7 +419,7 @@ it("shows the client's phone as one picture, and what is on it", async () => {
   expect(phone.querySelector("a, button, input, [tabindex]")).toBeNull();
 });
 
-it("keeps the phone's due date two weeks ahead, across a month's and a year's end", async () => {
+it("phone due date two weeks ahead", async () => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date(2026, 11, 25, 23, 30));
   const { page } = await open();
@@ -447,7 +428,7 @@ it("keeps the phone's due date two weeks ahead, across a month's and a year's en
   );
 });
 
-it("plays the steps from invoice to paid, and lets a click pick one", async () => {
+it("plays the payment steps", async () => {
   clock();
   const { page } = await open();
   const section = page.querySelector("section#get-paid");
@@ -463,8 +444,6 @@ it("plays the steps from invoice to paid, and lets a click pick one", async () =
       (element) => element.lastElementChild.firstElementChild.textContent,
     ),
   ).toEqual(["Send", "They pay", "You confirm"]);
-  // Each step says what the app does: a reported payment is opened to
-  // check, then recorded.
   expect(
     stepButtons().map(
       (element) => element.lastElementChild.children[1].textContent,
@@ -474,8 +453,6 @@ it("plays the steps from invoice to paid, and lets a click pick one", async () =
     "By UPI or bank, and they tell you from the invoice.",
     "Check what they reported, then record the payment.",
   ]);
-  // Every step keeps its full colour; only the one playing has the bar
-  // under its line, running out.
   const items = () => [...section.querySelectorAll("ol > li")];
   const bar = (item) => item.querySelector("button [aria-hidden=true]");
   expect(items().some((item) => /opacity/.test(item.className))).toBe(false);
@@ -513,8 +490,6 @@ it("plays the steps from invoice to paid, and lets a click pick one", async () =
     true,
     false,
   ]);
-  // The picked step has its full turn from the click, even when it was
-  // the step shown already, and its bar starts over.
   await pass(2000);
   expect(currentStep(page)).toBe("They pay");
   await pass(800);
@@ -529,7 +504,7 @@ it("plays the steps from invoice to paid, and lets a click pick one", async () =
   expect(currentStep(page)).toBe("Send");
 });
 
-it("turns the steps only while they are on screen", async () => {
+it("steps play only on screen", async () => {
   watch();
   clock();
   const { page } = await open();
@@ -547,7 +522,7 @@ it("turns the steps only while they are on screen", async () => {
   expect(currentStep(page)).toBe("They pay");
 });
 
-it("dresses the sample invoice in the chosen PDF template", async () => {
+it("applies the chosen template", async () => {
   const { page } = await open();
   const group = page.querySelector("[role=group][aria-label='PDF template']");
   const choices = [...group.querySelectorAll("button")];
@@ -564,8 +539,8 @@ it("dresses the sample invoice in the chosen PDF template", async () => {
   for (const line of [
     "TAX INVOICE",
     "INV-0042",
-    "Tester Studio",
-    "GSTIN 27ABCFT1234F1ZH",
+    "Apte Design Studio",
+    "GSTIN 27AFQRA4826M1ZY",
     "Bill to Banyan Court Architects · Maharashtra (27)",
     "Brand identity designSAC 99839140,000.00",
     "Website design, 5 pagesSAC 99831410,000.00",
@@ -575,7 +550,6 @@ it("dresses the sample invoice in the chosen PDF template", async () => {
   ]) {
     expect(mock().textContent).toContain(line);
   }
-  // The sample's GSTIN passes the app's own check.
   expect(isValidGstin(mock().textContent.match(/GSTIN (\w{15})/)[1])).toBe(
     true,
   );
@@ -596,18 +570,16 @@ it("dresses the sample invoice in the chosen PDF template", async () => {
   expect(mock().firstElementChild.classList.contains("bg-spot-violet")).toBe(
     false,
   );
-  // The template changes the dress, not the step.
   expect(mock().textContent).toContain("Rupees Fifty Nine Thousand Only");
 });
 
-it("ends on free pricing and three questions, with sign-up", async () => {
+it("shows pricing and questions", async () => {
   const { page } = await open();
   const pricing = page.querySelector("section#pricing");
   expect(pricing.querySelector("h2").textContent).toBe("Free.");
   expect(pricing.textContent).toContain(
     "Everything included, for you and your team.",
   );
-  // "No card needed" is said once, under the hero's sign-up.
   expect(pricing.textContent).not.toContain("No card needed");
   expect(
     [...pricing.querySelectorAll("dt")].map((dt) => dt.textContent),
@@ -624,9 +596,9 @@ it("ends on free pricing and three questions, with sign-up", async () => {
   );
 });
 
-it("signs off with the year", async () => {
+it("shows the year in footer", async () => {
   const { page } = await open();
   expect(page.querySelector("footer").textContent).toBe(
-    `Florin.© ${new Date().getFullYear()} Florin · Made for independent business`,
+    `Florin.© ${new Date().getFullYear()} Florin · Made for small businesses`,
   );
 });

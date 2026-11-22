@@ -20,7 +20,6 @@ import java.time.LocalDate;
 import java.util.Base64;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.thymeleaf.spring6.SpringTemplateEngine;
@@ -60,7 +59,7 @@ class PdfServiceTest {
     private static Business seller(String name) {
         Business business = new Business();
         business.setName(name);
-        business.setEmail("ada@x.com");
+        business.setEmail("apte@x.com");
         business.setCity("Pune");
         business.setCountry("India");
         return business;
@@ -108,9 +107,8 @@ class PdfServiceTest {
     }
 
     @Test
-    @DisplayName("an invoice lists line amounts, what was paid and the balance due, text escaped")
     void invoiceHtml() {
-        String html = service.html(sampleDocument(DocumentType.INVOICE), seller("Ada Analytics"), SETTINGS);
+        String html = service.html(sampleDocument(DocumentType.INVOICE), seller("Apte Analytics"), SETTINGS);
 
         assertThat(html)
                 .contains("Prototype &amp; &lt;review&gt;")
@@ -130,7 +128,6 @@ class PdfServiceTest {
     }
 
     @Test
-    @DisplayName("within a union territory without a legislature, SGST is called UTGST")
     void unionTerritory() {
         Document document = sampleDocument(DocumentType.INVOICE);
         document.getBillingItems().forEach(item -> item.setTaxRate(new BigDecimal("18")));
@@ -140,27 +137,25 @@ class PdfServiceTest {
         document.setSupplyType(SupplyType.INTRA);
         DocumentTotals.apply(document);
 
-        String html = service.html(document, seller("Ada Analytics"), SETTINGS);
+        String html = service.html(document, seller("Apte Analytics"), SETTINGS);
 
         assertThat(html).contains(
                 "UTGST 9%",
                 "<th class=\"num\">UTGST</th>",
-                "Place of supply: 04 – Chandigarh",
+                "Place of supply: 04-Chandigarh",
                 "State: Chandigarh (04)",
                 "Tax Invoice");
     }
 
     @Test
-    @DisplayName("a quotation shows a validity date and its total, with no payment status")
     void quotationHtml() {
-        String html = service.html(sampleDocument(DocumentType.QUOTATION), seller("Ada Analytics"), SETTINGS);
+        String html = service.html(sampleDocument(DocumentType.QUOTATION), seller("Apte Analytics"), SETTINGS);
 
         assertThat(html).contains("Valid until").contains("USD 1,445.50");
         assertThat(html).doesNotContain("Amount paid").doesNotContain("Balance due").doesNotContain("Partially paid");
     }
 
     @Test
-    @DisplayName("a payment receipt shows what was received, how, and the balance left afterwards")
     void receiptHtml() {
         Document document = sampleDocument(DocumentType.INVOICE);
         Payment payment = document.getPayments().get(0);
@@ -173,7 +168,7 @@ class PdfServiceTest {
                 payment,
                 "2026-September-ABC123-P1",
                 new BigDecimal("445.50"),
-                seller("Ada Analytics"),
+                seller("Apte Analytics"),
                 PdfTemplate.CLASSIC);
 
         assertThat(html)
@@ -214,10 +209,9 @@ class PdfServiceTest {
     }
 
     @Test
-    @DisplayName("a statement lists each invoice and payment with the running balance and the amount due")
     void statementHtml() {
         String html = service.statementHtml(
-                seller("Ada Analytics"),
+                seller("Apte Analytics"),
                 client(),
                 LocalDate.of(2026, 9, 30),
                 List.of(account("USD", "1000.00")),
@@ -237,40 +231,36 @@ class PdfServiceTest {
     }
 
     @Test
-    @DisplayName("a settled statement shows no overdue line, and several currencies are labelled")
     void statementCurrencies() {
         String settled = service.statementHtml(
-                seller("Ada Analytics"),
+                seller("Apte Analytics"),
                 client(),
                 LocalDate.of(2026, 9, 30),
                 List.of(account("USD", "0")),
                 PdfTemplate.CLASSIC);
         String mixed = service.statementHtml(
-                seller("Ada Analytics"),
+                seller("Apte Analytics"),
                 client(),
                 LocalDate.of(2026, 9, 30),
                 List.of(account("USD", "0"), account("EUR", "0")),
                 PdfTemplate.CLASSIC);
         String empty = service.statementHtml(
-                seller("Ada Analytics"), client(), LocalDate.of(2026, 9, 30), List.of(), PdfTemplate.CLASSIC);
+                seller("Apte Analytics"), client(), LocalDate.of(2026, 9, 30), List.of(), PdfTemplate.CLASSIC);
 
         assertThat(settled).doesNotContain("Overdue");
         assertThat(mixed).contains("<div class=\"label\">EUR</div>");
-        assertThat(empty).contains("No invoices yet, so nothing is due.");
+        assertThat(empty).contains("No invoices yet.");
     }
 
     @Test
-    @DisplayName("a logo uploaded to this server is embedded unless it is a WebP; a remote one is never fetched")
-    void logo() throws Exception {
+    void embedsOnlyLocalLogos() throws Exception {
         Files.write(uploads.resolve("brand.png"), PNG);
         Files.write(uploads.resolve("brand.webp"), PNG);
-        Business local = seller("Ada Analytics");
+        Business local = seller("Apte Analytics");
         local.setLogo("/uploads/brand.png");
-        Business remote = seller("Ada Analytics");
+        Business remote = seller("Apte Analytics");
         remote.setLogo("https://example.com/brand.png");
-        // PDFs can't show WebP, so a WebP logo from before is left out. The settings screen warns
-        // of this with a copy of the rule (the client's settings/logo.js), so keep the two in step.
-        Business webp = seller("Ada Analytics");
+        Business webp = seller("Apte Analytics");
         webp.setLogo("/uploads/brand.webp");
 
         assertThat(service.html(sampleDocument(DocumentType.INVOICE), local, SETTINGS)).contains("data:image/png;base64,");
@@ -280,29 +270,23 @@ class PdfServiceTest {
     }
 
     @Test
-    @DisplayName("a control character pasted into a client's name or a note no longer stops the PDF")
     void controlCharacters() throws Exception {
-        // Word puts a vertical tab where Shift+Enter breaks a line.
         String verticalTab = Character.toString(0x0B);
         String nul = Character.toString(0x00);
         Document document = sampleDocument(DocumentType.INVOICE);
         document.getCustomerSnapshot().setName("Beta" + verticalTab + "LLC" + nul);
         document.setAdditionalInfo("Thank you" + verticalTab + "for your business");
 
-        String text = PdfText.of(service.render(document, seller("Ada Analytics"), SETTINGS));
+        String text = PdfText.of(service.render(document, seller("Apte Analytics"), SETTINGS));
 
         assertThat(text).contains("Beta LLC").contains("Thank you for your business");
         assertThat(PdfService.printable("a" + verticalTab + "b" + nul + "c")).isEqualTo("a bc");
     }
 
     @Test
-    @DisplayName("a stored logo over 4 megapixels is left off the PDF without being opened")
     void largeLogo() throws Exception {
-        // A PDF holds every pixel of its logo in memory: this one would need
-        // more than half a gigabyte. It was stored before uploads were
-        // checked for size, so only its header is ever read.
         Files.write(uploads.resolve("huge.png"), TestImages.pngHeader(12000, 12000));
-        Business business = seller("Ada Analytics");
+        Business business = seller("Apte Analytics");
         business.setLogo("/uploads/huge.png");
 
         assertThat(service.html(sampleDocument(DocumentType.INVOICE), business, SETTINGS)).doesNotContain("class=\"logo\"");
@@ -311,24 +295,22 @@ class PdfServiceTest {
     }
 
     @Test
-    @DisplayName("the sender is the business, with its legal name when it differs, its address and tax ID")
-    void sender() {
-        Business business = seller("Ada Analytics");
-        business.setLegalName("Ada Analytics Private Limited");
+    void senderShowsBusinessDetails() {
+        Business business = seller("Apte Analytics");
+        business.setLegalName("Apte Analytics Private Limited");
         business.setState("Maharashtra");
         business.setPostalCode("411001");
         business.setTaxId("27AAPFU0939F1ZV");
 
-        assertThat(PdfService.senderName(business)).isEqualTo("Ada Analytics");
+        assertThat(PdfService.senderName(business)).isEqualTo("Apte Analytics");
         assertThat(PdfService.senderLines(business)).containsExactly(
-                "Ada Analytics Private Limited", "ada@x.com", "Pune, Maharashtra 411001, India", "Tax ID 27AAPFU0939F1ZV");
+                "Apte Analytics Private Limited", "apte@x.com", "Pune, Maharashtra 411001, India", "Tax ID 27AAPFU0939F1ZV");
 
-        business.setLegalName("ada analytics");
-        assertThat(PdfService.senderLines(business)).doesNotContain("ada analytics");
+        business.setLegalName("apte analytics");
+        assertThat(PdfService.senderLines(business)).doesNotContain("apte analytics");
     }
 
     @Test
-    @DisplayName("the tax is named as the document keeps it, and the due date is a day in the owner's time zone")
     void settingsApply() {
         BusinessSettings settings = new BusinessSettings();
         settings.setTaxLabel("VAT");
@@ -337,35 +319,33 @@ class PdfServiceTest {
         document.setTaxLabel("GST");
         document.setDueDate(Instant.parse("2026-10-15T20:00:00Z"));
 
-        String html = service.html(document, seller("Ada Analytics"), settings);
+        String html = service.html(document, seller("Apte Analytics"), settings);
 
         assertThat(html).contains("GST (18%)").contains("Oct 16, 2026").doesNotContain("VAT (18%)");
     }
 
     @Test
-    @DisplayName("a document shows the business as it went out with it, whatever it is called now")
     void keptSeller() {
         Document document = sampleDocument(DocumentType.INVOICE);
-        document.setSeller(SellerSnapshot.of(seller("Ada Analytics")));
+        document.setSeller(SellerSnapshot.of(seller("Apte Analytics")));
         Payment payment = document.getPayments().get(0);
         payment.setDatePaid(LocalDate.of(2026, 9, 12));
         payment.setPaymentMethod(PaymentMethod.CASH);
 
         assertThat(service.html(document, seller("Borealis Studio"), SETTINGS))
-                .contains("Ada Analytics")
+                .contains("Apte Analytics")
                 .doesNotContain("Borealis Studio");
         assertThat(service.receiptHtml(
                         document, payment, "INV-1-P1", BigDecimal.TEN, seller("Borealis Studio"), PdfTemplate.CLASSIC))
-                .contains("Ada Analytics")
+                .contains("Apte Analytics")
                 .doesNotContain("Borealis Studio");
     }
 
     @Test
-    @DisplayName("a document shows the day it is dated, not the day it was typed in")
     void issueDate() {
         Document document = sampleDocument(DocumentType.INVOICE);
         document.setIssueDate(LocalDate.of(2026, 9, 1));
 
-        assertThat(service.html(document, seller("Ada Analytics"), SETTINGS)).contains("Sep 1, 2026");
+        assertThat(service.html(document, seller("Apte Analytics"), SETTINGS)).contains("Sep 1, 2026");
     }
 }

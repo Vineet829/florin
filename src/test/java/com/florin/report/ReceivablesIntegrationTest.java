@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -38,9 +37,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// The documents' view of what clients owe now: the overview's total
-// receivables, split into what is not due yet and what is overdue, each in
-// stretches of 15 days and with the five clients who owe most of it.
 class ReceivablesIntegrationTest extends IntegrationTest {
 
     @Autowired
@@ -55,7 +51,6 @@ class ReceivablesIntegrationTest extends IntegrationTest {
         today = LocalDate.now(ZoneOffset.UTC);
     }
 
-    // Puts the business in the time zone, and dates what follows from its today.
     private void inZone(ZoneId zone) throws Exception {
         send(put("/api/v1/settings"), """
                 {"defaultCurrency": "USD", "paymentTermsDays": 15, "defaultTaxRate": 0,
@@ -83,8 +78,6 @@ class ReceivablesIntegrationTest extends IntegrationTest {
                 "$.createdCustomer._id");
     }
 
-    // A document for the client, dated well before it falls due, for one
-    // amount; a draft is only planned.
     private String create(String type, String client, String currency, String amount, LocalDate due, boolean draft)
             throws Exception {
         return JsonPath.read(
@@ -108,7 +101,6 @@ class ReceivablesIntegrationTest extends IntegrationTest {
         return create("Invoice", client, "USD", amount, due, false);
     }
 
-    // An invoice falling due at a moment on the business's clock.
     private String invoice(String client, String amount, LocalDateTime due, ZoneId zone) throws Exception {
         String invoice = invoice(client, amount, due.toLocalDate());
         jdbcTemplate.update(
@@ -125,7 +117,6 @@ class ReceivablesIntegrationTest extends IntegrationTest {
                 .andExpect(status().isCreated());
     }
 
-    // A credit note taking the amount off the document, dated today.
     private void credit(String document, String amount) throws Exception {
         String note = JsonPath.read(
                 body(send(post("/api/v1/document/{id}/credit-note", document), "").andExpect(status().isCreated())),
@@ -155,7 +146,6 @@ class ReceivablesIntegrationTest extends IntegrationTest {
         return new BigDecimal(JsonPath.read(body, path).toString());
     }
 
-    // The amounts at the path added up.
     private static BigDecimal sum(String body, String path) {
         List<Object> amounts = JsonPath.read(body, path);
         return amounts.stream()
@@ -165,18 +155,12 @@ class ReceivablesIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("what is not due yet is split by days left and what is overdue by days late, each side of 15, 30"
-            + " and 45 days on the business's clock, with the clients who owe most")
-    void bands(ZoneId zone) throws Exception {
+    void groupsOwedByDueBand(ZoneId zone) throws Exception {
         inZone(zone);
         String acme = client("Acme");
         String birch = client("Birch Studio");
         String cedar = client("Cedar Works");
         String oak = client("Oak Joinery");
-        // Not due yet: due in the first minutes of today, then each side of
-        // 15, 30 and 45 days ahead; one partly paid with tax withheld, one
-        // partly credited, and one saved without a due date, as the oldest
-        // invoices were.
         invoice(acme, "100", today.atTime(0, 30), zone);
         invoice(birch, "200", today.plusDays(15).atTime(23, 30), zone);
         invoice(acme, "300", today.plusDays(16).atTime(0, 30), zone);
@@ -186,8 +170,6 @@ class ReceivablesIntegrationTest extends IntegrationTest {
         invoice(acme, "700", today.plusDays(46).atTime(0, 30), zone);
         String undated = invoice(cedar, "800", today.plusDays(5));
         jdbcTemplate.update("update documents set due_date = null where id = ?", UUID.fromString(undated));
-        // Overdue: due in the last minutes of yesterday, then each side of 15,
-        // 30 and 45 days late; one partly paid, and one partly credited.
         invoice(acme, "10", today.minusDays(1).atTime(23, 30), zone);
         invoice(birch, "20", today.minusDays(15).atTime(0, 30), zone);
         pay(invoice(birch, "30", today.minusDays(16).atTime(23, 30), zone), "10", "0");
@@ -196,8 +178,6 @@ class ReceivablesIntegrationTest extends IntegrationTest {
         credit(invoice(acme, "60", today.minusDays(45).atTime(0, 30), zone), "15");
         invoice(oak, "70", today.minusDays(46).atTime(23, 30), zone);
         invoice(cedar, "80", today.minusDays(400));
-        // Never owed: an invoice paid in full, a receipt, a draft, a void
-        // invoice and a quotation. Euros are owed in euros.
         pay(invoice(acme, "90", today.minusDays(5)), "90", "0");
         create("Receipt", acme, "USD", "95", null, false);
         create("Invoice", acme, "USD", "96", today.minusDays(5), true);
@@ -205,8 +185,6 @@ class ReceivablesIntegrationTest extends IntegrationTest {
         create("Quotation", acme, "USD", "98", today.plusDays(5), false);
         create("Invoice", acme, "EUR", "900", today.plusDays(5), false);
         pay(create("Invoice", birch, "EUR", "90", today.minusDays(20), false), "40", "0");
-        // Oak Joinery is deleted since: its invoices are owed under the name
-        // they were saved with, with no client id.
         send(delete("/api/v1/customer/{id}", oak), "").andExpect(status().isOk());
 
         String dollars = body(receivables("currency", "USD")
@@ -248,7 +226,6 @@ class ReceivablesIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.overdue.bands[*].amount", contains(0.0, 50.0, 0.0, 0.0)))
                 .andExpect(jsonPath("$.overdue.clients[*].client", contains("Birch Studio")))
                 .andExpect(jsonPath("$.overdue.clients[*].amount", contains(50.0))));
-        // Each currency's figures are the overview's owedNow, band for band.
         for (String currency : List.of("USD", "EUR")) {
             String received = currency.equals("USD") ? dollars : euros;
             String overview = body(send(get("/api/v1/report/overview").param("currency", currency), ""));
@@ -268,7 +245,6 @@ class ReceivablesIntegrationTest extends IntegrationTest {
                     .isEqualTo(JsonPath.read(overview, "$.owedNow.overdueInvoices"));
             List<Map<String, Object>> late = JsonPath.read(overview, "$.owedNow.bands[1:]");
             assertThat(JsonPath.<List<Map<String, Object>>>read(received, "$.overdue.bands")).isEqualTo(late);
-            // The documents list's invoices not yet due are the same.
             String listed = body(send(
                     get("/api/v1/document/all").param("due", "current").param("currency", currency), ""));
             assertThat(amount(listed, "$.totals[0].balanceDue"))
@@ -279,14 +255,11 @@ class ReceivablesIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("five clients are listed in each part, largest first and by name when two owe the same, and"
-            + " invoices linked to no client and saved without a name are one client with neither")
     void topFive() throws Exception {
         List<String> names = List.of("delta", "Acme", "echo", "birch", "Cedar", "Zed");
         for (String name : names) {
             invoice(client(name), name.equals("Zed") ? "300" : "100", today.minusDays(3));
         }
-        // Saved before a client was named or linked, as the oldest invoices were.
         String nameless = invoice(client("Fir"), "500", today.minusDays(3));
         jdbcTemplate.update(
                 "update documents set customer_pkid = null, customer_name = null where id = ?",
@@ -304,8 +277,6 @@ class ReceivablesIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the currency is chosen as the overview chooses it, and a business owed nothing sees zeros in"
-            + " every band and no clients")
     void currencyAndEmpty() throws Exception {
         receivables()
                 .andExpect(status().isOk())
@@ -325,15 +296,12 @@ class ReceivablesIntegrationTest extends IntegrationTest {
                         "\"current\":{\"amount\":0.00,\"invoices\":0,\"bands\":[{\"key\":\"dueIn0to15\","
                                 + "\"amount\":0.00,\"invoices\":0},")));
 
-        // Only euros are billed, so euros are shown whatever is asked for,
-        // until the business bills in dollars too.
         String acme = client("Acme");
         create("Invoice", acme, "EUR", "400", today.plusDays(3), false);
         receivables().andExpect(jsonPath("$.currency").value("EUR")).andExpect(jsonPath("$.total").value(400.0));
         receivables("currency", "USD")
                 .andExpect(jsonPath("$.currency").value("EUR"))
                 .andExpect(jsonPath("$.currencies", contains("EUR")));
-        // A receipt in dollars is billed, though nothing is owed on it.
         create("Receipt", acme, "USD", "60", null, false);
         receivables()
                 .andExpect(jsonPath("$.currency").value("USD"))
@@ -343,8 +311,7 @@ class ReceivablesIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the view isn't read as a document's id, a viewer may see it, and it counts only its business")
-    void route() throws Exception {
+    void receivablesRouteAccess() throws Exception {
         String invoice = invoice(client("Acme"), "100", today.minusDays(2));
 
         send(get("/api/v1/document/{id}", invoice), "")
@@ -357,7 +324,6 @@ class ReceivablesIntegrationTest extends IntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(100.0))
                 .andExpect(jsonPath("$.overdue.clients[0].client").value("Acme"));
-        // Another business owes nothing of it.
         mockMvc.perform(get("/api/v1/document/receivables").header(HttpHeaders.AUTHORIZATION, bearer(createUser())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(0.0))

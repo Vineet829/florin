@@ -6,29 +6,24 @@ import payments from "./screens/payments.webp";
 import receivables from "./screens/receivables.webp";
 import sales from "./screens/sales.webp";
 
-// The four screens of the tour, taken from the sample business at
-// 1440×720. That business bills in dollars with sales tax, so the notes
-// say so. Each has where its pointer goes and what it highlights, as a
-// share of the screenshot's width and height, and the note that pops up on
-// the click.
 export const SCREENS = [
   {
     name: "Overview",
     src: overview,
     alt: "The Overview: total receivables by age, billed with its tax, received and profit.",
-    x: 44,
-    y: 48,
-    box: [37.5, 41, 15, 11],
-    toast: "3 invoices overdue · $6,326.03",
+    x: 40,
+    y: 91,
+    box: [33.5, 84, 11, 14],
+    toast: "7 invoices overdue · ₹\u00a02,86,577.16",
   },
   {
     name: "Receivables",
     src: receivables,
     alt: "Receivables: overdue invoices by age, with a reminder button on each.",
     x: 93,
-    y: 73,
-    box: [21.5, 69.5, 76.5, 6.5],
-    toast: "Reminder ready for INV-1026",
+    y: 85,
+    box: [21.5, 82, 76.5, 6.5],
+    toast: "Reminder ready for INV-1005",
   },
   {
     name: "Sales",
@@ -37,7 +32,7 @@ export const SCREENS = [
     x: 80,
     y: 43,
     box: [60.5, 31, 37.5, 19.5],
-    toast: "$4,654.08 sales tax at 7.25%",
+    toast: "₹\u00a01,32,336.00 GST at 18%",
   },
   {
     name: "Payments",
@@ -45,29 +40,20 @@ export const SCREENS = [
     alt: "Payments: what came in by payment method, and who paid most.",
     x: 66,
     y: 59,
-    box: [60.5, 55.5, 37.5, 6.5],
-    toast: "Top payer: Quill & Co. · $11,490.77",
+    box: [60.5, 56, 37.5, 6.5],
+    toast: "Top payer: Shinde · ₹\u00a01,48,246.94",
   },
 ];
 
-// Where the pointer rests between screens, as a share of the screenshot.
 const REST = { x: 84, y: 90 };
-// A screen's step, in milliseconds from its start: the pointer sets off
-// for its target, clicks, and the next screen follows.
 export const MOVE_AT = 700;
 export const CLICK_AT = 1900;
 export const NEXT_AT = 4800;
 
 const percent = (value) => `${value}%`;
 
-// The product tour: the four screens cross-fading in a tilted frame, with
-// a pointer that shows one thing on each, and the client's phone over the
-// frame's corner. `running` plays it; a dot below picks a screen and stops
-// it there, with that screen's highlight and note held still. With motion
-// off it holds the first screen that way, with no pointer.
 const Tour = ({ motion, running }) => {
   const [screen, setScreen] = useState(0);
-  // 0: the pointer rests; 1: it is on its way; 2: it has clicked.
   const [phase, setPhase] = useState(motion ? 0 : 2);
   const [stopped, setStopped] = useState(false);
   const playing = running && !stopped;
@@ -176,8 +162,6 @@ const Tour = ({ motion, running }) => {
             />
           ))}
         </div>
-        {/* The name is announced once the visitor has picked a screen, not
-            while the tour turns on its own. */}
         <span
           className="text-[14px] text-[#cfc8ea]"
           aria-live={stopped ? "polite" : "off"}

@@ -9,7 +9,7 @@ const choices = {
   reminderMax: "3",
 };
 
-it("describes each step that sends a reminder, and the limit", () => {
+it("describes reminder steps and limit", () => {
   expect(reminderSummary(choices)).toBe(
     "Reminders go out 3 days before the due date, on the due date and every 7 days after it, at most 3 times per invoice.",
   );
@@ -26,7 +26,7 @@ it("describes each step that sends a reminder, and the limit", () => {
   );
 });
 
-it("says when reminders are off or nothing would be sent", () => {
+it("says when reminders are off", () => {
   expect(reminderSummary({ ...choices, remindersEnabled: false })).toBe(
     "Automatic reminders are off.",
   );

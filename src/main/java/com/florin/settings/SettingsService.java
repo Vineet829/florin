@@ -37,7 +37,6 @@ public class SettingsService {
         this.demoAccountGuard = demoAccountGuard;
     }
 
-    // A business that never saved its settings works with the defaults.
     @Transactional(readOnly = true)
     public BusinessSettings forBusiness(Long businessPkid) {
         return settingsRepository.findByBusinessPkid(businessPkid).orElseGet(BusinessSettings::new);
@@ -51,8 +50,6 @@ public class SettingsService {
     @Transactional
     public SettingsResponse update(BusinessAccess access, UpdateSettingsRequest request) {
         BusinessSettings settings = saved(access);
-        // The reporting currency follows the default currency until it is
-        // set to another one.
         if (request.baseCurrency() != null) {
             settings.setBaseCurrency(request.baseCurrency());
         } else if (settings.getBaseCurrency().equals(settings.getDefaultCurrency())) {
@@ -125,8 +122,6 @@ public class SettingsService {
         return PaymentDetailsResponse.from(forBusiness(access.businessPkid()).getPaymentDetails());
     }
 
-    // The shared demo business's payment details are on every visitor's
-    // invoices and share links, so nobody trying it can put theirs there.
     @Transactional
     public PaymentDetailsResponse updatePaymentDetails(BusinessAccess access, PaymentDetailsRequest request) {
         demoAccountGuard.requireNotDemo(access.user(), "changing the payment details");
@@ -137,9 +132,6 @@ public class SettingsService {
         return PaymentDetailsResponse.from(settings.getPaymentDetails());
     }
 
-    // The business's settings row, made with the defaults if it has none yet.
-    // It is locked, as numbering locks it, so a save that waits for another
-    // save or for a document's number starts from what that one wrote.
     private BusinessSettings saved(BusinessAccess access) {
         return settingsRepository.findForUpdateByBusinessPkid(access.businessPkid()).orElseGet(() -> {
             BusinessSettings created = new BusinessSettings();
@@ -148,15 +140,13 @@ public class SettingsService {
         });
     }
 
-    // India GST mode needs the business's GSTIN, reports in rupees, and
-    // numbers invoices only with letters, digits, / and -, at most 16 long.
     private void requireGst(Long businessPkid, BusinessSettings settings) {
         Business business = businessRepository.findById(businessPkid).orElseThrow();
         String gstin = business.getTaxId() == null ? null : business.getTaxId().trim().toUpperCase(Locale.ROOT);
         if (!Gstin.isValid(gstin)) {
             throw new ApiException(
                     HttpStatus.BAD_REQUEST,
-                    "Add your business's GSTIN under Settings → Business before turning on GST mode");
+                    "Add your business's GSTIN under Settings > Business before turning on GST mode");
         }
         business.setTaxId(gstin);
         settings.setBaseCurrency("INR");

@@ -16,7 +16,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -62,8 +61,7 @@ class DocumentNumberingIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("each document type counts up on its own, separately for every user")
-    void sequences() throws Exception {
+    void numbersCountPerType() throws Exception {
         User owner = createUser();
         String customerId = customerId(owner);
 
@@ -76,7 +74,6 @@ class DocumentNumberingIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("prefixes and next numbers follow the settings, and numbers already used are skipped")
     void customNumbering() throws Exception {
         User owner = createUser();
         String customerId = customerId(owner);
@@ -90,7 +87,6 @@ class DocumentNumberingIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("documents created at the same moment still get different numbers")
     void concurrentCreates() throws Exception {
         User owner = createUser();
         String customerId = customerId(owner);

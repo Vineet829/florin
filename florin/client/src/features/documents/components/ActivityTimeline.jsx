@@ -22,9 +22,6 @@ import { useGetDocumentActivityQuery } from "../documentsApiSlice";
 import { useBusiness } from "../../business/permissions";
 import { panelNote, retryButton } from "../../../components/workspace/pastel";
 
-// How each event reads. The server words the detail when the event happens,
-// so an old entry never changes when the document does; a copy made as a
-// draft had no number to name.
 const EVENTS = {
   CREATED: { icon: FiFilePlus, text: () => "Created" },
   ISSUED: {
@@ -87,7 +84,6 @@ const EVENTS = {
     icon: FiSend,
     text: (detail) => `Emailed receipt ${detail}`,
   },
-  // A link made to send in a message says so: "for an email".
   SHARED: {
     icon: FiLink,
     text: (detail) =>
@@ -114,7 +110,6 @@ const EVENTS = {
     icon: FiXCircle,
     text: (detail) => `Reported payment dismissed: ${detail}`,
   },
-  // The detail names the template and how often it repeats: "INV-1 · monthly".
   RECURRING: {
     icon: FiRepeat,
     text: (detail) => {
@@ -124,8 +119,6 @@ const EVENTS = {
   },
 };
 
-// A time zone as the browser names it, or none when it is missing or one
-// the browser doesn't know.
 const knownZone = (timeZone) => {
   if (!timeZone) return undefined;
   try {
@@ -136,9 +129,6 @@ const knownZone = (timeZone) => {
   }
 };
 
-// When something happened, in the business's time zone, as every other date
-// on the page is, with the zone's short name, such as "PDT", when the
-// viewer's own zone is another. Without a zone it is the viewer's.
 export const moment = (value, timeZone) => {
   const zone = knownZone(timeZone);
   const viewer = new Intl.DateTimeFormat("en").resolvedOptions().timeZone;
@@ -153,8 +143,6 @@ export const moment = (value, timeZone) => {
   });
 };
 
-// Who did it, when a member did. The client's views, automatic runs and
-// events from before this was kept name no one rather than a guess.
 const byline = (event) =>
   event.byYou ? "by you" : event.actor ? `by ${event.actor}` : null;
 
@@ -165,14 +153,14 @@ const ActivityTimeline = ({ documentId }) => {
   if (query.isLoading) {
     return (
       <p className={panelNote} role="status">
-        Loading activity…
+        Loading activity...
       </p>
     );
   }
   if (query.isError) {
     return (
       <div className="flex flex-wrap items-center gap-3">
-        <p className={panelNote}>The activity couldn’t be loaded.</p>
+        <p className={panelNote}>The activity couldn't be loaded.</p>
         <button type="button" className={retryButton} onClick={query.refetch}>
           Try again
         </button>

@@ -1,7 +1,3 @@
-// A document's tax as rows of a summary. Standard tax is one row per rate;
-// India's GST shows CGST and SGST (UTGST in a union territory without a
-// legislature) at half the rate within the state, or IGST at the full rate,
-// and says when the recipient pays it under reverse charge.
 export const taxRows = (taxes, gst, taxLabel) => {
   if (!gst?.supplyType) {
     return taxes.map((tax) => [`${taxLabel} (${tax.rate}%)`, tax.tax]);

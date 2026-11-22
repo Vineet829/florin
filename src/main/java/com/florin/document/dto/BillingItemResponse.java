@@ -15,8 +15,6 @@ public record BillingItemResponse(
         BigDecimal taxRate,
         @JsonInclude(JsonInclude.Include.NON_NULL) String hsnSac) {
 
-    // A quantity as it was typed: 2 rather than 2.0000, and 1.5 rather than
-    // 1.5000.
     public static BillingItemResponse from(BillingItem item) {
         return new BillingItemResponse(
                 item.getItemName(),

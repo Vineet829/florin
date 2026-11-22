@@ -11,7 +11,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.florin.IntegrationTest;
 import com.jayway.jsonpath.JsonPath;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -38,8 +37,7 @@ class AdministrationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("accounts are searched by name, email or username, a page at a time; only admins may look")
-    void search() throws Exception {
+    void adminSearchesAccounts() throws Exception {
         String tag = "zq" + UUID.randomUUID().toString().substring(0, 6);
         for (int count = 0; count < 3; count++) {
             User user = createUser();
@@ -61,8 +59,7 @@ class AdministrationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the counts include every new account")
-    void counts() throws Exception {
+    void countsIncludeNewAccounts() throws Exception {
         String admin = bearer(createAdmin());
         int before = JsonPath.read(stats(admin).andReturn().getResponse().getContentAsString(), "$.accounts");
         createUser();
@@ -76,7 +73,6 @@ class AdministrationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an admin can reactivate an account and make it an admin; the change counts at once")
     void reactivateAndPromote() throws Exception {
         User actor = createAdmin();
         String admin = bearer(actor);
@@ -109,8 +105,7 @@ class AdministrationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an admin can't demote, deactivate or delete themselves, nor make the demo account an admin")
-    void guards() throws Exception {
+    void refusesSelfAndDemoChanges() throws Exception {
         User self = createAdmin();
         String admin = bearer(self);
 

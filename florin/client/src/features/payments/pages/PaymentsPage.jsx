@@ -59,16 +59,10 @@ const NO_PAYMENTS = [];
 const DESCRIPTION =
   "Every payment recorded on an invoice, and every receipt. Refunds show as minus amounts.";
 
-// Money in and out on issued documents, one row each: payments on invoices,
-// receipts, and refunds as minus amounts. A view of the Documents page, so
-// it has the same header and money bar. Above the list, what came in over
-// its period is summed up by method and by who paid.
 const PaymentsPage = () => {
-  useTitle("Payments — Florin");
+  useTitle("Payments - Florin");
   const [list, update] = useListState(readPaymentList, paymentListSearch);
   const search = useCallback((q) => update({ q, page: 1 }), [update]);
-  // The calendar's periods are days of the business's calendar, as the
-  // summary's are.
   const today = useBusinessToday();
   const query = useGetPaymentsQuery(paymentQuery(list, today), {
     refetchOnMountOrArgChange: 60,
@@ -82,8 +76,6 @@ const PaymentsPage = () => {
     paymentSummaryQuery(list),
     { refetchOnMountOrArgChange: 60 },
   );
-  // What the result line says comes from the last answer and the filters
-  // it answered.
   const answered = useLastAnswer(query.currentData, list);
   const rows = query.data?.payments || NO_PAYMENTS;
   const count = query.data?.total ?? 0;
@@ -95,22 +87,18 @@ const PaymentsPage = () => {
     setPage: (page) => update({ page: page + 1 }),
     setSize: (size) => update({ size, page: 1 }),
   });
-  // A page past the end, from an old link, shows the last.
   const pages = query.currentData?.numberOfPages;
   useEffect(() => {
     if (pages && list.page > pages) update({ page: pages });
   }, [pages, list.page, update]);
 
   const { reason } = useBusiness();
-  // Clear filters is gone once they are cleared, so focus moves to the
-  // search box, as soon as the tools are shown.
   const tools = useRef(null);
   const [refocus, setRefocus] = useState(false);
   const clearFilters = () => {
     update({ q: "", method: "", period: "", currency: "", page: 1 });
     setRefocus(true);
   };
-  // A new account has nothing to search or filter yet.
   const showTools = Boolean(query.data) && (count > 0 || filtered);
   useEffect(() => {
     const box = refocus && tools.current?.querySelector('input[type="search"]');
@@ -133,7 +121,7 @@ const PaymentsPage = () => {
     {
       label: "Customer",
       type: "main",
-      render: (row) => row.client || "—",
+      render: (row) => row.client || "-",
     },
     {
       label: "Document",
@@ -144,7 +132,7 @@ const PaymentsPage = () => {
       ),
     },
     { label: "Method", render: (row) => <Badge>{methodLabel(row)}</Badge> },
-    { label: "Note", render: (row) => row.note || "—" },
+    { label: "Note", render: (row) => row.note || "-" },
     {
       label: "Amount",
       type: "amount",
@@ -218,13 +206,11 @@ const PaymentsPage = () => {
     />
   );
 
-  // With the summary above it, the list keeps its rows' own height and the
-  // page scrolls, rather than the list stretching to the window's foot.
   return (
     <WorkspacePage section="Documents">
       <PageHeader
         title="Documents"
-        description="Invoices, quotations, and receipts. All your paperwork in one place."
+        description="Invoices, quotations, receipts and credit notes."
         actions={
           <>
             <DocumentsTabs />

@@ -1,4 +1,3 @@
-// How long ago something happened, in the words a notification uses.
 export const timeAgo = (value, now = new Date()) => {
   const then = new Date(value);
   const minutes = Math.floor((now - then) / 60000);

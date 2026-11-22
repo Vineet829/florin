@@ -23,7 +23,6 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -31,8 +30,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// A draft has no number and counts for nothing until it is issued: then it
-// takes the next number, is dated, and keeps the client as they are.
 class DraftIntegrationTest extends IntegrationTest {
 
     private static final ZoneId ZONE = ZoneId.of("Asia/Kolkata");
@@ -72,8 +69,6 @@ class DraftIntegrationTest extends IntegrationTest {
                 "$.createdCustomer._id");
     }
 
-    // An invoice for 100 or 500, issued or saved as a draft, due on a day
-    // when one is given.
     private String invoice(boolean draft, String price, String extra) throws Exception {
         return JsonPath.read(
                 body(send(post("/api/v1/document/create"), """
@@ -100,8 +95,7 @@ class DraftIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a draft has no number until it is issued, then takes the next one; a deleted draft takes none")
-    void numbering() throws Exception {
+    void numberedOnIssue() throws Exception {
         invoice(false, "100", "");
         String draft = draft();
         read(draft)
@@ -129,8 +123,7 @@ class DraftIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a draft is dated the day it is issued, unless a day was planned or is asked for")
-    void dates() throws Exception {
+    void datedOnIssue() throws Exception {
         LocalDate today = LocalDate.now(ZONE);
         String unplanned = draft();
         read(unplanned).andExpect(jsonPath("$.document.issueDate").value(nullValue()));
@@ -148,7 +141,6 @@ class DraftIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an invoice issued without a due date is due as the payment terms say, from its issue date")
     void dueDates() throws Exception {
         LocalDate day = LocalDate.now(ZONE).minusDays(4);
 
@@ -160,7 +152,6 @@ class DraftIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("issuing a draft takes the client's details as they are then")
     void clientAtIssue() throws Exception {
         String draft = draft();
         send(patch("/api/v1/customer/{id}", client), "{\"name\": \"Beta Limited\"}").andExpect(status().isOk());
@@ -170,8 +161,7 @@ class DraftIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a draft can't be emailed, shared, paid or reminded about, but its PDF says DRAFT")
-    void refusals() throws Exception {
+    void draftCannotBeSent() throws Exception {
         String draft = invoice(true, "500", ", \"dueDate\": \"" + dueNoon(LocalDate.now(ZONE).minusDays(9)) + "\"");
 
         send(get("/api/v1/document/{id}/email", draft), "")
@@ -199,8 +189,7 @@ class DraftIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("drafts count for nothing: not in balances, reports, the overview, statements or alerts")
-    void leftOut() throws Exception {
+    void draftsCountForNothing() throws Exception {
         String overdue = dueNoon(LocalDate.now(ZONE).minusDays(9));
         String issued = invoice(false, "100", ", \"issueDate\": \"%s\", \"dueDate\": \"%s\""
                 .formatted(LocalDate.now(ZONE).minusDays(9), overdue));

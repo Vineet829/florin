@@ -26,7 +26,6 @@ import {
 
 const USERNAME_REGEX = /^[A-Za-z][A-Za-z0-9_-]{3,23}$/;
 
-// Mirrors RegistrationService.isStrongPassword on the backend.
 const registerSchema = Yup.object().shape({
   firstName: Yup.string()
     .max(60, "At most 60 characters")
@@ -38,7 +37,7 @@ const registerSchema = Yup.object().shape({
     .required("Username is required")
     .matches(
       USERNAME_REGEX,
-      "Start with a letter; 4–24 letters, numbers, - or _",
+      "Start with a letter; 4-24 letters, numbers, - or _",
     ),
   email: Yup.string()
     .email("Must be a valid email")
@@ -111,7 +110,6 @@ const RegisterPage = () => {
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  // An invitation sends people here with the address it was sent to.
   const invitedEmail = useLocation().state?.email || "";
 
   const [registerUser, { isLoading: registering }] = useRegisterUserMutation();
@@ -132,9 +130,9 @@ const RegisterPage = () => {
   return (
     <div className={auth.page}>
       <AuthVisual
-        headline={["Start invoicing", "in minutes."]}
-        subtext="Set up your account, verify your email, and start sending invoices."
-        loaderLabel="Creating your workspace"
+        headline={["Create your", "account."]}
+        subtext="Then verify your email and send your first invoice."
+        loaderLabel="Creating your account"
       />
 
       <section className={auth.formPanel}>
@@ -246,7 +244,7 @@ const RegisterPage = () => {
                       disabled={busy}
                     >
                       {isSubmitting || registering
-                        ? "Creating account…"
+                        ? "Creating account..."
                         : "Create account"}
                     </button>
                   </div>
@@ -261,8 +259,6 @@ const RegisterPage = () => {
                       <div className={auth.dividerLine} />
                     </div>
 
-                    {/* Sign-in providers share Guest's row, in equal columns,
-                        tightened on narrow screens so labels stay on one line. */}
                     <div
                       className={`grid auto-cols-fr grid-flow-col gap-2.5 ${rise}`}
                       style={delay(0.66)}
@@ -275,7 +271,7 @@ const RegisterPage = () => {
                         disabled={busy}
                       >
                         <GuestIcon />
-                        {loggingIn ? "Opening demo…" : "Guest"}
+                        {loggingIn ? "Opening demo..." : "Guest"}
                       </button>
                     </div>
                   </div>

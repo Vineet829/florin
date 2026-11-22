@@ -11,8 +11,6 @@ import {
   useGetTdsReportQuery,
 } from "../reportsApiSlice";
 
-// The page gets its reports from these hooks, so it needs no store or
-// server; the signed-in shell around it is left out.
 vi.mock("../reportsApiSlice", () => ({
   useGetReportQuery: vi.fn(),
   useGetTaxReportQuery: vi.fn(),
@@ -36,7 +34,6 @@ const loaded = (data) => ({
   isError: false,
 });
 
-// A period with no invoices, receipts or payments, and nothing unpaid.
 beforeEach(() => {
   useGetReportQuery.mockReturnValue(
     loaded({
@@ -63,7 +60,6 @@ afterEach(() => {
   delete Element.prototype.scrollIntoView;
 });
 
-// In the document, so a section can take focus.
 const render = (path = "/reports") => {
   container = document.body.appendChild(document.createElement("div"));
   root = createRoot(container);
@@ -80,7 +76,7 @@ const render = (path = "/reports") => {
 const headings = (container) =>
   [...container.querySelectorAll("h2")].map((heading) => heading.textContent);
 
-it("shows the profit and loss of a period with expenses but no invoices", () => {
+it("shows loss without invoices", () => {
   useGetProfitReportQuery.mockReturnValue(
     loaded({
       period: "12m",
@@ -106,7 +102,7 @@ it("shows the profit and loss of a period with expenses but no invoices", () => 
   expect(page.textContent).toContain("a loss of INR 1,500.00");
 });
 
-it("shows each month's margin and the profit so far, and each category's share of the expenses", () => {
+it("shows margins and expense shares", () => {
   withFigures();
   useGetProfitReportQuery.mockReturnValue(
     loaded({
@@ -146,7 +142,6 @@ it("shows each month's margin and the profit so far, and each category's share o
     "Margin",
     "Profit so far",
   ]);
-  // No income in September, so no margin; the profit so far sums the months.
   expect(text(months)).toEqual([
     [
       "August 2026",
@@ -161,11 +156,10 @@ it("shows each month's margin and the profit so far, and each category's share o
       "USD0.00",
       "USD1,200.00",
       "USD-1,200.00",
-      "—",
+      "-",
       "USD-600.00",
     ],
   ]);
-  // The categories follow the months, each with its bar and its share.
   expect(text(categories)).toEqual([
     ["Rent", "USD1,200.00", "75%"],
     ["Software", "USD396.00", "25%"],
@@ -181,14 +175,13 @@ it("shows each month's margin and the profit so far, and each category's share o
   );
 });
 
-it("shows only that there is nothing to report when there are no expenses either", () => {
+it("shows empty report", () => {
   useGetProfitReportQuery.mockReturnValue(
     loaded({ period: "12m", currencies: [] }),
   );
   expect(headings(render())).toEqual(["Nothing to report for this period."]);
 });
 
-// A period with one invoice, part paid, in one currency.
 const withFigures = () => {
   useGetReportCsvMutation.mockReturnValue([vi.fn(), { isLoading: false }]);
   useGetReportQuery.mockReturnValue(
@@ -250,9 +243,7 @@ const withFigures = () => {
   );
 };
 
-// The last 30 days to Oct 7 hold Sep 8–30 and Oct 1–7, which the server
-// sends as the months 2026-09 and 2026-10, with the period's days.
-it("names the part months of the last 30 days by their days, in every table and on the chart", () => {
+it("labels partial months by days", () => {
   const days = { period: "30d", from: "2026-09-08", to: "2026-10-07" };
   const halfTaxed = { taxable: 500, tax: 35, cgst: 0, sgst: 0, igst: 0 };
   withFigures();
@@ -350,22 +341,22 @@ it("names the part months of the last 30 days by their days, in every table and 
         )
         .querySelectorAll('tbody td[data-label="Month"]'),
     ].map((cell) => cell.textContent);
-  const both = ["Sep 8–30, 2026", "Oct 1–7, 2026"];
+  const both = ["Sep 8-30, 2026", "Oct 1-7, 2026"];
   expect(months("Billed and received by month")).toEqual(both);
   expect(months("Profit and loss by month")).toEqual(both);
   expect(months("Tax charged by month and rate")).toEqual(both);
-  expect(months("Tax withheld by month")).toEqual(["Oct 1–7, 2026"]);
+  expect(months("Tax withheld by month")).toEqual(["Oct 1-7, 2026"]);
   expect(
     [...page.querySelectorAll('#income [role="img"]')].map((month) =>
       month.getAttribute("aria-label"),
     ),
   ).toEqual([
-    "Sep 8–30, 2026: billed 600.00, received 300.00",
-    "Oct 1–7, 2026: billed 400.00, received 300.00",
+    "Sep 8-30, 2026: billed 600.00, received 300.00",
+    "Oct 1-7, 2026: billed 400.00, received 300.00",
   ]);
 });
 
-it("opens at the section the overview links to, with focus there", () => {
+it("opens at the linked section", () => {
   withFigures();
   const scrolled = [];
   Element.prototype.scrollIntoView = vi.fn(function () {
@@ -387,7 +378,7 @@ it("opens at the section the overview links to, with focus there", () => {
 });
 
 it.each(["/reports#%", "/reports#nowhere", "/reports"])(
-  "stays at the top for %s",
+  "stays at top for %s",
   (path) => {
     withFigures();
     Element.prototype.scrollIntoView = vi.fn();
@@ -397,7 +388,7 @@ it.each(["/reports#%", "/reports#nowhere", "/reports"])(
   },
 );
 
-it("charts what was billed and received side by side, with the figures a click away", () => {
+it("charts billed and received", () => {
   withFigures();
   const income = render().querySelector("#income");
   expect(
@@ -413,9 +404,7 @@ it("charts what was billed and received side by side, with the figures a click a
   expect(income.querySelector("caption").closest("details").open).toBe(false);
 });
 
-// Billed counts tax, so the chart isn't called income, which the profit and
-// loss counts before tax; its file is named as the server names it.
-it("names the chart and its file for what they hold: billed and received", async () => {
+it("names chart and download", async () => {
   withFigures();
   const fetchFile = vi.fn(() => ({
     unwrap: () => Promise.resolve("blob:report"),
@@ -454,7 +443,7 @@ it("names the chart and its file for what they hold: billed and received", async
   }
 });
 
-it("spaces every table's columns evenly, a count right-aligned and a bar given room", () => {
+it("spaces table columns evenly", () => {
   withFigures();
   const page = render();
   const tables = [...page.querySelectorAll("table")];
@@ -468,15 +457,12 @@ it("spaces every table's columns evenly, a count right-aligned and a bar given r
   const documents = clients.querySelector('[data-label="Documents"]');
   expect(documents.className).toContain("text-right");
   expect(documents.className).toContain("tabular-nums");
-  // Every table draws its text at the one scale set by the window's width.
   for (const table of tables)
     expect(table.querySelector("tbody td").className).toMatch(
       /min-\[1536px\]:text-\[\d+px\]/,
     );
 });
 
-// The report's rows from the profit and loss down: a panel's name, or for a
-// row of two, each one's.
 const rowsFrom = (first) => {
   const name = (panel) => panel.querySelector("h2").textContent;
   const rows = [];
@@ -507,63 +493,58 @@ it.each([
     true,
     ["Profit and loss", owed, "Top clients", "Tax charged", "Tax withheld"],
   ],
-])(
-  "lays the reports out in the same rows for %s",
-  (_case, months, gst, layout) => {
-    withFigures();
-    useGetProfitReportQuery.mockReturnValue(
-      loaded({
-        period: "12m",
-        currencies: [
-          {
-            currency: "USD",
+])("same layout for %s", (_case, months, gst, layout) => {
+  withFigures();
+  useGetProfitReportQuery.mockReturnValue(
+    loaded({
+      period: "12m",
+      currencies: [
+        {
+          currency: "USD",
+          income: 900,
+          expenses: 0,
+          profit: 900,
+          months: Array.from({ length: months }, (_, index) => ({
+            month: `2025-${String(index + 1).padStart(2, "0")}`,
             income: 900,
             expenses: 0,
             profit: 900,
-            months: Array.from({ length: months }, (_, index) => ({
-              month: `2025-${String(index + 1).padStart(2, "0")}`,
-              income: 900,
-              expenses: 0,
-              profit: 900,
-            })),
-            categories: [],
-          },
-        ],
-      }),
-    );
-    const tax = { taxable: 1000, tax: 70, cgst: 0, sgst: 0, igst: 0 };
-    useGetTaxReportQuery.mockReturnValue(
-      loaded({
-        currencies: [
-          {
-            currency: "USD",
-            tax: 70,
-            taxable: 1000,
-            documents: 1,
-            gst,
-            reverseChargeTaxable: 0,
-            rates: [{ rate: 7, documents: 1, ...tax }],
-            months: [{ month: "2026-09", rate: 7, ...tax }],
-          },
-        ],
-      }),
-    );
-    const page = render();
-    expect(rowsFrom(page.querySelector("#profit"))).toEqual(layout);
-    // Beside the tax withheld, the tax tables stay tables in half the
-    // width; split for GST, they need the page's width.
-    const rates = [...page.querySelectorAll("table")].find((table) =>
-      table
-        .querySelector("caption")
-        .textContent.startsWith("Tax charged by rate"),
-    );
-    expect(rates.parentElement.className).toContain(
-      gst ? "[container-name:table]" : "[container-name:narrow-table]",
-    );
-  },
-);
+          })),
+          categories: [],
+        },
+      ],
+    }),
+  );
+  const tax = { taxable: 1000, tax: 70, cgst: 0, sgst: 0, igst: 0 };
+  useGetTaxReportQuery.mockReturnValue(
+    loaded({
+      currencies: [
+        {
+          currency: "USD",
+          tax: 70,
+          taxable: 1000,
+          documents: 1,
+          gst,
+          reverseChargeTaxable: 0,
+          rates: [{ rate: 7, documents: 1, ...tax }],
+          months: [{ month: "2026-09", rate: 7, ...tax }],
+        },
+      ],
+    }),
+  );
+  const page = render();
+  expect(rowsFrom(page.querySelector("#profit"))).toEqual(layout);
+  const rates = [...page.querySelectorAll("table")].find((table) =>
+    table
+      .querySelector("caption")
+      .textContent.startsWith("Tax charged by rate"),
+  );
+  expect(rates.parentElement.className).toContain(
+    gst ? "[container-name:table]" : "[container-name:narrow-table]",
+  );
+});
 
-it("reports on the overview's last 90 days when its profit opens the page", async () => {
+it("opens on last 90 days", async () => {
   withFigures();
   const scrolled = [];
   Element.prototype.scrollIntoView = vi.fn(function () {
@@ -580,7 +561,6 @@ it("reports on the overview's last 90 days when its profit opens the page", asyn
     .find((label) => label.textContent.startsWith("Period"))
     .querySelector('[role="combobox"]');
   expect(period.value).toBe("90d");
-  // The menu offers the periods, opened to look and closed again.
   await act(async () => period.click());
   expect(
     [...document.querySelectorAll('[role="option"]')]
@@ -590,7 +570,6 @@ it("reports on the overview's last 90 days when its profit opens the page", asyn
   await act(async () => period.click());
 });
 
-// The tax report's dollars, from documents taxed at the given rates.
 const taxedAt = (rates) => {
   const sum = (key) => rates.reduce((total, row) => total + row[key], 0);
   useGetTaxReportQuery.mockReturnValue(
@@ -614,7 +593,7 @@ const taxedAt = (rates) => {
   );
 };
 
-it("says what tax was charged on the taxed sales alone, and what else had no tax", () => {
+it("splits taxed and untaxed sales", () => {
   withFigures();
   taxedAt([
     { rate: 0, documents: 2, taxable: 500, tax: 0 },
@@ -626,7 +605,7 @@ it("says what tax was charged on the taxed sales alone, and what else had no tax
   );
 });
 
-it("says nothing about untaxed sales when every sale was taxed", () => {
+it("no untaxed note when all taxed", () => {
   withFigures();
   taxedAt([{ rate: 10, documents: 1, taxable: 600, tax: 60 }]);
   const text = render().textContent;
@@ -634,7 +613,7 @@ it("says nothing about untaxed sales when every sale was taxed", () => {
   expect(text).not.toContain("had no tax");
 });
 
-it("says no tax was charged when no sale was taxed", () => {
+it("no tax when nothing taxed", () => {
   withFigures();
   taxedAt([{ rate: 0, documents: 2, taxable: 500, tax: 0 }]);
   const text = render().textContent;

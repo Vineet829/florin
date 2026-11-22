@@ -8,8 +8,6 @@ import {
 import { rowAction } from "../../../components/workspace/pastel";
 import { useGetWaitingPaymentClaimsQuery } from "../documentsApiSlice";
 
-// Payments clients reported from their share pages, waiting to be confirmed.
-// Each leads to its invoice, where it is confirmed or dismissed.
 const WaitingPayments = () => {
   const claims = useGetWaitingPaymentClaimsQuery().data?.claims || [];
   if (claims.length === 0) return null;

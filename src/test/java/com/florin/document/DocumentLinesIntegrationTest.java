@@ -14,15 +14,12 @@ import com.florin.IntegrationTest;
 import com.jayway.jsonpath.JsonPath;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// A line counts in whole or fractional quantities, and can say what it
-// counts, such as hours.
 class DocumentLinesIntegrationTest extends IntegrationTest {
 
     private String session;
@@ -55,7 +52,6 @@ class DocumentLinesIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a quantity can be a fraction and a line can name its unit, both shown as typed")
     void fractionsAndUnits() throws Exception {
         String id = JsonPath.read(
                 body(create("""
@@ -84,9 +80,7 @@ class DocumentLinesIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a quantity below 0, above 1,000,000 or with more than 4 decimals is refused, as are a unit price"
-            + " past 15 whole digits and a long unit")
-    void limits() throws Exception {
+    void refusesOutOfRangeLines() throws Exception {
         create("{\"itemName\": \"Work\", \"unitPrice\": 1, \"quantity\": -1}")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Quantities can't be negative"));
@@ -96,7 +90,6 @@ class DocumentLinesIntegrationTest extends IntegrationTest {
         create("{\"itemName\": \"Work\", \"unitPrice\": 1, \"quantity\": 1.23456}")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Quantities can be at most 1,000,000, with up to 4 decimals"));
-        // Past 7 whole digits two limits apply, and either may be the one named.
         create("{\"itemName\": \"Work\", \"unitPrice\": 1, \"quantity\": 10000000}")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(startsWith("Quantities can be at most 1,000,000")));
@@ -109,10 +102,7 @@ class DocumentLinesIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.message").value("Units can be at most 20 characters"));
     }
 
-    // Each line's price and quantity are within their limits, but a document
-    // can store amounts of at most 99,999,999,999,999,999.99.
     @Test
-    @DisplayName("a total too large to save is a 400 that says so, and a draft edited past it keeps its total")
     void totalTooLarge() throws Exception {
         create("{\"itemName\": \"Work\", \"unitPrice\": 999999999999999.9999, \"quantity\": 1000000}")
                 .andExpect(status().isBadRequest())
@@ -138,7 +128,6 @@ class DocumentLinesIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a line whose name has a NUL character in it is a 400 that says so")
     void nulCharacter() throws Exception {
         create("{\"itemName\": \"Work\\u0000\", \"unitPrice\": 1, \"quantity\": 1}")
                 .andExpect(status().isBadRequest())

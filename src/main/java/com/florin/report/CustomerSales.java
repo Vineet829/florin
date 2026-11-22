@@ -21,16 +21,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
-// Sales by customer: every client billed in a period, in one currency chosen
-// as the overview chooses it, read by the reports' own query for their top
-// clients and with the same billed, paid and owed, a page at a time.
 @Service
 public class CustomerSales {
 
     private static final BigDecimal ZERO = BigDecimal.ZERO.setScale(2);
     private static final int MAX_PAGE_SIZE = 100;
 
-    // What each of the sorts orders clients by.
     private static final Map<String, Function<CustomerSalesResponse.Client, BigDecimal>> AMOUNTS = Map.of(
             "billed", CustomerSalesResponse.Client::billed,
             "paid", CustomerSalesResponse.Client::paid,
@@ -49,7 +45,6 @@ public class CustomerSales {
         this.clock = clock;
     }
 
-    // The totals count every client, on every page.
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public CustomerSalesResponse list(
             BusinessAccess access,
@@ -102,9 +97,6 @@ public class CustomerSales {
                 client.outstanding());
     }
 
-    // Billed, paid or owed in the direction asked for, or the name; clients
-    // alike in it go by name, whatever its case, then by spelling, and
-    // clients named alike in a fixed order, those linked to no client last.
     private static Comparator<CustomerSalesResponse.Client> order(String sort, boolean ascending) {
         Comparator<CustomerSalesResponse.Client> byName = Comparator.<CustomerSalesResponse.Client, String>comparing(
                         client -> name(client).toLowerCase(Locale.ROOT))
@@ -123,7 +115,6 @@ public class CustomerSales {
         return Comparator.comparing(amount, direction).thenComparing(byName);
     }
 
-    // Documents linked to no client and saved without a name have none.
     private static String name(CustomerSalesResponse.Client client) {
         return Objects.requireNonNullElse(client.client(), "");
     }

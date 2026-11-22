@@ -23,7 +23,7 @@
     "clients": [
       {
         "clientId": "00000000-0000-0000-0000-00000000c107",
-        "client": "Quill & Co. Publishing",
+        "client": "Deshmukh & Associates",
         "documents": 2,
         "billed": 13459.88,
         "paid": 11490.77,
@@ -31,7 +31,7 @@
       },
       {
         "clientId": "00000000-0000-0000-0000-00000000c109",
-        "client": "Kestrel Outdoor",
+        "client": "Casa Fernandes Homestay",
         "documents": 2,
         "billed": 10317.45,
         "paid": 10317.45,
@@ -39,7 +39,7 @@
       },
       {
         "clientId": null,
-        "client": "Verdant Farms",
+        "client": "Nisarg Organic Farms",
         "documents": 2,
         "billed": 8590.73,
         "paid": 3278.96,
@@ -47,7 +47,7 @@
       },
       {
         "clientId": "00000000-0000-0000-0000-00000000c110",
-        "client": "Oak Street Bakery",
+        "client": "Mehta Bakers",
         "documents": 3,
         "billed": 8363.36,
         "paid": 5145.86,
@@ -55,7 +55,7 @@
       },
       {
         "clientId": "00000000-0000-0000-0000-00000000c101",
-        "client": "Atlas Robotics",
+        "client": "Pai Electricals",
         "documents": 2,
         "billed": 5298.15,
         "paid": 2747.75,
@@ -63,7 +63,7 @@
       },
       {
         "clientId": "00000000-0000-0000-0000-00000000c103",
-        "client": "Bluefin Analytics",
+        "client": "Shinde Constructions",
         "documents": 2,
         "billed": 5164.09,
         "paid": 2500.0,
@@ -71,7 +71,7 @@
       },
       {
         "clientId": "00000000-0000-0000-0000-00000000c104",
-        "client": "Harbor & Pine Architects",
+        "client": "Kale & Deshpande Architects",
         "documents": 2,
         "billed": 4953.0,
         "paid": 4465.0,
@@ -79,7 +79,7 @@
       },
       {
         "clientId": "00000000-0000-0000-0000-00000000c112",
-        "client": "Juniper Films",
+        "client": "Iyer Dance Academy",
         "documents": 2,
         "billed": 4861.5,
         "paid": 2931.0,
@@ -87,7 +87,7 @@
       },
       {
         "clientId": "00000000-0000-0000-0000-00000000c111",
-        "client": "Lumen Health",
+        "client": "Bhide Nursing Home",
         "documents": 2,
         "billed": 4262.75,
         "paid": 1500.0,
@@ -95,7 +95,7 @@
       },
       {
         "clientId": "00000000-0000-0000-0000-00000000c105",
-        "client": "Sable Fitness",
+        "client": "Gadre Mess",
         "documents": 2,
         "billed": 3577.17,
         "paid": 185.5,

@@ -49,6 +49,5 @@ public record PublicDocumentResponse(
         boolean canReportPayment,
         List<PublicPaymentReport> paymentReports) {
 
-    // The invoice or receipt a credit note credits, as its client knows it.
     public record PublicCreditedDocument(DocumentType documentType, String documentNumber, LocalDate issueDate) {}
 }

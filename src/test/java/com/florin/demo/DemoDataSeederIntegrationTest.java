@@ -18,7 +18,6 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,8 +32,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 class DemoDataSeederIntegrationTest extends IntegrationTest {
 
-    // Where the sample data is dated from.
-    private static final ZoneId ZONE = ZoneId.of("America/Los_Angeles");
+    private static final ZoneId ZONE = ZoneId.of("Asia/Kolkata");
 
     @Autowired
     private DemoDataSeeder seeder;
@@ -53,7 +51,6 @@ class DemoDataSeederIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("seeding fills an account with a year of clients, items, documents and payments, exactly once")
     void seedsOnce() {
         User demo = createUser();
 
@@ -80,6 +77,15 @@ class DemoDataSeederIntegrationTest extends IntegrationTest {
                         "select count(*) from documents where created_by_pkid = ? and document_number = 'INV-1001'",
                         owner))
                 .isEqualTo(1);
+        assertThat(jdbcTemplate.queryForList("""
+                select distinct concat_ws(' ', tax_regime, seller_state_code, place_of_supply, supply_type)
+                from documents where created_by_pkid = ? order by 1
+                """, String.class, owner))
+                .containsExactly("GST_INDIA 27 27 INTRA", "GST_INDIA 27 29 INTER", "GST_INDIA 27 30 INTER");
+        assertThat(count("""
+                select count(*) from document_billing_items i join documents d on d.pkid = i.document_pkid
+                where d.created_by_pkid = ? and (i.tax_rate <> 18 or i.hsn_sac is null)
+                """, owner)).isZero();
         assertThat(count("""
                 select count(*) from documents d
                 where d.created_by_pkid = ? and d.total_amount_received <>
@@ -112,12 +118,10 @@ class DemoDataSeederIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an account with the rest of the sample data gets a year of sample expenses in dollars, once")
     void expensesOnce() {
         User demo = createUser();
         Long business = businessOf(demo).getPkid();
         seeder.seed(demo.getEmail());
-        // A currency of its own since; the sample expenses are in dollars, as the sample documents are.
         jdbcTemplate.update("update business_settings set default_currency = 'EUR' where business_pkid = ?", business);
 
         DemoDataSeeder.ExpenseResult result = seeder.seedExpenses(demo.getEmail());
@@ -135,9 +139,6 @@ class DemoDataSeederIntegrationTest extends IntegrationTest {
         assertThat(count("select count(*) from documents where business_pkid = ?", business)).isEqualTo(51);
     }
 
-    // The fourteen sample expenses over the last 12 months, in dollars, in
-    // five categories, some with sales tax, none of which can be claimed back,
-    // each recorded by the account on the day it was paid.
     private void sampleExpenses(User demo) {
         Long business = businessOf(demo).getPkid();
         LocalDate today = LocalDate.now(ZONE);
@@ -146,7 +147,7 @@ class DemoDataSeederIntegrationTest extends IntegrationTest {
                         "select distinct category from expenses where business_pkid = ?", String.class, business))
                 .containsExactlyInAnyOrder(
                         "Contractors", "Software and subscriptions", "Marketing", "Travel", "Office");
-        assertThat(count("select count(*) from expenses where business_pkid = ? and currency <> 'USD'", business))
+        assertThat(count("select count(*) from expenses where business_pkid = ? and currency <> 'INR'", business))
                 .isZero();
         assertThat(count(
                         "select count(*) from expenses where business_pkid = ? and expense_date between ? and ?",
@@ -155,9 +156,9 @@ class DemoDataSeederIntegrationTest extends IntegrationTest {
                         today))
                 .isEqualTo(14);
         assertThat(count("select count(*) from expenses where business_pkid = ? and tax_amount > 0", business))
-                .isEqualTo(6);
+                .isEqualTo(9);
         assertThat(count("select count(*) from expenses where business_pkid = ? and tax_reclaimable", business))
-                .isZero();
+                .isEqualTo(7);
         assertThat(count("select count(*) from expenses where business_pkid = ? and vendor is null", business))
                 .isZero();
         assertThat(count(
@@ -167,12 +168,11 @@ class DemoDataSeederIntegrationTest extends IntegrationTest {
                 .isEqualTo(14);
         assertThat(count("""
                 select count(*) from expenses
-                where business_pkid = ? and expense_date <> (created_at at time zone 'America/Los_Angeles')::date
+                where business_pkid = ? and expense_date <> (created_at at time zone 'Asia/Kolkata')::date
                 """, business)).isZero();
     }
 
     @Test
-    @DisplayName("an account with expenses of its own gets no sample ones, with or without the rest of the sample data")
     void ownExpenses() {
         User demo = createUser();
         Long business = businessOf(demo).getPkid();
@@ -186,7 +186,6 @@ class DemoDataSeederIntegrationTest extends IntegrationTest {
         assertThat(before.reason()).isEqualTo("the demo account already has expenses of its own");
         assertThat(count("select count(*) from expenses where business_pkid = ?", business)).isEqualTo(1);
 
-        // The rest of the sample data is added as before, and the sample expenses still aren't.
         assertThat(seeder.seed(demo.getEmail()).seeded()).isTrue();
         DemoDataSeeder.ExpenseResult after = seeder.seedExpenses(demo.getEmail());
         assertThat(after.seeded()).isFalse();
@@ -196,25 +195,23 @@ class DemoDataSeederIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the sample expenses add up alike on the overview, the profit report and the expenses list")
     void figuresAgree() throws Exception {
         User demo = createUser();
         seeder.seed(demo.getEmail());
         seeder.seedExpenses(demo.getEmail());
         String session = bearer(demo);
 
-        // The last 90 days hold all five categories, each expense costing what
-        // was paid for it, tax and all.
         read(session, get("/api/v1/report/profit").param("period", "90d"))
-                .andExpect(jsonPath("$.currencies[0].currency").value("USD"))
-                .andExpect(jsonPath("$.currencies[0].expenses").value(5958.16))
+                .andExpect(jsonPath("$.currencies[0].currency").value("INR"))
+                .andExpect(jsonPath("$.currencies[0].expenses").value(86970.0))
                 .andExpect(jsonPath(
                         "$.currencies[0].categories[*].category",
-                        contains("Contractors", "Travel", "Software and subscriptions", "Marketing", "Office")))
+                        contains("Contractors", "Software and subscriptions", "Travel", "Office", "Marketing")))
                 .andExpect(jsonPath(
-                        "$.currencies[0].categories[*].expenses", contains(3600.0, 847.84, 787.37, 450.45, 272.5)));
-        read(session, get("/api/v1/expense").param("period", "90d").param("currency", "USD"))
-                .andExpect(jsonPath("$.totals[0].spent").value(5958.16));
+                        "$.currencies[0].categories[*].expenses",
+                        contains(45000.0, 23100.0, 11760.0, 4360.0, 2750.0)));
+        read(session, get("/api/v1/expense").param("period", "90d").param("currency", "INR"))
+                .andExpect(jsonPath("$.totals[0].spent").value(91758.0));
         for (String period : List.of("30d", "90d", "12m", "ytd")) {
             String overview = body(read(session, get("/api/v1/report/overview").param("period", period)));
             BigDecimal total = sum(overview, "$.trend[*].expenses");
@@ -223,17 +220,14 @@ class DemoDataSeederIntegrationTest extends IntegrationTest {
                     .as(period)
                     .isEqualByComparingTo(JsonPath.read(overview, "$.totals.profit.current").toString());
             String profit = body(read(session, get("/api/v1/report/profit").param("period", period)));
-            List<Object> spent = JsonPath.read(profit, "$.currencies[?(@.currency == 'USD')].expenses");
+            List<Object> spent = JsonPath.read(profit, "$.currencies[?(@.currency == 'INR')].expenses");
             assertThat(new BigDecimal(spent.get(0).toString())).as(period).isEqualByComparingTo(total);
-            // The expenses list for each of the profit report's categories and
-            // the same days adds up to what was paid in it, and less the tax
-            // that can be claimed back, to what the report says it cost.
             List<Map<String, Object>> categories =
-                    JsonPath.read(profit, "$.currencies[?(@.currency == 'USD')].categories[*]");
+                    JsonPath.read(profit, "$.currencies[?(@.currency == 'INR')].categories[*]");
             for (Map<String, Object> category : categories) {
                 MockHttpServletRequestBuilder list = get("/api/v1/expense")
                         .param("size", "100")
-                        .param("currency", "USD")
+                        .param("currency", "INR")
                         .param("category", (String) category.get("category"));
                 if (period.equals("ytd")) {
                     LocalDate today = LocalDate.now(ZONE);
@@ -272,8 +266,6 @@ class DemoDataSeederIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an account with the rest of the sample data gets three sample invoices repeating from the coming"
-            + " weeks, once")
     void recurringOnce() throws Exception {
         User demo = createUser();
         Long business = businessOf(demo).getPkid();
@@ -301,10 +293,6 @@ class DemoDataSeederIntegrationTest extends IntegrationTest {
         assertThat(schedules)
                 .extracting(schedule -> (String) schedule.get("items"))
                 .containsExactly("Hosting and maintenance (monthly)", "Consulting (hourly)", "Brand strategy workshop");
-        // Each repeats an invoice that bills its item and nothing else: one
-        // month of hosting, ten hours of consulting and one workshop. The
-        // hosting one is the invoice the schedule last made, a month before
-        // its next, paid in full.
         List<Map<String, Object>> templates = jdbcTemplate.queryForList("""
                 select d.issue_date, d.total, d.status,
                        (select count(*) from document_billing_items i where i.document_pkid = d.pkid) as lines,
@@ -317,17 +305,15 @@ class DemoDataSeederIntegrationTest extends IntegrationTest {
         assertThat(templates)
                 .extracting(template -> ((BigDecimal) template.get("quantity")).intValueExact())
                 .containsExactly(1, 10, 1);
-        assertThat((BigDecimal) templates.get(0).get("total")).isEqualByComparingTo("128.70");
+        assertThat((BigDecimal) templates.get(0).get("total")).isEqualByComparingTo("1770.00");
         assertThat(((Date) templates.get(0).get("issue_date")).toLocalDate())
                 .isEqualTo(today.plusDays(5).minusMonths(1));
         assertThat(templates.get(0).get("status")).isEqualTo("Paid");
-        // Each repeats a sample invoice of its own in dollars, made by the
-        // account, and issues each new one as it is made, without emailing it.
         assertThat(count("""
                 select count(distinct s.template_pkid) from recurring_schedules s
                 join documents d on d.pkid = s.template_pkid
                 where s.business_pkid = ? and s.created_by_pkid = ? and d.document_type = 'Invoice'
-                  and d.currency = 'USD' and d.issued_at is not null and d.voided_at is null
+                  and d.currency = 'INR' and d.issued_at is not null and d.voided_at is null
                   and s.issue_automatically and not s.email_automatically and not s.paused
                 """, business, demo.getPkid())).isEqualTo(3);
         read(bearer(demo), get("/api/v1/report/overview"))
@@ -341,7 +327,6 @@ class DemoDataSeederIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an account with a schedule of its own gets no sample ones, and one without sample invoices gets none")
     void ownSchedules() throws Exception {
         User demo = createUser();
         Long business = businessOf(demo).getPkid();
@@ -369,7 +354,6 @@ class DemoDataSeederIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the sample invoices to repeat are found however their items were spelled when they were added")
     void spelledDifferently() {
         User demo = createUser();
         Long business = businessOf(demo).getPkid();
@@ -394,8 +378,7 @@ class DemoDataSeederIntegrationTest extends IntegrationTest {
 
     @Test
     @ExtendWith(OutputCaptureExtension.class)
-    @DisplayName("starting up adds each kind of sample data on its own and says so, then says why it adds none again")
-    void startup(CapturedOutput output) {
+    void startupSeedsEachKindOnce(CapturedOutput output) {
         User demo = createUser();
         DemoSeedRunner runner =
                 new DemoSeedRunner(seeder, reset, new DemoProperties(demo.getEmail(), false), transactionTemplate);
@@ -414,7 +397,6 @@ class DemoDataSeederIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an account that doesn't exist is left alone")
     void missingAccount() {
         assertThat(seeder.seed("nobody@florin.test").seeded()).isFalse();
         DemoDataSeeder.ExpenseResult expenses = seeder.seedExpenses("nobody@florin.test");

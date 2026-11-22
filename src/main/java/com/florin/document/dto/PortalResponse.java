@@ -9,9 +9,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
-// A client's portal: the business, the client's name, what they owe in each
-// currency and a page of their documents. It holds nothing a share link
-// doesn't show, and no ids: documents are found by their number.
 public record PortalResponse(
         boolean success,
         PublicParty business,
@@ -22,7 +19,6 @@ public record PortalResponse(
         int page,
         int pages) {
 
-    // What the client owes in one currency, as their statement shows it.
     public record Balance(
             String currency,
             BigDecimal invoiced,
@@ -32,7 +28,6 @@ public record PortalResponse(
             BigDecimal due,
             BigDecimal overdue) {}
 
-    // One of the client's documents; only an invoice has a balance.
     public record Entry(
             DocumentType documentType,
             String documentNumber,

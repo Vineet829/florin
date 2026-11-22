@@ -4,13 +4,9 @@ import java.nio.charset.StandardCharsets;
 
 public final class PasswordPolicy {
 
-    // What isStrong asks for, every kind of character named.
     public static final String REQUIREMENTS = "Password must be at least 8 characters long, with at least 1"
             + " uppercase letter, 1 lowercase letter, 1 number and 1 symbol";
 
-    // Passwords are kept as bcrypt hashes, which take at most 72 bytes of
-    // a password: one letter of English is a byte, an accented letter two,
-    // a letter of most other scripts three. A longer password can't be kept.
     public static final int MAX_BYTES = 72;
     public static final String TOO_LONG = "Password can be at most 72 characters long, or fewer with letters"
             + " outside the English alphabet";

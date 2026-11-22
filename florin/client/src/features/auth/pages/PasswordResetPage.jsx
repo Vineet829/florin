@@ -72,7 +72,6 @@ const PasswordField = ({
 const PasswordResetPage = () => {
   useTitle("Request Reset Password");
   const navigate = useNavigate();
-  // The emailed link carries the reset token and the account it belongs to.
   const [searchParams] = useSearchParams();
 
   const [resetPassword, { data, isLoading, isSuccess }] =
@@ -111,11 +110,10 @@ const PasswordResetPage = () => {
             setStatus({ success: true });
             setSubmitting(false);
           } catch (err) {
-            // A server that can't be reached sends no message of its own.
             toast.error(
               errorMessage(
                 err,
-                "Your password could not be reset. Please try again.",
+                "Your password couldn't be reset. Please try again.",
               ),
             );
             setStatus({ success: false });
@@ -165,7 +163,7 @@ const PasswordResetPage = () => {
                 (!values.password && !values.passwordConfirm) || isLoading
               }
             >
-              {isLoading ? "Resetting…" : "Reset password"}
+              {isLoading ? "Resetting..." : "Reset password"}
             </button>
           </form>
         )}

@@ -1,4 +1,3 @@
-// What the automatic reminder settings will do, in one sentence.
 export const reminderSummary = ({
   remindersEnabled,
   reminderDaysBefore,

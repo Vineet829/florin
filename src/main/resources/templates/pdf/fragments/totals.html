@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
 <body>
-  <!-- Amounts in a column on the right, ending with the one that matters. -->
   <table class="summary" th:fragment="totals(currency, rows, balanceLabel, balance)">
     <tr th:each="row : ${rows}" th:class="${row.tone()}">
       <td th:text="${row.label()}">Subtotal</td>
@@ -13,7 +12,6 @@
     </tr>
   </table>
 
-  <!-- A GST invoice's tax at each rate, split as it was charged. -->
   <table class="rates gst-rates" th:fragment="gstRates(currency, sgstLabel, rows)">
     <thead>
       <tr>
@@ -37,8 +35,6 @@
     </tbody>
   </table>
 
-  <!-- A GST invoice's tax by HSN or SAC code within each rate, in place of
-       the rate table once any line has a code. -->
   <table class="rates gst-rates" th:fragment="hsnRates(currency, sgstLabel, rows)">
     <thead>
       <tr>
@@ -64,7 +60,6 @@
     </tbody>
   </table>
 
-  <!-- What was taxable at each rate, and the tax charged at it. -->
   <table class="rates" th:fragment="rates(currency, rows)">
     <thead>
       <tr>

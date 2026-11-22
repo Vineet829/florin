@@ -72,10 +72,6 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, message);
     }
 
-    // A value PostgreSQL can't store is the request's to fix, not a clash
-    // with a record already saved: a number too large for its column, such
-    // as a document total past 17 digits (SQLSTATE 22003), or text with a
-    // NUL character in it (22021).
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleConflict(DataIntegrityViolationException ex) {
         String state = ex.getMostSpecificCause() instanceof SQLException sql ? sql.getSQLState() : null;
@@ -88,9 +84,6 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.CONFLICT, "That conflicts with a record that already exists");
     }
 
-    // Spring reports a body sent in more parts than Tomcat takes as too large
-    // as well; that one is answered as an unreadable body, below, as the
-    // logo's size has nothing to do with it.
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ErrorResponse> handleTooLarge(MaxUploadSizeExceededException ex, WebRequest request) {
         if (ex.getMostSpecificCause() instanceof FileCountLimitExceededException) {
@@ -99,11 +92,6 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.PAYLOAD_TOO_LARGE, UploadService.TOO_LARGE);
     }
 
-    // Any other multipart body that can't be read is a 400. Most are the
-    // sender's to fix, such as one cut short or sent in more parts than
-    // Tomcat takes, but Tomcat failing on its own side lands here too, such
-    // as when it can't write a part to its temp folder, so each is logged in
-    // one warning line. One over the size limit is answered above.
     @ExceptionHandler(MultipartException.class)
     public ResponseEntity<ErrorResponse> handleUnreadableParts(MultipartException ex, WebRequest request) {
         LOGGER.warn("Unreadable multipart body on {}: {}", describe(request), ex.getMostSpecificCause().toString());
@@ -129,10 +117,6 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.NOT_FOUND, "That route does not exist - " + path);
     }
 
-    // Spring's own request errors, such as a method or media type the route
-    // doesn't take or a missing parameter, keep their status. Anything else
-    // is unexpected: it is logged with where it happened, and answered
-    // without its details.
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(Exception ex, WebRequest request) {
         if (ex instanceof org.springframework.web.ErrorResponse spring

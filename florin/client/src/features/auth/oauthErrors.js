@@ -1,5 +1,3 @@
-// What went wrong when signing in with a provider such as Google, from the
-// oauth_error code the server adds when it sends the browser back to /login.
 export const oauthErrorMessage = (code, providerName = "Google") => {
   switch (code) {
     case "cancelled":
@@ -16,7 +14,6 @@ export const oauthErrorMessage = (code, providerName = "Google") => {
       return `This account is already linked to a different ${providerName} account.`;
     case "email_not_hosted":
       return `An account already uses that email address, and ${providerName} can't confirm it's still yours. Please sign in with your password.`;
-    // "failed", and any code this version of the app doesn't know yet.
     default:
       return `Signing in with ${providerName} didn't work. Please try again.`;
   }

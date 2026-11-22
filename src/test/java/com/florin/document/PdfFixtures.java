@@ -20,9 +20,6 @@ import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 
-// Fixed documents, a seller and a client to render PDFs from in tests, and a
-// PdfService wired as the app wires it. Every detail is filled in, so a
-// change to any part of a PDF shows up.
 final class PdfFixtures {
 
     static final byte[] PNG = Base64.getDecoder().decode(
@@ -48,13 +45,12 @@ final class PdfFixtures {
         return new PdfService(engine, new UploadService(properties));
     }
 
-    // The business, with a logo saved in the upload folder.
     static Business seller(Path uploads) throws IOException {
         Files.write(uploads.resolve("logo.png"), PNG);
         Business business = new Business();
-        business.setName("Ada Analytics");
-        business.setLegalName("Ada Analytics Private Limited");
-        business.setEmail("accounts@ada.example");
+        business.setName("Apte Analytics");
+        business.setLegalName("Apte Analytics Private Limited");
+        business.setEmail("accounts@apte.example");
         business.setPhoneNumber("+91 20 5555 0100");
         business.setAddress("12 MG Road");
         business.setCity("Pune");
@@ -111,8 +107,6 @@ final class PdfFixtures {
         return document;
     }
 
-    // An invoice part paid, with a discounted line, characters to escape and
-    // an amount over a lakh.
     static Document invoice() {
         Document invoice = document(DocumentType.INVOICE, "INV-0042", "INR");
         invoice.setDueDate(Instant.parse("2026-10-15T06:30:00Z"));
@@ -129,8 +123,6 @@ final class PdfFixtures {
         return invoice;
     }
 
-    // A draft: no number and no date until it is issued, and the business
-    // and the name of its tax as they are now.
     static Document draft() {
         Document draft = document(DocumentType.INVOICE, null, "INR");
         draft.setIssuedAt(null);
@@ -148,7 +140,6 @@ final class PdfFixtures {
         return draft;
     }
 
-    // An invoice voided because it went to the wrong client.
     static Document voided() {
         Document voided = invoice();
         voided.getPayments().clear();
@@ -159,8 +150,6 @@ final class PdfFixtures {
         return voided;
     }
 
-    // An invoice whose lines are taxed at two rates, worked out as the app
-    // works them out.
     static Document twoRates() {
         Document invoice = document(DocumentType.INVOICE, "INV-0043", "INR");
         invoice.setDueDate(Instant.parse("2026-10-15T06:30:00Z"));
@@ -198,8 +187,6 @@ final class PdfFixtures {
         return quotation;
     }
 
-    // A credit note for one returned prototype on the invoice above, with the
-    // reason, and characters to escape.
     static Document creditNote() {
         Document invoice = invoice();
         Document note = document(DocumentType.CREDIT_NOTE, "CN-0003", "INR");
@@ -212,14 +199,12 @@ final class PdfFixtures {
         return note;
     }
 
-    // The invoice above, part paid, with that credit note issued against it.
     static Document creditedInvoice() {
         Document invoice = creditNote().getCredited();
         invoice.setTotalCredited(new BigDecimal("14750.00"));
         return invoice;
     }
 
-    // A GST tax invoice within Maharashtra, at two rates, to a registered client.
     static Document gstInvoice() {
         Document invoice = document(DocumentType.INVOICE, "INV/0044", "INR");
         invoice.setDueDate(Instant.parse("2026-10-15T06:30:00Z"));
@@ -241,8 +226,6 @@ final class PdfFixtures {
         return invoice;
     }
 
-    // An export to the United States under the business's LUT, billed in
-    // dollars and valued in rupees.
     static Document gstExport() {
         Document invoice = document(DocumentType.INVOICE, "INV/0045", "USD");
         invoice.setDueDate(Instant.parse("2026-10-15T06:30:00Z"));
@@ -264,7 +247,6 @@ final class PdfFixtures {
         return invoice;
     }
 
-    // A receipt: a document for a sale paid in full on the spot.
     static Document receipt() {
         Document receipt = document(DocumentType.RECEIPT, "REC-0003", "INR");
         receipt.setStatus(DocumentStatus.PAID);
@@ -291,7 +273,6 @@ final class PdfFixtures {
         return customer;
     }
 
-    // Two currencies: rupees part credited and still overdue, dollars settled.
     static List<Statements.Account> accounts() {
         return List.of(
                 new Statements.Account(
@@ -324,8 +305,6 @@ final class PdfFixtures {
                         BigDecimal.ZERO));
     }
 
-    // Rupees, in amounts as wide as a test needs: an invoice for what was
-    // charged, then a payment and a credit note against it.
     static List<Statements.Account> account(BigDecimal charged, BigDecimal paid) {
         BigDecimal credited = new BigDecimal("20000.00");
         BigDecimal due = charged.subtract(paid).subtract(credited);

@@ -22,7 +22,6 @@ import jakarta.mail.Session;
 import jakarta.mail.internet.MimeMessage;
 import java.util.List;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.http.HttpHeaders;
@@ -32,7 +31,6 @@ class PaymentReceiptIntegrationTest extends IntegrationTest {
 
     private record Paid(String document, String email, List<String> payments) {}
 
-    // An invoice of 100 paid in two parts, the later one recorded first.
     private Paid paidInvoice(User owner) throws Exception {
         String email = "beta-" + UUID.randomUUID() + "@clients.test";
         String customer = mockMvc.perform(post("/api/v1/customer/create")
@@ -70,8 +68,7 @@ class PaymentReceiptIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("each receipt is a PDF numbered in the order its payment was recorded, whatever the dates")
-    void pdf() throws Exception {
+    void receiptsNumberedByRecording() throws Exception {
         User owner = createUser();
         Paid paid = paidInvoice(owner);
 
@@ -89,7 +86,6 @@ class PaymentReceiptIntegrationTest extends IntegrationTest {
         assertThat(new String(body, 0, 5)).isEqualTo("%PDF-");
     }
 
-    // The file name a payment's receipt is given, which carries its number.
     private String receiptName(User owner, Paid paid, String payment) throws Exception {
         return mockMvc.perform(get("/api/v1/document/{id}/payment/{payment}/receipt", paid.document(), payment)
                         .header(HttpHeaders.AUTHORIZATION, bearer(owner)))
@@ -100,7 +96,6 @@ class PaymentReceiptIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("each payment says its receipt's number, which isn't its place among the payments by date")
     void numberListed() throws Exception {
         User owner = createUser();
         Paid paid = paidInvoice(owner);
@@ -111,7 +106,6 @@ class PaymentReceiptIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a receipt keeps its number when its payment's date changes, and a deleted one's isn't given again")
     void numbersKept() throws Exception {
         User owner = createUser();
         Paid paid = paidInvoice(owner);
@@ -143,8 +137,7 @@ class PaymentReceiptIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a receipt emails to the client, and the document's timeline records it")
-    void email() throws Exception {
+    void emailsReceiptToClient() throws Exception {
         User owner = createUser();
         Paid paid = paidInvoice(owner);
         when(mailSender.createMimeMessage()).thenReturn(new MimeMessage((Session) null));
@@ -170,8 +163,7 @@ class PaymentReceiptIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("only the owner gets a receipt, for a payment that exists, and the demo account can't email one")
-    void rules() throws Exception {
+    void receiptAccessRules() throws Exception {
         User owner = createUser();
         Paid paid = paidInvoice(owner);
 

@@ -3,10 +3,6 @@ import { createRoot } from "react-dom/client";
 import { act } from "react-dom/test-utils";
 import fixture from "./ReceivablesPage.fixture.json";
 
-// The view as the app draws it, through its own store and RTK Query, with
-// only fetch faked. The fixture is the demo account on Oct 4, 2026: what
-// clients owe as the server sums it up, and the invoices behind each
-// figure. The signed-in shell is left out.
 vi.mock("../../dashboard/components/DashboardShell", () => ({
   default: ({ children }) => children,
 }));
@@ -15,7 +11,6 @@ vi.mock("react-toastify", () => ({ toast }));
 
 window.IS_REACT_ACT_ENVIRONMENT = true;
 
-// jsdom has no modal dialogs; these stand in for the browser's.
 HTMLDialogElement.prototype.showModal = function showModal() {
   this.open = true;
 };
@@ -30,7 +25,6 @@ let container;
 beforeEach(() => {
   vi.resetModules();
   vi.stubEnv("VITE_API_URL", "http://localhost:3001/api/v1");
-  // Days late and days to go count from the day the fixture was taken.
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date(2026, 9, 4, 12));
   requests = [];
@@ -51,8 +45,6 @@ const json = (body, status = 200) =>
     headers: { "content-type": "application/json" },
   });
 
-// The business the session works in, as its owner, and as a viewer, who
-// sees the records and exports lists but changes nothing.
 const business = (role, permissions) => ({
   businesses: [
     { _id: "b-1", name: "Studio Demo", role, active: true, permissions },
@@ -66,25 +58,20 @@ const owner = business("OWNER", [
 ]);
 const viewer = business("VIEWER", ["VIEW_RECORDS", "EXPORT_LISTS"]);
 
-const SABLE = "00000000-0000-0000-0000-000000001026";
+const GADRE = "00000000-0000-0000-0000-000000001026";
 const draft = {
   success: true,
-  to: "accounts@sablefitness.example",
+  to: "orders@gadremess.example",
   subject: "A reminder about invoice INV-1026",
   message: "Hello, invoice INV-1026 was due on Aug 11, 2026.",
   note: null,
 };
 
-// The invoices each mode asks for: those owed and overdue, or those owed
-// and not due yet.
 const invoices = (url) =>
   url.searchParams.get("overdue") === "true"
     ? fixture.overdue
     : fixture.comingIn;
 
-// Answers each request by its path; `answers` replaces any of them with a
-// body or a Response, a promise of either, or a function of the request
-// giving one.
 const serve = (answers = {}) =>
   vi.stubGlobal(
     "fetch",
@@ -99,7 +86,7 @@ const serve = (answers = {}) =>
         "/document/all": invoices,
         "/businesses": owner,
         "/user/profile": { userProfile: { demo: false } },
-        [`/document/${SABLE}/remind`]: (_url, sent) =>
+        [`/document/${GADRE}/remind`]: (_url, sent) =>
           sent.method === "POST"
             ? { success: true, message: "Reminder sent successfully." }
             : draft,
@@ -150,7 +137,6 @@ const click = (element) =>
   });
 const documents = () =>
   requests.filter((request) => request.includes("/document/"));
-// The summary, and the list of invoices under it.
 const summary = (page) => page.querySelector("section");
 const list = (page) => page.querySelectorAll("section")[1];
 const table = (element) =>
@@ -168,7 +154,6 @@ const pill = (page, label) =>
   [...page.querySelectorAll('input[name="receivables-mode"]')].find(
     (input) => input.parentElement.textContent === label,
   );
-// The bar's parts: each one's colour and the amount it grows by.
 const bar = (page) =>
   [...summary(page).querySelector(".h-3\\.5").children].map((part) => [
     part.className.match(/bg-owed-[\w/-]+/)[0],
@@ -178,8 +163,6 @@ const legend = (page) =>
   [...summary(page).querySelectorAll("ul > li .sr-only")].map(
     (words) => words.textContent,
   );
-// The styled dropdown with this label: its trigger, which carries the value
-// chosen.
 const select = (page, label) =>
   [...page.querySelectorAll("label")]
     .find((element) => element.textContent.startsWith(label))
@@ -203,12 +186,10 @@ const choose = async (combobox, value) => {
   );
 };
 
-it("shows what is coming in, as the overview's Current counts it, above those invoices soonest due first", async () => {
+it("shows incoming invoices", async () => {
   const page = await open("/receivables");
-  expect(document.title).toBe("Receivables — Florin");
+  expect(document.title).toBe("Receivables - Florin");
   expect(page.querySelector("h1").textContent).toBe("Documents.");
-  // The figure's currency is the server's, so the invoices are asked for in
-  // it once it has answered.
   expect(documents()).toEqual([
     "/api/v1/document/receivables",
     "/api/v1/document/all?page=1&size=10&sort=dueDate&dir=asc&outstanding=true&due=current&currency=USD",
@@ -217,41 +198,41 @@ it("shows what is coming in, as the overview's Current counts it, above those in
   expect(summary(page).textContent).toContain(
     "Coming in17,959.76on 7 invoicesOf 24,285.79 owed on 10 invoices, as of today.",
   );
-  // Each band as long as its amount; the empty one is left out.
   expect(bar(page)).toEqual([
     ["bg-owed-due", 11194.74],
     ["bg-owed-due/70", 6277.02],
     ["bg-owed-due/45", 488],
   ]);
   expect(legend(page)).toEqual([
-    "Due in 0–15 days: USD 11,194.74 on 4 invoices",
-    "Due in 16–30 days: USD 6,277.02 on 2 invoices",
-    "Due in 31–45 days: USD 488.00 on 1 invoice",
+    "Due in 0-15 days: USD 11,194.74 on 4 invoices",
+    "Due in 16-30 days: USD 6,277.02 on 2 invoices",
+    "Due in 31-45 days: USD 488.00 on 1 invoice",
     "Due after 45 days: USD 0.00 on 0 invoices",
   ]);
-  // Who owes the most of it, each linked client opening the client.
   const owes = summary(page).querySelector("table");
   expect(headings(owes)).toEqual(["Client", "Invoices", "Owed"]);
   expect(table(owes)).toEqual([
-    ["Verdant Farms", "1", "4,346.52"],
-    ["Oak Street Bakery", "1", "3,217.50"],
-    ["Lumen Health", "1", "2,762.75"],
-    ["Bluefin Analytics", "1", "2,664.09"],
-    ["Atlas Robotics", "1", "2,550.40"],
+    ["Nisarg Organic Farms", "1", "4,346.52"],
+    ["Mehta Bakers", "1", "3,217.50"],
+    ["Bhide Nursing Home", "1", "2,762.75"],
+    ["Shinde Constructions", "1", "2,664.09"],
+    ["Pai Electricals", "1", "2,550.40"],
   ]);
   expect(links(owes)).toEqual([
+    ["Mehta Bakers", "/single-customer/00000000-0000-0000-0000-00000000c110"],
     [
-      "Oak Street Bakery",
-      "/single-customer/00000000-0000-0000-0000-00000000c110",
+      "Bhide Nursing Home",
+      "/single-customer/00000000-0000-0000-0000-00000000c111",
     ],
-    ["Lumen Health", "/single-customer/00000000-0000-0000-0000-00000000c111"],
     [
-      "Bluefin Analytics",
+      "Shinde Constructions",
       "/single-customer/00000000-0000-0000-0000-00000000c103",
     ],
-    ["Atlas Robotics", "/single-customer/00000000-0000-0000-0000-00000000c101"],
+    [
+      "Pai Electricals",
+      "/single-customer/00000000-0000-0000-0000-00000000c101",
+    ],
   ]);
-  // The invoices behind the figure, each saying when it falls due.
   expect(list(page).querySelector("h2").textContent).toBe("Invoices coming in");
   expect(headings(list(page))).toEqual([
     "Invoice",
@@ -263,57 +244,57 @@ it("shows what is coming in, as the overview's Current counts it, above those in
   expect(table(list(page))).toEqual([
     [
       "INV-1032",
-      "Bluefin Analytics",
+      "Shinde Constructions",
       "Oct 6, 2026",
       "Due in 2 days",
       "USD2,664.09",
     ],
     [
       "INV-1034",
-      "Atlas Robotics",
+      "Pai Electricals",
       "Oct 12, 2026",
       "Due in 8 days",
       "USD2,550.40",
     ],
     [
       "INV-1035",
-      "Oak Street Bakery",
+      "Mehta Bakers",
       "Oct 15, 2026",
       "Due in 11 days",
       "USD3,217.50",
     ],
     [
       "INV-1036",
-      "Verdant Farms",
+      "Nisarg Organic Farms",
       "Oct 24, 2026",
       "Due in 20 days",
       "USD4,346.52",
     ],
     [
       "INV-1037",
-      "Juniper Films",
+      "Iyer Dance Academy",
       "Oct 31, 2026",
       "Due in 27 days",
       "USD1,930.50",
     ],
     [
       "INV-1038",
-      "Harbor & Pine Architects",
+      "Kale & Deshpande Architects",
       "Nov 16, 2026",
       "Due in 43 days",
       "USD488.00",
     ],
-    ["INV-1039", "Lumen Health", "—", "No due date", "USD2,762.75"],
+    ["INV-1039", "Bhide Nursing Home", "-", "No due date", "USD2,762.75"],
   ]);
   expect(links(list(page))[0]).toEqual([
     "INV-1032",
     "/document/00000000-0000-0000-0000-000000001032",
   ]);
   expect(list(page).querySelector("button[aria-label^='Send']")).toBeNull();
-  expect(page.querySelector('[role="status"]').textContent).toBe("1–7 of 7");
+  expect(page.querySelector('[role="status"]').textContent).toBe("1-7 of 7");
 });
 
-it("shows what is overdue, as the overview's Overdue counts it, most late first with a way to remind each client", async () => {
+it("shows overdue invoices", async () => {
   const page = await open("/receivables?mode=overdue");
   expect(documents()).toEqual([
     "/api/v1/document/receivables",
@@ -323,16 +304,15 @@ it("shows what is overdue, as the overview's Overdue counts it, most late first 
   expect(summary(page).textContent).toContain(
     "Overdue6,326.03on 3 invoicesOf 24,285.79 owed on 10 invoices, as of today.",
   );
-  // The overview's rust ramp, deeper the later.
   expect(bar(page)).toEqual([
     ["bg-owed-age-1", 965.25],
     ["bg-owed-age-2", 1969.11],
     ["bg-owed-age-4", 3391.67],
   ]);
   expect(legend(page)).toEqual([
-    "1–15 days late: USD 965.25 on 1 invoice",
-    "16–30 days late: USD 1,969.11 on 1 invoice",
-    "31–45 days late: USD 0.00 on 0 invoices",
+    "1-15 days late: USD 965.25 on 1 invoice",
+    "16-30 days late: USD 1,969.11 on 1 invoice",
+    "31-45 days late: USD 0.00 on 0 invoices",
     "Over 45 days late: USD 3,391.67 on 1 invoice",
   ]);
   expect(
@@ -347,9 +327,9 @@ it("shows what is overdue, as the overview's Overdue counts it, most late first 
   ]);
   const owes = summary(page).querySelector("table");
   expect(table(owes)).toEqual([
-    ["Sable Fitness", "1", "3,391.67"],
-    ["Quill & Co. Publishing", "1", "1,969.11"],
-    ["Verdant Farms", "1", "965.25"],
+    ["Gadre Mess", "1", "3,391.67"],
+    ["Deshmukh & Associates", "1", "1,969.11"],
+    ["Nisarg Organic Farms", "1", "965.25"],
   ]);
   expect(list(page).querySelector("h2").textContent).toBe("Overdue invoices");
   expect(headings(list(page))).toEqual([
@@ -363,7 +343,7 @@ it("shows what is overdue, as the overview's Overdue counts it, most late first 
   expect(table(list(page))).toEqual([
     [
       "INV-1026",
-      "Sable Fitness",
+      "Gadre Mess",
       "Aug 11, 2026, overdue",
       "54 days late",
       "USD3,391.67",
@@ -371,7 +351,7 @@ it("shows what is overdue, as the overview's Overdue counts it, most late first 
     ],
     [
       "INV-1030",
-      "Quill & Co. Publishing",
+      "Deshmukh & Associates",
       "Sep 13, 2026, overdue",
       "21 days late",
       "USD1,969.11",
@@ -379,7 +359,7 @@ it("shows what is overdue, as the overview's Overdue counts it, most late first 
     ],
     [
       "INV-1031",
-      "Verdant Farms",
+      "Nisarg Organic Farms",
       "Sep 24, 2026, overdue",
       "10 days late",
       "USD965.25",
@@ -398,7 +378,7 @@ it("shows what is overdue, as the overview's Overdue counts it, most late first 
   ]);
 });
 
-it("switches between coming in and overdue with the pills, keeping the mode in the address", async () => {
+it("switches mode with the pills", async () => {
   const page = await open("/receivables");
   await click(pill(page, "Overdue"));
   expect(address).toBe("?mode=overdue");
@@ -411,15 +391,12 @@ it("switches between coming in and overdue with the pills, keeping the mode in t
   await act(() =>
     vi.waitFor(() => expect(table(list(page))[0][0]).toBe("INV-1032")),
   );
-  // The figures were asked for once: the mode only changes the list.
   expect(
     documents().filter((request) => request.includes("/receivables")),
   ).toHaveLength(1);
 });
 
-// At 5 in the morning of Oct 5 in Kolkata it is still the afternoon of Oct 4
-// in Los Angeles, where the business is and the server counts its days.
-it("counts days late and due from the business's today, not the viewer's", async () => {
+it("counts days from business today", async () => {
   const zone = process.env.TZ;
   process.env.TZ = "Asia/Kolkata";
   try {
@@ -462,7 +439,6 @@ it("counts days late and due from the business's today, not the viewer's", async
   }
 });
 
-// Twelve overdue invoices, ten to a page; the second page has two.
 const twoPages = (url) => ({
   ...fixture.overdue,
   totalDocuments: 12,
@@ -474,14 +450,14 @@ const twoPages = (url) => ({
       : fixture.overdue.myDocuments,
 });
 
-it("keeps the page in the address, and starts a new mode at its first", async () => {
+it("new mode starts at page one", async () => {
   const page = await open("/receivables?mode=overdue&page=2", {
     "/document/all": twoPages,
   });
   expect(documents()[1]).toBe(
     "/api/v1/document/all?page=2&size=10&sort=dueDate&dir=asc&overdue=true&outstanding=true&currency=USD",
   );
-  expect(page.querySelector('[role="status"]').textContent).toBe("11–12 of 12");
+  expect(page.querySelector('[role="status"]').textContent).toBe("11-12 of 12");
   await click(page.querySelector('button[aria-label="First page"]'));
   expect(address).toBe("?mode=overdue");
   await click(page.querySelector('button[aria-label="Next page"]'));
@@ -490,13 +466,11 @@ it("keeps the page in the address, and starts a new mode at its first", async ()
   expect(address).toBe("");
 });
 
-it("shows the last page for a page past the end", async () => {
+it("clamps page past the end", async () => {
   await open("/receivables?mode=overdue&page=5");
   await act(() => vi.waitFor(() => expect(address).toBe("?mode=overdue")));
 });
 
-// The business bills in dollars and euros; the server answers in the
-// currency asked for, or in dollars.
 const inEuros = {
   "/document/receivables": (url) => ({
     ...fixture.receivables,
@@ -505,12 +479,11 @@ const inEuros = {
   }),
 };
 
-it("shows one currency at a time, with a menu when the business bills in several", async () => {
+it("currency menu for several currencies", async () => {
   const page = await open("/receivables?mode=overdue", inEuros);
   const currency = select(page, "Currency");
   expect(currency.textContent).toContain("USD");
   expect(await options(currency)).toEqual(["USD", "EUR"]);
-  // Amounts name their currency when there are several.
   expect(summary(page).textContent).toContain("USD6,326.03on 3 invoices");
   expect(summary(page).textContent).toContain("Of USD 24,285.79 owed");
   await choose(currency, "EUR");
@@ -523,12 +496,11 @@ it("shows one currency at a time, with a menu when the business bills in several
     ),
   );
   expect(documents()).toContain("/api/v1/document/receivables?currency=EUR");
-  // The first currency is the default, so it leaves the address.
   await choose(select(page, "Currency"), "USD");
   expect(address).toBe("?mode=overdue");
 });
 
-it("offers no currency menu when the business bills in one", async () => {
+it("no currency menu for one", async () => {
   const page = await open("/receivables");
   expect(select(page, "Currency")).toBeUndefined();
 });
@@ -550,7 +522,7 @@ const empty = {
   totals: [],
 };
 
-it("says when nothing is overdue", async () => {
+it("nothing overdue message", async () => {
   const page = await open(
     "/receivables?mode=overdue",
     {
@@ -568,12 +540,11 @@ it("says when nothing is overdue", async () => {
       ),
   );
   expect(summary(page).textContent).toContain("Overdue0.00Nothing is overdue");
-  // An empty track, and every band at zero.
   expect(bar(page)).toEqual([]);
   expect(legend(page)).toEqual([
-    "1–15 days late: USD 0.00 on 0 invoices",
-    "16–30 days late: USD 0.00 on 0 invoices",
-    "31–45 days late: USD 0.00 on 0 invoices",
+    "1-15 days late: USD 0.00 on 0 invoices",
+    "16-30 days late: USD 0.00 on 0 invoices",
+    "31-45 days late: USD 0.00 on 0 invoices",
     "Over 45 days late: USD 0.00 on 0 invoices",
   ]);
   expect(summary(page).textContent).toContain("No one is late paying.");
@@ -584,7 +555,7 @@ it("says when nothing is overdue", async () => {
   expect(list(page).querySelector("table")).toBeNull();
 });
 
-it("says when nothing is coming in", async () => {
+it("nothing incoming message", async () => {
   const page = await open(
     "/receivables",
     {
@@ -605,14 +576,14 @@ it("says when nothing is coming in", async () => {
     "Coming in0.00Nothing is coming in",
   );
   expect(summary(page).textContent).toContain(
-    "No one owes anything that isn’t due yet.",
+    "No one owes anything that isn't due yet.",
   );
   expect(list(page).textContent).toContain(
-    "Unpaid invoices that aren’t due yet show up here, soonest due first.",
+    "Unpaid invoices that aren't due yet show up here, soonest due first.",
   );
 });
 
-it("holds the summary's place while it loads, and asks for the invoices once it has", async () => {
+it("loads summary before invoices", async () => {
   let answer;
   const page = await open(
     "/receivables",
@@ -623,12 +594,11 @@ it("holds the summary's place while it loads, and asks for the invoices once it 
     },
     () => Promise.resolve(),
   );
-  // Blocks where the figures go, and the list's placeholder.
   expect(
     page.querySelector('[aria-hidden="true"] .animate-ov-pulse'),
   ).not.toBeNull();
   expect(page.querySelector('[role="status"]').textContent).toBe(
-    "Loading workspace data…",
+    "Loading workspace data...",
   );
   expect(page.textContent).not.toContain("17,959.76");
   expect(documents()).toEqual(["/api/v1/document/receivables"]);
@@ -638,7 +608,7 @@ it("holds the summary's place while it loads, and asks for the invoices once it 
   expect(page.querySelector(".animate-ov-pulse")).toBeNull();
 });
 
-it("says when the figures can't be loaded, with a way to try again", async () => {
+it("figures load error with retry", async () => {
   let fails = true;
   const page = await open(
     "/receivables",
@@ -654,8 +624,7 @@ it("says when the figures can't be loaded, with a way to try again", async () =>
       ),
   );
   const alert = page.querySelector('[role="alert"]');
-  expect(alert.textContent).toContain("We couldn’t load this page.");
-  // Without the figures there is no currency to list invoices in.
+  expect(alert.textContent).toContain("We couldn't load this page.");
   expect(documents().some((request) => request.includes("/document/all"))).toBe(
     false,
   );
@@ -670,7 +639,7 @@ it("says when the figures can't be loaded, with a way to try again", async () =>
   expect(summary(page).textContent).toContain("17,959.76");
 });
 
-it("says when the invoices can't be loaded, and keeps the figures", async () => {
+it("invoices load error keeps figures", async () => {
   const page = await open(
     "/receivables",
     {
@@ -684,13 +653,12 @@ it("says when the invoices can't be loaded, and keeps the figures", async () => 
   );
   expect(summary(page).textContent).toContain("17,959.76");
   const alert = list(page).querySelector('[role="alert"]');
-  expect(alert.textContent).toContain("We couldn’t load this page.");
+  expect(alert.textContent).toContain("We couldn't load this page.");
   expect(alert.textContent).toContain("The list is taking a break.");
 });
 
 const remindButton = (page) =>
   list(page).querySelector('button[aria-label="Send a reminder for INV-1026"]');
-// Sends the reminder the dialog offers, as written.
 const sendReminder = async (page) => {
   await click(remindButton(page));
   const dialog = document.querySelector("dialog[open]");
@@ -705,7 +673,7 @@ const sendReminder = async (page) => {
   return dialog;
 };
 
-it("reminds a client about an overdue invoice, with the message the invoice's page shows", async () => {
+it("sends a reminder", async () => {
   const page = await open("/receivables?mode=overdue");
   const dialog = await sendReminder(page);
   await act(() =>
@@ -713,47 +681,46 @@ it("reminds a client about an overdue invoice, with the message the invoice's pa
       expect(toast.success).toHaveBeenCalledWith("Reminder sent successfully."),
     ),
   );
-  expect(requests).toContain(`POST /api/v1/document/${SABLE}/remind`);
+  expect(requests).toContain(`POST /api/v1/document/${GADRE}/remind`);
   expect(toast.error).not.toHaveBeenCalled();
   expect(dialog.open).toBe(false);
 });
 
-it("says why a reminder wasn't sent, as the invoice's page does", async () => {
+it("shows reminder failure reason", async () => {
   const page = await open("/receivables?mode=overdue", {
-    [`/document/${SABLE}/remind`]: (_url, sent) =>
+    [`/document/${GADRE}/remind`]: (_url, sent) =>
       sent.method === "POST"
-        ? json({ message: "Sable Fitness has no email address." }, 400)
+        ? json({ message: "Gadre Mess has no email address." }, 400)
         : draft,
   });
   const dialog = await sendReminder(page);
   await act(() =>
     vi.waitFor(() =>
       expect(toast.error).toHaveBeenCalledWith(
-        "Sable Fitness has no email address.",
+        "Gadre Mess has no email address.",
       ),
     ),
   );
   expect(toast.success).not.toHaveBeenCalled();
-  // The dialog stays open, with what was written.
   expect(dialog.open).toBe(true);
 });
 
-it("falls back to the invoice page's words when the server gives no reason", async () => {
+it("default reminder failure message", async () => {
   const page = await open("/receivables?mode=overdue", {
-    [`/document/${SABLE}/remind`]: (_url, sent) =>
+    [`/document/${GADRE}/remind`]: (_url, sent) =>
       sent.method === "POST" ? new Response(null, { status: 502 }) : draft,
   });
   await sendReminder(page);
   await act(() =>
     vi.waitFor(() =>
       expect(toast.error).toHaveBeenCalledWith(
-        "The reminder could not be sent.",
+        "The reminder couldn't be sent.",
       ),
     ),
   );
 });
 
-it("shows a viewer each reminder disabled, with the reason", async () => {
+it("disables reminders for viewers", async () => {
   const page = await open("/receivables?mode=overdue", {
     "/businesses": viewer,
   });
@@ -779,7 +746,7 @@ it("shows a viewer each reminder disabled, with the reason", async () => {
   expect(document.querySelector("dialog[open]")).toBeNull();
 });
 
-it("turns reminders off for the shared demo account, as the invoice's page does", async () => {
+it("disables reminders for the demo", async () => {
   const page = await open("/receivables?mode=overdue", {
     "/user/profile": { userProfile: { demo: true } },
   });
@@ -791,7 +758,7 @@ it("turns reminders off for the shared demo account, as the invoice's page does"
   );
 });
 
-it("sits beside All documents, Sales, Payments and Recurring", async () => {
+it("shows the documents tab row", async () => {
   const page = await open("/receivables");
   expect(
     [...page.querySelectorAll('nav[aria-label="Documents views"] a')].map(

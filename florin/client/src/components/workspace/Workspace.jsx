@@ -54,9 +54,7 @@ export const dateLabel = (value) =>
         month: "short",
         year: "numeric",
       })
-    : "—";
-// A due date. An overdue one takes the overview's overdue colour, with the
-// icon after the date so the dates in a column stay aligned.
+    : "-";
 export const DueDate = ({ value, overdue = false }) =>
   overdue ? (
     <span
@@ -73,8 +71,6 @@ export const DueDate = ({ value, overdue = false }) =>
   ) : (
     dateLabel(value)
   );
-// The day a date field holds. A day sent as YYYY-MM-DD stays that day in any
-// time zone; a moment is its day where the browser is.
 export const dateInput = (value) => {
   const date = value ? parseDate(value) : new Date();
   return Number.isFinite(date.getTime())
@@ -82,8 +78,6 @@ export const dateInput = (value) => {
     : "";
 };
 
-// Page sections rise one after another, like the overview's panels. On a
-// `fill` page, a `fill` panel reaches the bottom of wide windows.
 export const WorkspacePage = ({ children, section, fill = false }) => (
   <DashboardShell section={section} fill={fill}>
     <div
@@ -94,10 +88,6 @@ export const WorkspacePage = ({ children, section, fill = false }) => (
   </DashboardShell>
 );
 
-// The title keeps room for a word as long as "Documents." beside the
-// actions; when the actions need more of the row, such as a long row of
-// tabs, they go under the title, and wrap within the width, rather than
-// squeezing it.
 export const PageHeader = ({ title, description, actions, back }) => {
   const navigate = useNavigate();
   return (
@@ -127,9 +117,6 @@ export const PageHeader = ({ title, description, actions, back }) => {
   );
 };
 
-// A link styled as a button. With a `reason`, it can't be followed, and the
-// reason is shown on hover and read out with it. A custom className replaces
-// the button's look, its disabled state included.
 export const ActionLink = ({
   children,
   to,
@@ -163,8 +150,6 @@ export const ActionLink = ({
     </Link>
   );
 };
-// An `id` lets a link from another page open this one at the panel, which
-// can then take focus.
 export const Panel = ({
   children,
   id,
@@ -217,14 +202,11 @@ const BADGE_TONES = {
   partial: "bg-spot-lilac/20 text-avatar-lilac-ink",
   unpaid: "bg-spot-coral/[.14] text-overdue-strong",
 };
-// The overview's status colours: violet, lilac and coral.
 const BADGE_DOTS = {
   paid: "bg-spot-violet",
   partial: "bg-spot-lilac",
   unpaid: "bg-spot-coral",
 };
-// Its text sets its baseline and the dot is centred beside it, so in a table
-// the text sits on the row's baseline.
 export const Badge = ({ children, tone = "neutral" }) => (
   <span
     className={`inline-flex items-baseline gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-[13px] leading-[1.3] ${BADGE_TONES[tone] || BADGE_TONES.neutral}`}
@@ -246,15 +228,10 @@ export const statusTone = (value) =>
       : value === "Not Paid"
         ? "unpaid"
         : "neutral";
-// A stored payment status in the app's words for it.
 export const StatusBadge = ({ status }) => (
   <Badge tone={statusTone(status)}>{STATUS_LABELS[status] || status}</Badge>
 );
 
-// An amount in the overview's figure style: light Sora, smaller decimals.
-// A custom className replaces the default weight and letter spacing. The
-// currency sets how digits are grouped; hideCode leaves its code off, where a
-// column's other amounts already name it.
 export const Amount = ({
   value,
   currency,
@@ -277,10 +254,6 @@ export const Amount = ({
   );
 };
 
-// A row's share of the largest row, from 0 to 1, drawn under its name in a
-// table that sums something up. The figures are in the row's other cells.
-// In a table, its column keeps room for the bar, up to its
-// 240px or 40% of the table's width.
 export const SHARE_BAR_TRACK = "minmax(min(240px,40%),auto)";
 export const ShareBar = ({ ratio, tone }) => (
   <span
@@ -294,9 +267,6 @@ export const ShareBar = ({ ratio, tone }) => (
   </span>
 );
 
-// A labelled control with its hint or error below. `as="select"` draws the
-// styled dropdown, and a date or month field the calendar; each reports its
-// choice as a change event, so a form reads it as it would a native control.
 export const Field = ({
   label,
   error,
@@ -388,8 +358,6 @@ export const EmptyState = ({ title, text, icon: Icon = FiInbox, action }) => (
   </div>
 );
 
-// A search box that searches once typing pauses, or at once on Enter. It
-// follows `value` when the search changes elsewhere, such as the back button.
 export const SearchField = ({
   value,
   onSearch,
@@ -429,10 +397,9 @@ export const SearchField = ({
     </label>
   );
 };
-// Placeholders keep the panel in place and never show figures.
 export const LoadingState = () => (
   <div role="status">
-    <span className="sr-only">Loading workspace data…</span>
+    <span className="sr-only">Loading workspace data...</span>
     <div className={panel} aria-hidden="true">
       <span className={`${skeleton} h-6 w-[185px] rounded-md`} />
       <div className="mt-5">
@@ -454,7 +421,7 @@ export const ErrorState = ({ error, retry }) => (
   <div className={errorBanner} role="alert">
     <FiAlertCircle aria-hidden="true" />
     <div className="flex-1">
-      <strong className={errorTitle}>We couldn’t load this page.</strong>
+      <strong className={errorTitle}>We couldn't load this page.</strong>
       <span className={errorDetail}>{errorMessage(error)}</span>
     </div>
     {retry && (
@@ -477,7 +444,6 @@ export const usePagination = (rows = [], initialSize = 5) => {
     last,
     start,
     count: rows.length,
-    // Rows on a full page; a short last page keeps their height.
     fullPage: size === -1 ? rows.length : Math.min(size, rows.length),
     rows: size === -1 ? rows : rows.slice(start, start + size),
     setPage,
@@ -487,8 +453,6 @@ export const usePagination = (rows = [], initialSize = 5) => {
     },
   };
 };
-// The same shape as usePagination for a list the server pages. The caller
-// owns the page (from 0) and size; the rows and count come from the server.
 export const serverPagination = ({
   rows = [],
   count = 0,
@@ -531,7 +495,7 @@ export const Pagination = ({ pagination, sizes = [5, 10, 25, -1] }) => {
           className="mr-2 text-[13px] text-spot-text max-[700px]:mr-0.5"
           role="status"
         >
-          {count ? start + 1 : 0}–{start + rows.length} of {count}
+          {count ? start + 1 : 0}-{start + rows.length} of {count}
         </span>
         {[
           {
@@ -576,14 +540,6 @@ export const Pagination = ({ pagination, sizes = [5, 10, 25, -1] }) => {
   );
 };
 
-// Tables copy the overview's payment table. Each column's `type` sets its
-// style, and every table draws a type the same: one size for it in every
-// table on a window, larger from 1536px wide, where the widest tables still
-// fit on single lines, whatever the panel's size, so no two tables side by
-// side or page to page differ. When the panel is too
-// narrow for every column, each row becomes a card: the main value first,
-// whichever column it is, then labelled fields in as many columns as fit,
-// then the actions on a line of their own.
 const CARD_LABEL =
   "stacked:before:mb-1 stacked:before:block stacked:before:text-[12px] stacked:before:text-spot-muted stacked:before:content-[attr(data-label)]";
 const COLUMN_TYPES = {
@@ -599,12 +555,10 @@ const COLUMN_TYPES = {
     th: "pr-3.5 text-left",
     td: `pr-3.5 text-[13px] text-spot-body [overflow-wrap:anywhere] min-[1536px]:text-[15px] tabled:whitespace-nowrap tabled:[overflow-wrap:normal] stacked:col-span-full ${CARD_LABEL}`,
   },
-  // A row's number, right-aligned so 9 and 10 end in one place.
   index: {
     th: "w-10 pr-3.5 text-right",
     td: "w-10 pr-3.5 text-right text-[13px] tabular-nums text-spot-faint min-[1536px]:text-[15px] stacked:absolute stacked:right-0 stacked:top-[18px] stacked:w-auto stacked:pr-0",
   },
-  // A count, right-aligned so its digits line up.
   number: {
     th: "pr-3.5 text-right",
     td: `pr-3.5 text-right text-[13px] tabular-nums text-spot-body min-[1536px]:text-[15px] stacked:text-left ${CARD_LABEL}`,
@@ -613,34 +567,17 @@ const COLUMN_TYPES = {
     th: "pr-8 text-right",
     td: `pr-8 text-right text-[17px] text-spot-ink min-[1536px]:text-[20px] stacked:pr-0 stacked:text-left ${CARD_LABEL}`,
   },
-  // Buttons, centred under their heading so the two share a centre line,
-  // the last column's still meeting the table's right edge.
   action: {
     th: "w-px pr-3.5 text-center",
     td: "w-px whitespace-nowrap pr-3.5 tabled:text-center stacked:w-auto",
   },
 };
-// A `fillRows` table takes the rest of its panel on wide windows, its rows
-// sharing the height, but never shorter than every table's 46px rows nor
-// taller than 88px. It is at least as tall as its 35px heading and its rows
-// at 46px, so a page that doesn't fit the window scrolls as a whole and no
-// row is ever cut off inside the panel. Its text is every table's size.
 const FILL = {
   wrapper:
     "min-[1360px]:min-h-[calc(35px+var(--fill-rows)*46px)] min-[1360px]:flex-[1_1_0] min-[1360px]:overflow-y-auto min-[1360px]:[container-type:size] min-[1360px]:[scrollbar-color:#a996e0_#ffffff26] min-[1360px]:[scrollbar-width:thin] min-[1360px]:[--fill-row:clamp(46px,calc((100cqh_-_35px)_/_var(--fill-rows)),88px)]",
   row: "tabled:min-h-[var(--fill-row,46px)]",
 };
 
-// A table, while it is one, lays its rows on one grid: each column as wide
-// as its widest entry, and the room left over shared out equally between the
-// columns, so every gap is the same and the first and last columns meet the
-// panel's edges. An email address keeps to one line while the table is a
-// table, so a tight table wraps names rather than addresses, and a column
-// can ask for its own track. Every cell
-// of a row, and every heading, sits on one baseline, whatever its size, with
-// the row's content centred in its height. A row is 46px, or taller when a
-// cell holds two lines, never letting its content spill into the next. The
-// rows carry the borders and the hover, which a cell would break at the gaps.
 const evenTrack = ({ track }) => track || "auto";
 const WHOLE = new Set(["email", "index", "number", "amount", "action"]);
 const EVEN = {
@@ -651,20 +588,11 @@ const EVEN = {
   th: "tabled:block tabled:w-auto tabled:whitespace-nowrap tabled:border-b-0 tabled:bg-transparent tabled:pr-0 tabled:leading-7",
   body: "tabled:col-span-full tabled:grid tabled:grid-cols-subgrid tabled:before:col-span-full",
   row: "tabled:col-span-full tabled:grid tabled:grid-cols-subgrid tabled:content-center tabled:items-baseline tabled:hover:bg-[#5b47a00a] tabled:[&:hover>*]:bg-transparent tabled:[&:not(:first-child)>*]:border-t-0 tabled:[&:not(:first-child)]:border-t tabled:[&:not(:first-child)]:border-[#23273512]",
-  // Text may shrink and wrap; figures, addresses, actions and any column
-  // marked `nowrap` keep their whole width, so no cell ever runs into the
-  // next.
   td: "tabled:w-auto tabled:pr-0",
   shrink: "tabled:min-w-0",
   whole: "tabled:min-w-max",
 };
 
-// A column with `sortBy` gets a header button when the table has `onSort`;
-// `sort` ({ field, dir }) marks the column the rows are sorted by. Cards
-// have no headers, so their list needs another way to sort. A `narrow`
-// table has a few short columns, so it stays a table in a narrower panel; a
-// `wide` one has many long ones, such as several actions, so it needs a
-// wider panel to stay one.
 export const DataTable = ({
   columns,
   rows,
@@ -677,7 +605,6 @@ export const DataTable = ({
   narrow = false,
   wide = false,
 }) => {
-  // In a card, placing the first action in column 1 starts a new line.
   const firstAction = columns.findIndex(({ type }) => type === "action");
   const fill = fillRows > 0;
   return (
@@ -795,7 +722,7 @@ export const ConfirmDialog = ({
         onClick={onConfirm}
         disabled={busy}
       >
-        {busy ? "Please wait…" : confirmLabel}
+        {busy ? "Please wait..." : confirmLabel}
       </button>
     </div>
   </Dialog>

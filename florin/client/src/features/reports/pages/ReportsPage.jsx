@@ -65,9 +65,6 @@ const AGEING_BARS = {
   over90: "bg-overdue-icon",
 };
 
-// Downloads one section for every currency, or in the reporting currency
-// as the report shows it, named like the server names it. The tax withheld
-// is only ever by currency.
 const CsvButton = ({ section, report, name, fileName }) => {
   const [download, busy] = useFileDownload(useGetReportCsvMutation);
   const converted = report.view === "base" && section !== "tds";
@@ -99,7 +96,6 @@ const amountColumn = (label, key, currency) => ({
   render: (row) => <Amount value={row[key]} currency={currency} />,
 });
 
-// What was taxed and charged at a rate; under GST, split as it was charged.
 const taxColumns = (currency, gst) => [
   amountColumn("Taxable", "taxable", currency),
   ...(gst
@@ -115,10 +111,6 @@ const taxColumns = (currency, gst) => [
 const documentCount = (count) =>
   `${count.toLocaleString("en")} ${count === 1 ? "document" : "documents"}`;
 
-// What the tax was charged on: only the sales taxed at a rate above nothing,
-// and in a sentence of its own what else was sold with no tax. The taxed
-// sales name no count of documents: the rates count a document taxed at two
-// of them twice, and the table below counts each rate's.
 const TaxSentence = ({ entry, currency }) => {
   const sales = taxedSales(entry);
   if (!sales.documents) {
@@ -139,9 +131,6 @@ const TaxSentence = ({ entry, currency }) => {
   );
 };
 
-// The tax charged in the period at each rate, less credit notes, with each
-// month's figures behind a disclosure. Supplies under reverse charge carry no
-// tax the business charged, so they are only mentioned.
 const TaxCharged = ({
   report,
   entry,
@@ -231,8 +220,6 @@ const TaxCharged = ({
   </Panel>
 );
 
-// The tax clients withheld from their payments in the period, per client and
-// per month, with each payment behind a disclosure.
 const TaxWithheld = ({
   report,
   entry,
@@ -274,8 +261,6 @@ const TaxWithheld = ({
             withheld from {count.toLocaleString("en")}{" "}
             {count === 1 ? "payment" : "payments"}.
           </p>
-          {/* By client beside by month when the panel has room for both, one
-              above the other in a narrower panel. */}
           <div className="grid min-w-0 gap-6 [@container_withheld_(min-width:800px)]:grid-cols-2">
             <DataTable
               label={`Tax withheld by client, ${currency}`}
@@ -398,10 +383,9 @@ const TaxWithheld = ({
 };
 
 const ReportsPage = () => {
-  useTitle("Reports — Florin");
+  useTitle("Reports - Florin");
   const [params, setParams] = useSearchParams();
   const period = params.get("period") || DEFAULT_PERIOD;
-  // Everything in the reporting currency, at each document's own rate.
   const view = params.get("view") === "base" ? "base" : undefined;
   const query = useGetReportQuery({ period, view });
   const tdsQuery = useGetTdsReportQuery(period);
@@ -415,9 +399,6 @@ const ReportsPage = () => {
     taxQuery.isLoading ||
     profitQuery.isLoading;
   const report = query.data;
-  // A link from the overview names a section, such as #ageing. Once the
-  // report is drawn, the page opens there and keyboard focus starts there.
-  // The sections' ids are plain words, so the hash is used as it is.
   const drawn = !loading && Boolean(report);
   const { hash } = useLocation();
   useEffect(() => {
@@ -431,8 +412,6 @@ const ReportsPage = () => {
     currencies.find((entry) => entry.currency === params.get("currency")) ||
     currencies[0];
   const currency = shown?.currency;
-  // The address keeps what was chosen; the default period and a currency
-  // nobody picked stay out of it.
   const choose = (changes) =>
     setParams(
       Object.fromEntries(
@@ -453,11 +432,9 @@ const ReportsPage = () => {
     options.push({ value: period, label: period });
   }
   const periodName = report
-    ? `${dateLabel(report.from)} – ${dateLabel(report.to)}`
+    ? `${dateLabel(report.from)} - ${dateLabel(report.to)}`
     : "";
   const periodFile = report ? `${report.from}-to-${report.to}` : "";
-  // The tax charged in the currency shown. Split for GST it needs the page's
-  // width; otherwise it sits beside the tax withheld.
   const taxEntry = taxQuery.data?.currencies.find(
     (entry) => entry.currency === currency,
   );
@@ -613,8 +590,6 @@ const ReportsPage = () => {
               }
             />
           </Panel>
-          {/* Profit and loss counts expenses too, so it can have figures when
-              the rest of the report has none. */}
           {profitQuery.data?.currencies.length > 0 && (
             <ProfitAndLoss
               report={profitQuery.data}
@@ -652,9 +627,6 @@ const ReportsPage = () => {
               tone="peach"
             />
           </section>
-          {/* What was billed, tax included, as the Billed figure counts it,
-              and received: not the profit and loss's income, which is before
-              tax. Links still open it at #income. */}
           <Panel
             id="income"
             title="Billed and received by month"
@@ -716,15 +688,11 @@ const ReportsPage = () => {
               </div>
             </details>
           </Panel>
-          {/* Profit and loss lists a row for every month of the period, so
-              it has the width to itself. */}
           <ProfitAndLoss
             report={profitQuery.data}
             periodName={periodName}
             busy={profitQuery.isFetching}
           />
-          {/* What is owed beside how it was paid, side by side from 1280px,
-              where half the width still holds each table. */}
           <div className="grid min-w-0 gap-6 compact:gap-5 min-[1280px]:grid-cols-2 max-[700px]:gap-5">
             <Panel
               id="ageing"
@@ -821,7 +789,7 @@ const ReportsPage = () => {
           <Panel
             id="clients"
             title="Top clients"
-            description="By the amount billed in this period, with what they have paid on it so far. The CSV file lists every client."
+            description="By the amount billed in this period, with what they've paid on it so far. The CSV file lists every client."
             aside={
               <CsvButton
                 section="clients"
@@ -886,8 +854,6 @@ const ReportsPage = () => {
               />
             )}
           </Panel>
-          {/* The tax charged beside the tax withheld. Split for GST, the tax
-              charged needs the whole width, and the two follow each other. */}
           {taxBeside ? (
             <div className="grid min-w-0 gap-6 compact:gap-5 min-[1280px]:grid-cols-2 max-[700px]:gap-5">
               {taxCharged(true)}

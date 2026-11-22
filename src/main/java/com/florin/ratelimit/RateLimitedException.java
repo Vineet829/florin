@@ -18,8 +18,6 @@ public class RateLimitedException extends ApiException {
         this.retryAfterSeconds = retryAfterSeconds;
     }
 
-    // The limits can't be checked right now, as when a flood of requests keeps
-    // the limiter's database busy: the server is overloaded, not this client.
     static RateLimitedException busy() {
         return new RateLimitedException(
                 HttpStatus.SERVICE_UNAVAILABLE, "Too many requests right now", BUSY_RETRY_SECONDS);

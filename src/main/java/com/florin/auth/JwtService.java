@@ -17,12 +17,6 @@ import java.util.UUID;
 import javax.crypto.SecretKey;
 import org.springframework.stereotype.Service;
 
-// Short-lived access tokens. Each names its user and the session it was
-// issued for, so ending the session ends the token with it. A sign-in that
-// still needs a two-factor code gets a challenge instead: it names the user
-// for five minutes, and has no session, so it opens nothing else. A signed
-// request carries a sign-in on its way through a provider such as Google;
-// its purpose keeps it from passing as either of the others.
 @Service
 public class JwtService {
 
@@ -54,8 +48,6 @@ public class JwtService {
                 .compact();
     }
 
-    // A challenge for the second step of a sign-in; `via` says how the first
-    // was made, such as "With Google", or is null for a password.
     public String issueTwoFactorChallenge(User user, String via) {
         Instant now = clock.instant();
         return Jwts.builder()
@@ -104,7 +96,6 @@ public class JwtService {
 
     public record TokenClaims(UUID subject, UUID sessionId, Instant issuedAt) {}
 
-    // A token without a session is from before sessions, and no longer works.
     public Optional<TokenClaims> readAccessClaims(String token) {
         try {
             Claims claims = parse(token);

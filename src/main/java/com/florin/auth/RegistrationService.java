@@ -22,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class RegistrationService {
 
-    // A link sent at sign-up may wait in an inbox a while before it is opened.
     static final Duration VERIFICATION_LINK_TTL = Duration.ofHours(24);
 
     public static final String VERIFICATION_RESENT =
@@ -85,16 +84,8 @@ public class RegistrationService {
         if (userRepository.existsByUsername(username)) {
             throw badRequest("That username is already taken");
         }
-        // From here on the sign-up emails its address, a link or a note to the
-        // account's owner, so it counts toward the address's emails, alike in
-        // both cases. One refused before, as for a taken username, sends
-        // nothing and isn't counted.
         rateLimiter.consume(RateLimit.ACCOUNT_EMAIL_TO, email);
-        // Hashed either way, so a sign-up for an email that has an account
-        // takes as long to answer as a new one.
         String password = passwordEncoder.encode(request.password());
-        // An email with an account gets the same answer as a new sign-up, so
-        // the form can't tell anyone who has one; its owner is told instead.
         if (holder.isPresent()) {
             tellOwnerOfSignUp(holder.get());
             return registered(request.firstName().trim());
@@ -162,8 +153,6 @@ public class RegistrationService {
         AfterCommit.run(() -> mailService.send(to, "Welcome - Account Verified", body));
     }
 
-    // The same answer whether or not the email has an account, or one that is
-    // already verified, so the form can't be used to find out who signed up.
     @Transactional
     public String resend(String email) {
         if (isBlank(email)) {

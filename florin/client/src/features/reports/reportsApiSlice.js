@@ -1,23 +1,18 @@
 import { baseApiSlice } from "../api/baseApiSlice";
 import { fetchFile } from "../api/fetchFile";
 
-// A report is read from documents, payments and client names, so any change
-// to them refreshes it.
 export const reportsApiSlice = baseApiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    // By currency, or with view "base" in the reporting currency.
     getReport: builder.query({
       query: ({ period, view }) =>
         `/report?${new URLSearchParams({ period, ...(view && { view }) })}`,
       providesTags: ["Document", "Customer"],
     }),
-    // The tax charged at each rate, by currency or in the reporting one.
     getTaxReport: builder.query({
       query: ({ period, view }) =>
         `/report/tax?${new URLSearchParams({ period, ...(view && { view }) })}`,
       providesTags: ["Document", "Customer"],
     }),
-    // Income less expenses; expenses change it too.
     getProfitReport: builder.query({
       query: (period) => `/report/profit?${new URLSearchParams({ period })}`,
       providesTags: ["Document", "Expense"],
@@ -26,7 +21,6 @@ export const reportsApiSlice = baseApiSlice.injectEndpoints({
       query: (period) => `/report/tds?${new URLSearchParams({ period })}`,
       providesTags: ["Document", "Customer"],
     }),
-    // The GST helper files for some months, as "2026-09".
     getGstReturns: builder.query({
       query: ({ from, to }) =>
         `/report/gst?${new URLSearchParams({ from, to })}`,

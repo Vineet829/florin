@@ -8,18 +8,8 @@ import java.time.temporal.IsoFields;
 import java.util.Locale;
 import org.springframework.http.HttpStatus;
 
-// The days a view the overview opens covers, by the business's calendar, as
-// the documents list's period filter names them, and the days just before
-// them to compare with. The last 30 or 90 days, the last 12 months and this
-// year to date are the overview's own, compared as it compares them, so that
-// a view agrees with the figure that opened it. A calendar month, quarter or
-// year still running runs from its first day to today, as this year to date
-// does, and is compared with the one before up to the same day; one gone by
-// runs from its first day to its last, and is compared with the whole one
-// before it. No period at all is all dates, with nothing to compare with.
 record ListPeriod(String key, LocalDate from, LocalDate to, LocalDate previousFrom, LocalDate previousTo) {
 
-    // What all dates are read between: any day something can be dated.
     private static final LocalDate FIRST_DAY = LocalDate.of(1, 1, 1);
     private static final LocalDate LAST_DAY = LocalDate.of(9999, 12, 31);
 
@@ -40,8 +30,6 @@ record ListPeriod(String key, LocalDate from, LocalDate to, LocalDate previousFr
         };
     }
 
-    // To today, beside the one before up to today's day in it; a day that one
-    // doesn't have, such as 31 March's in February, is its last.
     private static ListPeriod running(String key, LocalDate first, Period length, LocalDate today) {
         return new ListPeriod(key, first, today, first.minus(length), today.minus(length));
     }
@@ -50,12 +38,10 @@ record ListPeriod(String key, LocalDate from, LocalDate to, LocalDate previousFr
         return new ListPeriod(key, first, first.plus(length).minusDays(1), first.minus(length), first.minusDays(1));
     }
 
-    // Whether there are days before to compare with.
     boolean compared() {
         return previousFrom != null;
     }
 
-    // The first and last days the period is read between.
     LocalDate firstDay() {
         return from == null ? FIRST_DAY : from;
     }

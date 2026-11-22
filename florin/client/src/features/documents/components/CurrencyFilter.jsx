@@ -1,9 +1,5 @@
 import { Select } from "../../../components/workspace/Select";
 
-// The currency a list is narrowed to, offered when the business bills in
-// more than one. A currency the address names is always shown, even while
-// the business's currencies load or when they couldn't be, so a filter in
-// use never goes out of sight.
 const CurrencyFilter = ({ value, currencies = [], onChange }) => {
   if (currencies.length < 2 && !value) return null;
   const options =

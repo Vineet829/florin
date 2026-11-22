@@ -30,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,11 +41,6 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-// A new share or portal link replaces the current one with its document or
-// client locked, as sending a link does, so links made at once take turns:
-// each is made, one stays working, and an email that replaces a link once it
-// has gone carries one that works. Each test holds something in a transaction
-// of its own while the requests arrive.
 class LinkRaceIntegrationTest extends IntegrationTest {
 
     @Autowired
@@ -98,9 +92,6 @@ class LinkRaceIntegrationTest extends IntegrationTest {
                 "$.newDocument._id");
     }
 
-    // Runs the requests while a transaction of the test's own does `holding`
-    // and keeps what it locked, then lets it go once each request waits, and
-    // gives each request's status.
     private List<Integer> whileHeld(Runnable holding, List<Callable<ResultActions>> requests) throws Exception {
         CountDownLatch held = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
@@ -141,8 +132,6 @@ class LinkRaceIntegrationTest extends IntegrationTest {
         }
     }
 
-    // How many connections to the test's database wait for a lock, as a
-    // request does for what the test holds, or for another request.
     private int waitingForLocks() {
         return jdbc.queryForObject(
                 "select count(*) from pg_stat_activity"
@@ -166,8 +155,6 @@ class LinkRaceIntegrationTest extends IntegrationTest {
                 UUID.fromString(client));
     }
 
-    // The token of the link in the last email sent, a share link ("p") or a
-    // portal link ("c").
     private String emailedToken(String kind) throws Exception {
         ArgumentCaptor<MimeMessage> sent = ArgumentCaptor.forClass(MimeMessage.class);
         verify(mailSender, atLeastOnce()).send(sent.capture());
@@ -193,7 +180,6 @@ class LinkRaceIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("two new share links made at once are both made, and the second replaces the first")
     void shareTwice() throws Exception {
         String invoice = invoice();
         send(post("/api/v1/document/{id}/share", invoice), "").andExpect(status().isCreated());
@@ -212,12 +198,9 @@ class LinkRaceIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an email that replaces a link once sent, sent while a new link is made, carries a link that works")
     void emailWhileShared() throws Exception {
         String invoice = invoice();
         send(post("/api/v1/document/{id}/share", invoice), "").andExpect(status().isCreated());
-        // As if the link was made before links were kept sealed: an email
-        // replaces it, once it has gone.
         jdbc.update(
                 "update share_links set token_sealed = null"
                         + " where document_pkid = (select pkid from documents where id = ?)",
@@ -237,7 +220,6 @@ class LinkRaceIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("two new portal links made at once are both made, and the second replaces the first")
     void portalTwice() throws Exception {
         send(post("/api/v1/customer/{id}/portal", client), "").andExpect(status().isCreated());
 
@@ -255,7 +237,6 @@ class LinkRaceIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a portal email that replaces a link once sent, sent while a new link is made, carries one that works")
     void portalEmailWhileMade() throws Exception {
         send(post("/api/v1/customer/{id}/portal", client), "").andExpect(status().isCreated());
         jdbc.update(

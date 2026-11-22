@@ -24,7 +24,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,8 +63,6 @@ class TeamIntegrationTest extends IntegrationTest {
                 .content(json));
     }
 
-    // In the order they were recorded: without an order, the database may
-    // return rows in any order once other tests have deleted some.
     private List<AuditEventType> businessEvents() {
         return auditEventRepository.findAll().stream()
                 .filter(event -> event.getBusiness() != null && event.getBusiness().getPkid().equals(business.getPkid()))
@@ -75,8 +72,7 @@ class TeamIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the team lists the owner first, then by role, marking the viewer")
-    void lists() throws Exception {
+    void listsOwnerFirstThenRole() throws Exception {
         User viewer = createMember(business, BusinessRole.VIEWER);
         User admin = createMember(business, BusinessRole.ADMIN);
 
@@ -90,8 +86,7 @@ class TeamIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("owners and admins change other members' roles, never their own or the owner's")
-    void roles() throws Exception {
+    void changesOtherMembersRoles() throws Exception {
         User member = createMember(business, BusinessRole.MEMBER);
         User admin = createMember(business, BusinessRole.ADMIN);
         String adminSession = bearer(admin, business);
@@ -117,7 +112,6 @@ class TeamIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a removed member loses the business at once, and a member can leave, but the owner can't")
     void removesAndLeaves() throws Exception {
         User viewer = createMember(business, BusinessRole.VIEWER);
         String viewerSession = bearer(viewer, business);
@@ -144,8 +138,7 @@ class TeamIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the owner hands the business over and stays on as an admin; the new owner is told")
-    void transfers() throws Exception {
+    void ownerHandsBusinessOver() throws Exception {
         User admin = createMember(business, BusinessRole.ADMIN);
 
         send(post("/api/v1/business/transfer"), bearer(admin, business), "{\"userId\": \"" + founder.getId() + "\"}")
@@ -166,12 +159,10 @@ class TeamIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a hand-over that rolls back emails nobody, and the owner keeps the business")
     void transferRolledBack() {
         User admin = createMember(business, BusinessRole.ADMIN);
         BusinessAccess access = new BusinessAccess(business.getPkid(), business.getId(), BusinessRole.OWNER, founder);
 
-        // As when saving it fails at the very end.
         new TransactionTemplate(transactionManager).executeWithoutResult(transaction -> {
             teamService.transfer(access, admin.getId().toString());
             transaction.setRollbackOnly();
@@ -185,7 +176,6 @@ class TeamIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an inactive account can't take a business over")
     void transferNeedsAnActiveAccount() throws Exception {
         User admin = createMember(business, BusinessRole.ADMIN);
         admin.setActive(false);
@@ -197,8 +187,7 @@ class TeamIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("only the owner deletes a business, with everything in it, and its people carry on elsewhere")
-    void deletes() throws Exception {
+    void onlyOwnerDeletesBusiness() throws Exception {
         User admin = createMember(business, BusinessRole.ADMIN);
         String adminSession = bearer(admin, business);
         String body = send(post("/api/v1/customer/create"), owner, """
@@ -219,8 +208,6 @@ class TeamIntegrationTest extends IntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.business._id").value(businessOf(admin).getId().toString()));
         send(get("/api/v1/customer/" + client), adminSession, "").andExpect(status().isNotFound());
-        // Other tests delete businesses with the same name, so only the
-        // owner's own deletion counts.
         assertThat(auditEventRepository.findAll().stream()
                         .filter(event -> event.getType() == AuditEventType.BUSINESS_DELETED
                                 && event.getActor() != null
@@ -231,7 +218,6 @@ class TeamIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("deleting a business asks for the owner's password again, and a wrong one keeps it")
     void asksForThePassword() throws Exception {
         send(delete("/api/v1/business"), owner, "{\"password\": \"Wrong!pass1\"}")
                 .andExpect(status().isBadRequest())
@@ -244,8 +230,7 @@ class TeamIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the demo account can't delete its business")
-    void demo() throws Exception {
+    void demoCannotDeleteBusiness() throws Exception {
         User demo = demoUser();
         send(delete("/api/v1/business"), bearer(demo, businessOf(demo)), "")
                 .andExpect(status().isForbidden())

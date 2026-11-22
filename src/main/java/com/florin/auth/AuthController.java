@@ -48,10 +48,6 @@ public class AuthController {
             @CookieValue(name = "jwt", required = false) String refreshCookie,
             HttpServletRequest http,
             HttpServletResponse response) {
-        // Failures count per email from an address, and for the address as a
-        // whole. Each attempt is counted before its password is checked, so
-        // attempts sent all at once can't pass the limits together; a success
-        // takes its own count back and clears its email's.
         String address = http.getRemoteAddr();
         String attempt = address + "|"
                 + (request.email() == null ? "" : request.email().trim().toLowerCase(Locale.ROOT));
@@ -85,8 +81,6 @@ public class AuthController {
         try {
             bundle = authService.completeTwoFactor(request.challenge(), request.code(), refreshCookie);
         } catch (ApiException exception) {
-            // A code refused for too many tries counts as a rate-limit
-            // rejection instead, as a password does.
             if (!(exception instanceof RateLimitedException)) {
                 metrics.signInFailed(AppMetrics.TWO_FACTOR);
             }
@@ -113,7 +107,6 @@ public class AuthController {
             refreshCookies.clear(response);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        // A refresh within moments of another keeps the cookie the other set.
         TokenBundle bundle = refreshed.get();
         if (bundle.refreshToken() != null) {
             refreshCookies.set(response, bundle.refreshToken());
@@ -121,7 +114,6 @@ public class AuthController {
         return ResponseEntity.ok(bodyOf(bundle));
     }
 
-    // Only a POST signs out: a link or an image on another site can't.
     @PostMapping("/logout")
     public ResponseEntity<LogoutResponse> logout(
             @CookieValue(name = "jwt", required = false) String refreshCookie,

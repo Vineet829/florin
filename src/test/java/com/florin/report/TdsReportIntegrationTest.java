@@ -16,15 +16,12 @@ import java.time.YearMonth;
 import java.time.ZoneOffset;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// The tax clients withheld from their payments, by the date paid: each
-// payment, and the totals per client and per month, in each currency.
 class TdsReportIntegrationTest extends IntegrationTest {
 
     private final LocalDate today = LocalDate.now(ZoneOffset.UTC);
@@ -88,20 +85,19 @@ class TdsReportIntegrationTest extends IntegrationTest {
         session = business();
         String acme = client(session, "Acme");
         String beta = client(session, "Beta LLC");
-        pay(session, invoice(session, acme, "USD", "1000"), "900", "100", lastMonth); // INV-0001
-        pay(session, invoice(session, beta, "USD", "2000"), "1800", "200", today); // INV-0002
-        pay(session, invoice(session, beta, "USD", "400"), "400", "0", today); // INV-0003, nothing withheld
-        pay(session, invoice(session, acme, "USD", "500"), "0", "50", today); // INV-0004, only tax withheld
-        pay(session, invoice(session, acme, "EUR", "300"), "270", "30", today); // INV-0005
-        pay(session, invoice(session, acme, "USD", "700"), "690", "10", lastMonth.minusMonths(3)); // INV-0006
+        pay(session, invoice(session, acme, "USD", "1000"), "900", "100", lastMonth);
+        pay(session, invoice(session, beta, "USD", "2000"), "1800", "200", today);
+        pay(session, invoice(session, beta, "USD", "400"), "400", "0", today);
+        pay(session, invoice(session, acme, "USD", "500"), "0", "50", today);
+        pay(session, invoice(session, acme, "EUR", "300"), "270", "30", today);
+        pay(session, invoice(session, acme, "USD", "700"), "690", "10", lastMonth.minusMonths(3));
 
         String other = business();
         pay(other, invoice(other, client(other, "Acme"), "USD", "100"), "90", "10", today);
     }
 
     @Test
-    @DisplayName("each payment tax was withheld from, with totals per client and per month, in each currency")
-    void totals() throws Exception {
+    void totalsPerClientAndMonth() throws Exception {
         report("3m")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.period").value("3m"))
@@ -142,8 +138,7 @@ class TdsReportIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the CSV lists every payment tax was withheld from, oldest first, in each currency")
-    void csv() throws Exception {
+    void csvListsOldestFirst() throws Exception {
         String from = today.minusMonths(3).plusDays(1).toString();
         String csv = new String(
                 mockMvc.perform(get("/api/v1/report/csv/tds")

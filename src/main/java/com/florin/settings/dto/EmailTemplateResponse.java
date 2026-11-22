@@ -4,8 +4,6 @@ import com.florin.settings.EmailTemplate;
 import com.florin.settings.EmailTemplateKind;
 import java.util.List;
 
-// One kind of email: what it says now, whether the business wrote it, the
-// standard text it goes back to, and the placeholders it can use.
 public record EmailTemplateResponse(
         EmailTemplateKind kind,
         String label,

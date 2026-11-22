@@ -1,8 +1,6 @@
 import { baseApiSlice } from "../api/baseApiSlice";
 import { fetchFile } from "../api/fetchFile";
 
-// The page shows a quotation as the answer left it, and an invoice with the
-// payment its client just reported.
 const showAnswer = async (token, { dispatch, queryFulfilled }) => {
   try {
     const { data } = await queryFulfilled;
@@ -14,11 +12,9 @@ const showAnswer = async (token, { dispatch, queryFulfilled }) => {
       ),
     );
   } catch {
-    // The page shows the error from the mutation itself.
   }
 };
 
-// A document shared by link. No sign-in: the link itself is the key.
 export const publicApiSlice = baseApiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getSharedDocument: builder.query({

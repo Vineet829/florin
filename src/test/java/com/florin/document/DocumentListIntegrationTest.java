@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -44,10 +43,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// The documents list narrowed to what the overview's figures count, the
-// invoices owed now and the documents billed in one of its periods, and to
-// the week an invoice falls due in or one currency; and what the listed
-// documents come to.
 class DocumentListIntegrationTest extends IntegrationTest {
 
     @Autowired
@@ -64,7 +59,6 @@ class DocumentListIntegrationTest extends IntegrationTest {
         today = LocalDate.now(ZoneOffset.UTC);
     }
 
-    // Puts the business in the time zone, and dates what follows from its today.
     private void inZone(ZoneId zone) throws Exception {
         send(put("/api/v1/settings"), """
                 {"defaultCurrency": "USD", "paymentTermsDays": 15, "defaultTaxRate": 0,
@@ -94,8 +88,6 @@ class DocumentListIntegrationTest extends IntegrationTest {
         return result.andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
     }
 
-    // A document dated the given day and due on the other, for one amount in
-    // a currency, or none; a draft is only planned for that day.
     private String create(
             String type, String currency, String amount, LocalDate issued, LocalDate due, boolean draft)
             throws Exception {
@@ -137,7 +129,6 @@ class DocumentListIntegrationTest extends IntegrationTest {
                 .andExpect(status().isCreated());
     }
 
-    // A credit note taking the amount off the document, dated the given day.
     private void credit(String document, String amount, LocalDate issued) throws Exception {
         String note = JsonPath.read(
                 body(send(post("/api/v1/document/{id}/credit-note", document), "")
@@ -163,7 +154,6 @@ class DocumentListIntegrationTest extends IntegrationTest {
                 .andExpect(status().isOk());
     }
 
-    // Moves a document's due date to a moment on the business's clock.
     private void dueAt(String document, LocalDateTime moment, ZoneId zone) {
         jdbcTemplate.update(
                 "update documents set due_date = ? where id = ?",
@@ -171,7 +161,6 @@ class DocumentListIntegrationTest extends IntegrationTest {
                 UUID.fromString(document));
     }
 
-    // The documents list, every match on one page, with the given filters.
     private ResultActions list(String... params) throws Exception {
         MockHttpServletRequestBuilder request = get("/api/v1/document/all").param("size", "100");
         for (int index = 0; index < params.length; index += 2) {
@@ -193,9 +182,6 @@ class DocumentListIntegrationTest extends IntegrationTest {
                 .toList();
     }
 
-    // The invoices still owed in dollars that fall due in the week, as the
-    // list finds them: which they are and how many, what is still owed on
-    // them in its rows and its totals, and the days they fall due.
     private void owedIn(String week, String owed, List<String> invoices, List<LocalDate> days) throws Exception {
         String listed = body(list("outstanding", "true", "due", week, "currency", "USD")
                 .andExpect(status().isOk())
@@ -211,7 +197,6 @@ class DocumentListIntegrationTest extends IntegrationTest {
         assertThat(sum(listed, "$.totals[*].balanceDue")).isEqualByComparingTo(owed);
     }
 
-    // The amounts at the path added up, leaving out any there are none of.
     private static BigDecimal sum(String body, String path) {
         List<Object> amounts = JsonPath.read(body, path);
         return amounts.stream()
@@ -224,12 +209,6 @@ class DocumentListIntegrationTest extends IntegrationTest {
         return new BigDecimal(JsonPath.read(body, path).toString());
     }
 
-    // One of each kind of document the filters tell apart, numbered in the
-    // order made: INV-0001 unpaid, INV-0002 overdue, INV-0003 partly paid with
-    // tax withheld, INV-0004 paid, INV-0005 partly credited by CN-0001,
-    // INV-0006 wholly credited by CN-0002, INV-0007 paid, credited by CN-0003
-    // and paid back, the receipt REC-0001, the quotation QUO-0001, a draft and
-    // the void invoice INV-0008.
     private void books() throws Exception {
         issue("Invoice", "100", today.minusDays(5), today.plusDays(10));
         issue("Invoice", "200", today.minusDays(20), today.minusDays(1));
@@ -248,8 +227,7 @@ class DocumentListIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("outstanding lists the invoices still owed, overdue or not, as the overview counts what is owed now")
-    void outstanding() throws Exception {
+    void outstandingListsOwedInvoices() throws Exception {
         books();
 
         String owed = body(list("outstanding", "true")
@@ -279,9 +257,7 @@ class DocumentListIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a payment status lists the invoices and receipts that have it, never a quotation or a credit note,"
-            + " in the list and its CSV file")
-    void statuses() throws Exception {
+    void filtersByPaymentStatus() throws Exception {
         books();
 
         list("status", "Not Paid")
@@ -300,13 +276,11 @@ class DocumentListIntegrationTest extends IntegrationTest {
         list("status", "Not Paid", "type", "Quotation").andExpect(jsonPath("$.totalDocuments").value(0));
         assertThat(csv("status", "Not Paid", "sort", "number", "dir", "asc"))
                 .containsExactly("INV-0001", "INV-0002", "INV-0005");
-        // The quotation is still listed by its kind.
         assertThat(csv("type", "Quotation")).containsExactly("QUO-0001");
     }
 
     @Test
-    @DisplayName("billed lists the issued invoices, receipts and credit notes, which add up to what the overview billed")
-    void billed() throws Exception {
+    void billedListsIssuedDocuments() throws Exception {
         books();
 
         list("billed", "true")
@@ -317,7 +291,6 @@ class DocumentListIntegrationTest extends IntegrationTest {
                         containsInAnyOrder(
                                 "INV-0001", "INV-0002", "INV-0003", "INV-0004", "INV-0005", "INV-0006", "INV-0007",
                                 "CN-0001", "CN-0002", "CN-0003", "REC-0001")));
-        // A credit note takes its total off what was billed.
         BigDecimal invoices = sum(body(list("billed", "true", "type", "Invoice")), "$.myDocuments[*].total");
         BigDecimal receipts = sum(body(list("billed", "true", "type", "Receipt")), "$.myDocuments[*].total");
         BigDecimal notes = sum(body(list("billed", "true", "type", "Credit Note")), "$.myDocuments[*].total");
@@ -341,11 +314,9 @@ class DocumentListIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("a period is the overview's last 30 or 90 days or 12 months, by the business's calendar")
-    void periods(ZoneId zone) throws Exception {
+    void periodsFollowBusinessCalendar(ZoneId zone) throws Exception {
         inZone(zone);
         LocalDate year = today.minusMonths(12).plusDays(1);
-        // Dated today, and on the first day of each period and the day before it.
         issue("Invoice", "10", today, today);
         issue("Invoice", "20", today.minusDays(29), today);
         issue("Invoice", "30", today.minusDays(30), today);
@@ -354,7 +325,6 @@ class DocumentListIntegrationTest extends IntegrationTest {
         issue("Invoice", "60", year, today);
         issue("Invoice", "70", year.minusDays(1), today);
 
-        // The list says which days it covered, by the business's calendar.
         list("period", "30d")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.issuedFrom").value(today.minusDays(29).toString()))
@@ -376,7 +346,6 @@ class DocumentListIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.issuedTo").value(nullValue()))
                 .andExpect(jsonPath("$.totalDocuments").value(3));
         list().andExpect(jsonPath("$.issuedFrom").value(nullValue())).andExpect(jsonPath("$.issuedTo").value(nullValue()));
-        // Each begins on the day the overview's own period does.
         for (String period : List.of("30d", "90d", "12m")) {
             LocalDate from = LocalDate.parse(JsonPath.read(
                     body(send(get("/api/v1/report/overview").param("period", period), "")), "$.period.from"));
@@ -389,10 +358,8 @@ class DocumentListIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("due is the week an invoice falls due in, counted from today; later takes the undated")
-    void due(ZoneId zone) throws Exception {
+    void dueFilterGroupsByWeek(ZoneId zone) throws Exception {
         inZone(zone);
-        // Due on each side of where one week ends and the next begins.
         issue("Invoice", "100", today.minusDays(3), today.minusDays(1));
         issue("Invoice", "200", today.minusDays(3), today);
         issue("Invoice", "50", today.minusDays(3), today.plusDays(6));
@@ -401,29 +368,20 @@ class DocumentListIntegrationTest extends IntegrationTest {
         issue("Invoice", "30", today.minusDays(3), today.plusDays(14));
         issue("Invoice", "400", today.minusDays(3), today.plusDays(20));
         issue("Invoice", "500", today.minusDays(3), today.plusDays(21));
-        // One made before every invoice took a due date.
         String undated = issue("Invoice", "600", today.minusDays(3), today.plusDays(40));
         jdbcTemplate.update("update documents set due_date = null where id = ?", UUID.fromString(undated));
-        // Due this week, but paid, or owed in euros; and a receipt, which is never due.
         pay(issue("Invoice", "70", today.minusDays(3), today.plusDays(2)), "70", "0", today);
         issue("Invoice", "EUR", "80", today.minusDays(3), today.plusDays(2));
         issue("Receipt", "60", today, null);
-        // Due in the last minutes of this week and the first of the next, by
-        // the business's clock rather than at noon.
         dueAt(issue("Invoice", "20", today.minusDays(3), today.plusDays(6)), today.plusDays(6).atTime(23, 30), zone);
         dueAt(issue("Invoice", "40", today.minusDays(3), today.plusDays(7)), today.plusDays(7).atTime(0, 30), zone);
 
-        // Each week runs seven days from today, or from where the one before
-        // it ends, so the invoice due yesterday is in none of them. The one
-        // paid in part counts what is left on it, and later takes the
-        // undated one.
         owedIn("this-week", "270", List.of("INV-0002", "INV-0003", "INV-0012"),
                 List.of(today, today.plusDays(6), today.plusDays(6)));
         owedIn("next-week", "490", List.of("INV-0004", "INV-0005", "INV-0013"),
                 List.of(today.plusDays(7), today.plusDays(13), today.plusDays(7)));
         owedIn("week-after", "430", List.of("INV-0006", "INV-0007"), List.of(today.plusDays(14), today.plusDays(20)));
         owedIn("later", "1100", List.of("INV-0008", "INV-0009"), Arrays.asList(today.plusDays(21), null));
-        // On its own, due goes by the due date alone.
         list("due", "this-week")
                 .andExpect(jsonPath(
                         "$.myDocuments[*].documentNumber",
@@ -437,24 +395,16 @@ class DocumentListIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("current lists the invoices owed that are not due yet by the business's clock, or have no due date,"
-            + " as the overview's current band counts them")
-    void current(ZoneId zone) throws Exception {
+    void currentListsNotYetDue(ZoneId zone) throws Exception {
         inZone(zone);
-        // Not due yet: due in the first minutes of today by the business's
-        // clock, due later, partly paid with tax withheld, partly credited,
-        // and saved without a due date, as the oldest invoices were.
         dueAt(issue("Invoice", "100", today.minusDays(3), today), today.atTime(0, 30), zone);
         issue("Invoice", "200", today.minusDays(3), today.plusDays(40));
         pay(issue("Invoice", "300", today.minusDays(3), today.plusDays(5)), "100", "20", today);
         credit(issue("Invoice", "400", today.minusDays(3), today.plusDays(16)), "150", today);
         String undated = issue("Invoice", "500", today.minusDays(3), today.plusDays(10));
         jdbcTemplate.update("update documents set due_date = null where id = ?", UUID.fromString(undated));
-        // Overdue: due in the last minutes of yesterday, and a week ago.
         dueAt(issue("Invoice", "60", today.minusDays(3), today), today.minusDays(1).atTime(23, 30), zone);
         issue("Invoice", "70", today.minusDays(20), today.minusDays(7));
-        // Never current: an invoice paid in full, a receipt, a quotation, a
-        // draft and a void invoice. One in euros is owed in euros.
         pay(issue("Invoice", "80", today.minusDays(3), today.plusDays(5)), "80", "0", today);
         issue("Receipt", "90", today, null);
         issue("Quotation", "900", today, today.plusDays(10));
@@ -462,8 +412,6 @@ class DocumentListIntegrationTest extends IntegrationTest {
         voided(issue("Invoice", "700", today.minusDays(1), today.plusDays(10)));
         issue("Invoice", "EUR", "600", today.minusDays(3), today.plusDays(10));
 
-        // Soonest due first, the undated one last, with what is still owed on
-        // each; the totals count every one of them, none overdue.
         String dollars = body(list("due", "current", "currency", "USD", "sort", "dueDate", "dir", "asc")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath(
@@ -479,7 +427,6 @@ class DocumentListIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.totals[0].balanceDue").value(1230.0))
                 .andExpect(jsonPath("$.totals[0].overdue").value(0.0))
                 .andExpect(jsonPath("$.totals[0].overdueDocuments").value(0)));
-        // They are the overview's current band, in each currency.
         for (String currency : List.of("USD", "EUR")) {
             String listed = currency.equals("USD") ? dollars : body(list("due", "current", "currency", currency));
             String overview = body(send(get("/api/v1/report/overview").param("currency", currency), "")
@@ -495,8 +442,6 @@ class DocumentListIntegrationTest extends IntegrationTest {
         }
         assertThat(amount(body(list("due", "current", "currency", "EUR")), "$.totals[0].balanceDue"))
                 .isEqualByComparingTo("600");
-        // Without a currency, each one's invoices are totalled apart; with
-        // what is owed on them asked for as well, nothing changes.
         list("due", "Current")
                 .andExpect(jsonPath("$.totalDocuments").value(6))
                 .andExpect(jsonPath("$.totals[*].currency", contains("EUR", "USD")))
@@ -505,7 +450,6 @@ class DocumentListIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath(
                         "$.myDocuments[*].documentNumber",
                         containsInAnyOrder("INV-0001", "INV-0002", "INV-0003", "INV-0004", "INV-0005")));
-        // A page at a time, the totals on every page.
         mockMvc.perform(get("/api/v1/document/all")
                         .param("due", "current")
                         .param("currency", "USD")
@@ -520,7 +464,6 @@ class DocumentListIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.totals[0].balanceDue").value(1230.0));
         assertThat(csv("due", "current", "currency", "USD", "sort", "number", "dir", "asc"))
                 .containsExactly("INV-0001", "INV-0002", "INV-0003", "INV-0004", "INV-0005");
-        // A viewer sees the same; another business has nothing current.
         User viewer = createMember(businessOf(owner), BusinessRole.VIEWER);
         mockMvc.perform(get("/api/v1/document/all")
                         .param("due", "current")
@@ -539,12 +482,10 @@ class DocumentListIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("currency keeps the documents in one currency, and a blank one keeps them all")
-    void currency() throws Exception {
+    void filtersByCurrency() throws Exception {
         issue("Invoice", "USD", "100", today, today);
         issue("Invoice", "EUR", "200", today, today);
         issue("Receipt", "EUR", "50", today, null);
-        // Sent without a currency, it is in the business's own.
         issue("Invoice", null, "70", today, today);
 
         list("currency", "EUR")
@@ -558,10 +499,8 @@ class DocumentListIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("each issued invoice shows what is still owed on it; other documents, drafts and void ones show none")
     void balanceDue() throws Exception {
         books();
-        // Paid in full, then credited without the credit paid back yet.
         String overpaid = issue("Invoice", "90", today.minusDays(3), today.plusDays(3));
         pay(overpaid, "90", "0", today);
         credit(overpaid, "30", today);
@@ -580,23 +519,19 @@ class DocumentListIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.myDocuments[?(@.documentType != 'Invoice')].balanceDue", everyItem(nullValue())))
                 .andExpect(jsonPath("$.myDocuments[?(@.state != 'issued')].state", containsInAnyOrder("draft", "void")))
                 .andExpect(jsonPath("$.myDocuments[?(@.state != 'issued')].balanceDue", everyItem(nullValue())))
-                // Written to the cent, even when more than the total came in.
                 .andExpect(content().string(containsString(
                         "\"totalAmountReceived\":90.00,\"balanceDue\":0.00,\"ledger\":"))));
         assertThat(sum(all, "$.myDocuments[*].balanceDue")).isEqualByComparingTo(sum(all, "$.totals[*].balanceDue"));
     }
 
     @Test
-    @DisplayName("the totals sum every listed document in each currency, on every page, as the rows do")
-    void totals() throws Exception {
+    void totalsCoverAllPages() throws Exception {
         books();
-        // In euros: an overdue invoice partly paid, a receipt, and documents that bill nothing.
         pay(issue("Invoice", "EUR", "500", today.minusDays(10), today.minusDays(3)), "200", "0", today.minusDays(1));
         issue("Receipt", "EUR", "40", today.minusDays(1), null);
         issue("Quotation", "EUR", "999", today, today.plusDays(10));
         create("Invoice", "EUR", "800", today, today.plusDays(10), true);
         voided(issue("Invoice", "EUR", "600", today, today.plusDays(10)));
-        // And an invoice sent without a currency, which is in the business's own.
         issue("Invoice", null, "70", today, today.plusDays(5));
 
         String all = body(list()
@@ -648,12 +583,9 @@ class DocumentListIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("what was billed in each of the overview's periods, and what is owed now, total as the overview's do")
     void addUpToTheOverview(ZoneId zone) throws Exception {
         inZone(zone);
         LocalDate year = today.minusMonths(12).plusDays(1);
-        // Billed on the first day of each period and the day before it, with
-        // tax withheld, credit notes, a refund and a receipt.
         pay(issue("Invoice", "1000", today.minusDays(29), today.minusDays(1)), "400", "50", today);
         issue("Invoice", "300", today.minusDays(30), today);
         credit(issue("Invoice", "800", today.minusDays(89), today.plusDays(10)), "100", today.minusDays(2));
@@ -664,11 +596,8 @@ class DocumentListIntegrationTest extends IntegrationTest {
         refund(refunded, "150", today);
         issue("Invoice", "700", year.minusDays(1), today.plusDays(3));
         issue("Receipt", "90", today, null);
-        // Due in the last minutes of yesterday and the first of today, by the
-        // business's clock.
         dueAt(issue("Invoice", "40", today.minusDays(3), today), today.minusDays(1).atTime(23, 30), zone);
         dueAt(issue("Invoice", "60", today.minusDays(3), today), today.atTime(0, 30), zone);
-        // Never billed: a quotation, a draft and a void invoice.
         issue("Quotation", "5000", today, today.plusDays(5));
         create("Invoice", "6000", today, today.plusDays(5), true);
         voided(issue("Invoice", "7000", today, today.plusDays(5)));
@@ -702,7 +631,6 @@ class DocumentListIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the CSV file takes the same filters, and another business's documents never appear")
     void csvAndIsolation() throws Exception {
         books();
         User other = createUser();
@@ -719,7 +647,6 @@ class DocumentListIntegrationTest extends IntegrationTest {
         assertThat(csv("outstanding", "true", "sort", "number", "dir", "asc"))
                 .containsExactly("INV-0001", "INV-0002", "INV-0003", "INV-0005");
         assertThat(csv("billed", "true", "type", "Receipt")).containsExactly("REC-0001");
-        // The paid back invoice was dated the day before the last 30 days.
         assertThat(csv("billed", "true", "period", "30d", "currency", "USD", "sort", "number", "dir", "asc"))
                 .containsExactly(
                         "CN-0001", "CN-0002", "CN-0003", "INV-0001", "INV-0002", "INV-0003", "INV-0004", "INV-0005",
@@ -740,7 +667,6 @@ class DocumentListIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("filters the list can't read are refused, and so is a period with dates")
     void badInput() throws Exception {
         list("outstanding", "maybe")
                 .andExpect(status().isBadRequest())

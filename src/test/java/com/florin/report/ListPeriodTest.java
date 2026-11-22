@@ -7,7 +7,6 @@ import com.florin.common.ApiException;
 import com.florin.report.dto.ViewPeriod;
 import java.time.LocalDate;
 import java.util.List;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -24,7 +23,6 @@ class ListPeriodTest {
     }
 
     @Test
-    @DisplayName("no period is all dates, with nothing to compare with")
     void allDates() {
         for (String key : new String[] {null, "", "  "}) {
             ListPeriod period = ListPeriod.of(key, TODAY);
@@ -38,7 +36,6 @@ class ListPeriodTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"30d", "90d", "12m", "ytd"})
-    @DisplayName("the overview's periods are its own days, beside the days it compares them with")
     void overviewPeriods(String key) {
         for (LocalDate today : List.of(
                 TODAY, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 3, 31), LocalDate.of(2028, 2, 29),
@@ -57,8 +54,6 @@ class ListPeriodTest {
     }
 
     @Test
-    @DisplayName("a month, quarter or year still running runs from its first day to today, beside the one before up"
-            + " to the same day; one gone by runs to its last day, beside the whole one before it")
     void calendarPeriods() {
         assertThat(ListPeriod.of("this-month", TODAY))
                 .isEqualTo(period("this-month", "2026-10-01", "2026-10-06", "2026-09-01", "2026-09-06"));
@@ -73,14 +68,12 @@ class ListPeriodTest {
         assertThat(ListPeriod.of("this-month", TODAY).compared()).isTrue();
         assertThat(ListPeriod.of("this-month", TODAY).firstDay()).isEqualTo(LocalDate.of(2026, 10, 1));
         assertThat(ListPeriod.of("this-month", TODAY).lastDay()).isEqualTo(TODAY);
-        // This year is the overview's this year to date.
         OverviewWindow year = OverviewWindow.of("ytd", TODAY);
         assertThat(ListPeriod.of("this-year", TODAY))
                 .isEqualTo(new ListPeriod("this-year", year.from(), year.to(), year.previousFrom(), year.previousTo()));
     }
 
     @Test
-    @DisplayName("a day the period before doesn't have is compared up to its last day")
     void shorterMonths() {
         LocalDate march = LocalDate.of(2026, 3, 31);
         assertThat(ListPeriod.of("this-month", march))
@@ -102,8 +95,7 @@ class ListPeriodTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"7d", "3m", "6m", "2025", "all", "this-week", "next-month"})
-    @DisplayName("any other period is refused")
-    void unknown(String key) {
+    void refusesUnknownPeriods(String key) {
         assertThatThrownBy(() -> ListPeriod.of(key, TODAY))
                 .isInstanceOf(ApiException.class)
                 .hasMessage("Choose a period from the list");

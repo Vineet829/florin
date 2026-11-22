@@ -24,16 +24,11 @@ import {
   selectTrigger,
 } from "./pastel";
 
-// The menu sits this far from its trigger, grows to its longest option up to
-// this width, keeps this much of the window's edge clear, and shows at most
-// this much before scrolling.
 const GAP = 4;
 const MAX_WIDTH = 420;
 const EDGE = 8;
 const MAX_HEIGHT = 320;
-// Letters typed within this time of each other make one type-ahead word.
 const TYPE_AHEAD_MS = 500;
-// Lists longer than this get a search box unless told otherwise.
 const SEARCH_ABOVE = 12;
 
 const media = (query) => {
@@ -43,7 +38,6 @@ const media = (query) => {
     return false;
   }
 };
-// A finger or a narrow window gets the sheet instead of the floating menu.
 const usesSheet = () => media("(pointer: coarse)") || window.innerWidth < 700;
 
 const textOf = (children) =>
@@ -51,8 +45,6 @@ const textOf = (children) =>
     .filter((child) => typeof child === "string" || typeof child === "number")
     .join("");
 
-// Options given as <option> and <optgroup> children, so call sites keep the
-// markup they had with a native select.
 const parseOptions = (children) => {
   const options = [];
   const add = (element, group) => {
@@ -77,7 +69,6 @@ const parseOptions = (children) => {
   });
   return options;
 };
-// Values are compared and reported as strings, as a native select's are.
 const normalize = (options) =>
   options.map((option, index) => ({
     ...option,
@@ -97,9 +88,6 @@ const firstEnabled = (options, from = 0, step = 1) => {
   return -1;
 };
 
-// The text that names a control, for the sheet's title: a given label, or
-// the label element around or pointing at the trigger, without the
-// trigger's own words.
 const labelText = (trigger, wrapper) => {
   const label = trigger?.labels?.[0];
   if (!label) return "";
@@ -111,18 +99,12 @@ const labelText = (trigger, wrapper) => {
     .trim();
 };
 
-// A dropdown drawn in the app's own style, in place of a native select: a
-// combobox button that opens a listbox under it, or a sheet on a phone. It
-// takes `options` ({ value, label, description?, meta?, disabled?, group? })
-// or <option> children, reports the chosen value to `onChange`, and keeps a
-// hidden input in sync when it has a `name`, so forms can read it. Lists
-// longer than twelve get a search box.
 export const Select = ({
   value,
   onChange,
   options: given,
   children,
-  placeholder = "Choose…",
+  placeholder = "Choose...",
   size = "form",
   searchable: searchableGiven,
   label,
@@ -170,8 +152,6 @@ export const Select = ({
       : options;
   const activeOption = open ? shown[active] : undefined;
 
-  // Opens at the chosen option, or `step` options on from it, or at `at`;
-  // a letter typed on a searchable control starts the search with it.
   const openMenu = ({ at, step = 0, typedChar = "" } = {}) => {
     if (disabled || open) return;
     let start;
@@ -195,7 +175,6 @@ export const Select = ({
     setActive(start);
     setTitle(label || ariaLabel || labelText(trigger.current, wrapper.current));
     setOpen(true);
-    // Safari leaves a clicked button unfocused; the keys need it focused.
     if (!searchable) trigger.current?.focus();
   };
   const close = (refocus = true) => {
@@ -210,8 +189,6 @@ export const Select = ({
     if (option.value !== current) onChange?.(option.value);
   };
 
-  // Keys move through the visible options, skipping disabled ones and
-  // stopping at the ends.
   const move = (step) => {
     if (!shown.length) return;
     let next = Math.min(Math.max(active + step, 0), shown.length - 1);
@@ -226,8 +203,6 @@ export const Select = ({
       : firstEnabled(shown);
     if (next >= 0) setActive(next);
   };
-  // Letters typed in quick succession find the next option starting with
-  // them; the same letter again goes on to the next such option.
   const typeAhead = (char, from = active) => {
     const now = Date.now();
     const word =
@@ -293,7 +268,6 @@ export const Select = ({
       event.preventDefault();
       keys[key]();
     } else if (key === "Tab") {
-      // Focus goes on from the trigger, wherever it was.
       close();
     } else if (!inSearch && printable(event)) {
       event.preventDefault();
@@ -316,23 +290,15 @@ export const Select = ({
     if (autoFocus) trigger.current?.focus();
   }, [autoFocus]);
 
-  // The floating menu hangs under the trigger, as wide as it and at least
-  // as wide as its longest option, flipping above when there is less than
-  // its height below and more above, and follows the page as it scrolls.
   useLayoutEffect(() => {
     if (!open || sheet) return undefined;
     const place = (event) => {
       const button = trigger.current;
       const panel = menu.current;
-      // Scrolling inside the menu is not a reason to move it.
       if (!button || !panel) return;
       if (event?.target instanceof Node && panel.contains(event.target)) return;
       const rect = button.getBoundingClientRect();
       if (natural.current === null) {
-        // The menu's own width, once per open: measured from the left
-        // edge, so nothing cuts the longest option, over every option
-        // however the list is filtered, and rounded up, so no label
-        // loses a fraction of a pixel.
         panel.style.left = "0px";
         panel.style.width = "";
         natural.current = Math.ceil(panel.getBoundingClientRect().width);
@@ -371,8 +337,6 @@ export const Select = ({
     };
   }, [open, sheet, shown.length]);
 
-  // A click anywhere else closes the menu and leaves the value alone, and
-  // focus with it.
   useEffect(() => {
     if (!open || sheet) return undefined;
     const onPress = (event) => {
@@ -387,8 +351,6 @@ export const Select = ({
         return;
       setOpen(false);
       setPlacement(null);
-      // Pressed on the backdrop of the dialog the control is in: the click
-      // that follows would close the dialog too, so it goes no further.
       const dialog = button?.closest("dialog[open]");
       if (dialog && event.target === dialog) {
         document.addEventListener("click", (click) => click.stopPropagation(), {
@@ -401,9 +363,6 @@ export const Select = ({
     return () => document.removeEventListener("mousedown", onPress);
   }, [open, sheet]);
 
-  // The search opens focused once the menu is in place (hidden, it could
-  // not take focus), and the sheet opens as a modal in the browser's top
-  // layer, giving focus back to the trigger when it closes.
   const placed = sheet || Boolean(placement);
   useEffect(() => {
     if (!open || !placed) return undefined;
@@ -423,7 +382,6 @@ export const Select = ({
     };
   }, [open, sheet, placed, searchable]);
 
-  // The active option stays in view.
   const activeIndex = activeOption ? activeOption.index : -1;
   useEffect(() => {
     if (!open || activeIndex < 0) return;
@@ -470,7 +428,6 @@ export const Select = ({
     : size === "mini"
       ? "min-h-8"
       : "min-h-10";
-  // In a sheet without a search, the list itself takes focus and the keys.
   const listFocus =
     sheet && !searchable
       ? {
@@ -631,7 +588,6 @@ export const Select = ({
           : { top: 0, left: 0, maxWidth: MAX_WIDTH, maxHeight: MAX_HEIGHT }
       }
       onMouseDown={(event) => {
-        // Clicks in the menu leave focus where it is, except in the search.
         if (event.target !== search.current) event.preventDefault();
       }}
     >
@@ -641,9 +597,6 @@ export const Select = ({
       {sizer}
     </div>
   );
-  // The menu is drawn outside the page's flow: inside an open modal dialog
-  // when the trigger is in one, so it shows above the backdrop, and
-  // otherwise at the app's root, where the workspace styles apply.
   const portal =
     open &&
     createPortal(
@@ -708,9 +661,6 @@ export const Select = ({
         />
       </button>
       {required ? (
-        // A required control keeps the form's own checks: this input is
-        // what the browser finds empty, under the trigger, so its message
-        // shows there, naming the control.
         <input
           className="pointer-events-none absolute inset-0 h-full w-full opacity-0"
           tabIndex={-1}

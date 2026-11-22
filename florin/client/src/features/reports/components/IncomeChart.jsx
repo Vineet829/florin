@@ -6,7 +6,6 @@ import { axisTicks, monthName, monthSpan } from "../reportModel";
 const AXIS = 52;
 const CARD = 190;
 
-// The chart's two columns, for its legend too.
 export const SERIES = [
   { key: "billed", label: "Billed", column: "bg-card-blue-bar" },
   { key: "received", label: "Received", column: "bg-card-lilac-bar" },
@@ -14,12 +13,6 @@ export const SERIES = [
 
 const amount = (month, key) => Number(month[key]) || 0;
 
-// Billed and received side by side for each month, drawn as the overview
-// draws its cash flow: a month's figures show on hover or focus while the
-// other months fade back, and the keys move between months. The table
-// under the chart has the same figures. A month the period, from `from` to
-// `to`, holds only part of is named by its days; the axis keeps the
-// month's short name.
 const IncomeChart = ({ months, currency, from, to }) => {
   const [measureRef, width] = useWidth(720);
   const columns = useRef([]);
@@ -60,8 +53,6 @@ const IncomeChart = ({ months, currency, from, to }) => {
 
   return (
     <div ref={measureRef} className="min-w-0">
-      {/* A new period or currency draws the chart afresh, so its columns
-          rise again. */}
       <div
         key={`${currency}-${months[0]?.month}-${months.length}`}
         className="grid grid-cols-[52px_minmax(0,1fr)] grid-rows-[272px_34px] max-[700px]:grid-rows-[200px_34px]"

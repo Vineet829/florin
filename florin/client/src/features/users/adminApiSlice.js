@@ -2,8 +2,6 @@ import { baseApiSlice } from "../api/baseApiSlice";
 
 const USERS = [{ type: "User", id: "LIST" }];
 
-// Accounts a page at a time, their counts, and the admin changes to them.
-// Every change refreshes the list and the counts.
 export const adminApiSlice = baseApiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getUsersPage: builder.query({

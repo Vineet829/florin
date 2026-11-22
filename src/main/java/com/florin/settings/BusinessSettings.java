@@ -22,7 +22,6 @@ import lombok.Setter;
 @Setter
 public class BusinessSettings extends BaseEntity {
 
-    // The zone a business's days are counted in until it chooses one.
     public static final String DEFAULT_TIME_ZONE = "UTC";
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
@@ -32,12 +31,9 @@ public class BusinessSettings extends BaseEntity {
     @Column(name = "default_currency", nullable = false, length = 3)
     private String defaultCurrency = "USD";
 
-    // Reports can show every amount in it, at each document's exchange rate.
     @Column(name = "base_currency", nullable = false, length = 3)
     private String baseCurrency = "USD";
 
-    // India GST mode, and the letter of undertaking that lets the business
-    // export without paying IGST.
     @Enumerated(EnumType.STRING)
     @Column(name = "tax_regime", nullable = false, length = 20)
     private TaxRegime taxRegime = TaxRegime.STANDARD;
@@ -45,7 +41,6 @@ public class BusinessSettings extends BaseEntity {
     @Column(name = "lut_reference", length = 40)
     private String lutReference;
 
-    // How every PDF of the business looks.
     @Enumerated(EnumType.STRING)
     @Column(name = "pdf_template", nullable = false, length = 10)
     private PdfTemplate pdfTemplate = PdfTemplate.CLASSIC;
@@ -110,7 +105,6 @@ public class BusinessSettings extends BaseEntity {
     @Embedded
     private PaymentDetails paymentDetails;
 
-    // Hibernate reads payment details that are all empty as none at all.
     public PaymentDetails getPaymentDetails() {
         return paymentDetails == null ? new PaymentDetails() : paymentDetails;
     }

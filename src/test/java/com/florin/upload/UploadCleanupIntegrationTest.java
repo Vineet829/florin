@@ -15,7 +15,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,7 +55,6 @@ class UploadCleanupIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a logo a business shows, one a document was made with, and one uploaded today stay; others go")
     void removesUnused() throws Exception {
         session = bearer(createUser());
         Path onDocument = logo(UUID.randomUUID() + ".png", Duration.ofDays(30));

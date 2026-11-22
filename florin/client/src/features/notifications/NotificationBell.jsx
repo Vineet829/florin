@@ -35,9 +35,6 @@ const ICONS = {
   REMINDER_SENT: FiBell,
 };
 
-// The bell checks for news every minute while the tab is in view, and at
-// once when it comes back. The sidebar shows no counts, so unread news is a
-// dot; the number is for screen readers and the list itself.
 const NotificationBell = ({ className = "" }) => {
   const visible = usePageVisible();
   const navigate = useNavigate();
@@ -64,7 +61,7 @@ const NotificationBell = ({ className = "" }) => {
     try {
       await markRead().unwrap();
     } catch {
-      toast.error("The notifications couldn’t be marked as read.");
+      toast.error("The notifications couldn't be marked as read.");
     }
   };
   return (
@@ -95,7 +92,7 @@ const NotificationBell = ({ className = "" }) => {
       >
         {query.isError ? (
           <p className={`mt-4 ${panelNote}`}>
-            Notifications couldn’t be loaded. They will be checked again in a
+            Notifications couldn't be loaded. They'll be checked again in a
             minute.
           </p>
         ) : notifications.length ? (
@@ -157,7 +154,7 @@ const NotificationBell = ({ className = "" }) => {
           </>
         ) : (
           <p className={`mt-4 ${panelNote}`}>
-            Nothing new. You’ll hear here when a client views or accepts a
+            Nothing new. You'll hear here when a client views or accepts a
             document, and when an invoice becomes overdue.
           </p>
         )}

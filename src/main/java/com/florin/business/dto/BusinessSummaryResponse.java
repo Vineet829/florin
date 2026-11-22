@@ -7,10 +7,6 @@ import com.florin.business.Permission;
 import java.util.List;
 import java.util.UUID;
 
-// A business someone works in, with what their role lets them do there, so
-// the app never keeps its own copy of the rules, how many of their
-// notifications there are unread, and the time zone the server counts the
-// business's days in, so the app's today is the business's.
 public record BusinessSummaryResponse(
         @JsonProperty("_id") UUID id,
         String name,

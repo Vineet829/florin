@@ -12,9 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
-// The payments list: money in and out of the business's issued documents, a
-// page at a time, with what all of it comes to. Over one of the overview's
-// periods it adds up to the overview's Received.
 @Service
 public class PaymentList {
 
@@ -28,9 +25,6 @@ public class PaymentList {
         this.clock = clock;
     }
 
-    // A period ends today in the business's time zone. The page and the
-    // totals are read at one moment, so the two agree; the totals count the
-    // rows.
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public PaymentListResponse list(BusinessAccess access, PaymentSearch search) {
         ZoneId zone = ZoneId.of(settingsService.forBusiness(access.businessPkid()).getTimeZone());

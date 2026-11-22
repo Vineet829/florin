@@ -14,8 +14,6 @@ import java.time.Instant;
 import lombok.Getter;
 import lombok.Setter;
 
-// A single-use code for signing in without the authenticator app, kept as
-// a hash.
 @Entity
 @Table(name = "recovery_codes")
 @Getter

@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -37,9 +36,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// Sales by item: every item a period's lines sold, as the overview's top items
-// count them, with no limit, and each item's own page of who bought it and the
-// lines that sold it.
 class ItemSalesIntegrationTest extends IntegrationTest {
 
     @Autowired
@@ -56,7 +52,6 @@ class ItemSalesIntegrationTest extends IntegrationTest {
         acme = client("Acme");
     }
 
-    // Puts the business in the time zone, and dates what follows from its today.
     private void inZone(ZoneId zone) throws Exception {
         send(put("/api/v1/settings"), """
                 {"defaultCurrency": "USD", "paymentTermsDays": 15, "defaultTaxRate": 0,
@@ -84,8 +79,6 @@ class ItemSalesIntegrationTest extends IntegrationTest {
                 "$.createdCustomer._id");
     }
 
-    // A line: what it sells, at what unit price, how many, with a discount and
-    // a tax rate, each a percentage.
     private static String line(String name, String price, String quantity, String discount, String rate) {
         return """
                 {"itemName": "%s", "unitPrice": %s, "quantity": %s, "discount": "%s", "taxRate": "%s"}"""
@@ -96,8 +89,6 @@ class ItemSalesIntegrationTest extends IntegrationTest {
         return line(name, price, quantity, "0", "0");
     }
 
-    // A document for the client with the lines, dated the day; a draft is
-    // only planned for it.
     private String create(
             String type, String client, String currency, LocalDate issued, boolean draft, String... lines)
             throws Exception {
@@ -114,7 +105,6 @@ class ItemSalesIntegrationTest extends IntegrationTest {
         return create(type, client, "USD", issued, false, lines);
     }
 
-    // A credit note dated the day, taking the lines off the document.
     private String credit(String document, LocalDate issued, String... lines) throws Exception {
         String note = JsonPath.read(
                 body(send(post("/api/v1/document/{id}/credit-note", document), "").andExpect(status().isCreated())),
@@ -131,8 +121,6 @@ class ItemSalesIntegrationTest extends IntegrationTest {
                 .andExpect(status().isOk());
     }
 
-    // Names one of the document's lines as lines could be named before a name
-    // was required.
     private void rename(String document, int position, String name) {
         jdbcTemplate.update(
                 """
@@ -164,7 +152,6 @@ class ItemSalesIntegrationTest extends IntegrationTest {
         return new BigDecimal(value.toString());
     }
 
-    // The amounts at the path added up.
     private static BigDecimal sum(String body, String path) {
         List<Object> amounts = JsonPath.read(body, path);
         return amounts.stream().map(ItemSalesIntegrationTest::amount).reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -172,15 +159,10 @@ class ItemSalesIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("every item the period sold, net of discounts and credit notes and before tax, with its share of"
-            + " the income, and an item's page with who bought it and its lines")
-    void figures(ZoneId zone) throws Exception {
+    void periodFiguresPerItem(ZoneId zone) throws Exception {
         inZone(zone);
         String birch = client("Birch Studio");
         String cedar = client("Cedar Works");
-        // An invoice with a line taxed 10% and a fraction of a line at a 10%
-        // discount, a receipt with the same item in another spelling, and a
-        // credit note taking one of them off.
         String invoice = issue(
                 "Invoice",
                 acme,
@@ -190,16 +172,11 @@ class ItemSalesIntegrationTest extends IntegrationTest {
                 line("Copywriting", "150", "4.5", "10", "0"));
         issue("Receipt", birch, today.minusDays(10), line("Logo", "3200", "1"), line("website design", "450", "1"));
         String credited = credit(invoice, today, line("Website design", "450", "1", "0", "10"));
-        // Cedar Works, deleted since, bought under the name its invoice was
-        // saved with, with no client id.
         issue("Invoice", cedar, today, line("Photography", "900", "1"), line("Social kit", "700", "1"));
         send(delete("/api/v1/customer/{id}", cedar), "").andExpect(status().isOk());
-        // Lines saved without a name, before a name was required.
         String unnamed = issue("Invoice", acme, today.minusDays(2), line("Kept", "60", "1"), line("Gone", "15", "2"));
         rename(unnamed, 0, null);
         rename(unnamed, 1, " ");
-        // The day before the period; never counted: a quotation, a draft, a
-        // void invoice, and lines in euros.
         issue("Invoice", acme, today.minusDays(30), line("Logo", "3200", "1"));
         issue("Quotation", acme, today, line("Logo", "9999", "1"));
         create("Invoice", acme, "USD", today, true, line("Logo", "8888", "1"));
@@ -230,8 +207,6 @@ class ItemSalesIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.items[*].documents", contains(1, 3, 1, 1, 1, 1, 1)))
                 .andExpect(content().string(containsString(
                         "{\"item\":\"Logo\",\"quantity\":1,\"amount\":3200.00,\"share\":0.4515,\"documents\":1}")));
-        // Asked for in any case and with spaces around it, an item is the
-        // list's row, with who bought it and its lines, the newest first.
         detail("name", "  WEBSITE design ", "period", "30d", "currency", "USD")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -262,7 +237,6 @@ class ItemSalesIntegrationTest extends IntegrationTest {
                 .andExpect(content().string(containsString(
                         "\"clients\":[{\"clientId\":null,\"client\":\"Cedar Works\",\"quantity\":1,"
                                 + "\"amount\":900.00}]")));
-        // Lines without a name are asked for as the list names them.
         detail("name", "other lines", "period", "30d")
                 .andExpect(jsonPath("$.item").value("Other lines"))
                 .andExpect(jsonPath("$.quantity").value(3))
@@ -280,15 +254,11 @@ class ItemSalesIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("over each of the overview's periods the items add up to its itemsTotal, the first five are its top"
-            + " items, and each item's page adds up to its row")
     void addsUpToTheOverview(ZoneId zone) throws Exception {
         inZone(zone);
         String birch = client("Birch Studio");
         LocalDate year = today.minusMonths(12).plusDays(1);
         LocalDate january = today.withDayOfYear(1);
-        // Documents on the first day of each period and the day before it,
-        // with fractions of a cent to round, discounts and tax.
         List<LocalDate> days = List.of(
                 today,
                 today.minusDays(29),
@@ -348,8 +318,6 @@ class ItemSalesIntegrationTest extends IntegrationTest {
                             .isEqualTo(top.get(index).get(field));
                 }
             }
-            // Each item's page is its row, with who bought it and its lines
-            // adding up to it.
             for (Map<String, Object> item : items) {
                 String page = body(detail("name", (String) item.get("item"), "period", key).andExpect(status().isOk()));
                 for (String field : List.of("item", "quantity", "amount", "share", "documents")) {
@@ -374,8 +342,6 @@ class ItemSalesIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an item's page lists its 50 newest lines and counts them all, and an item the period sold none of"
-            + " has nothing in it")
     void manyLines() throws Exception {
         List<String> numbers = new ArrayList<>();
         for (int index = 0; index < 55; index++) {
@@ -393,14 +359,12 @@ class ItemSalesIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.share").value(1.0))
                 .andExpect(jsonPath("$.lines.length()").value(50))
                 .andExpect(jsonPath("$.linesTotal").value(55))
-                // Today's are first, the last made first.
                 .andExpect(jsonPath("$.lines[0].documentNumber").value(numbers.get(50)))
                 .andExpect(jsonPath("$.lines[1].documentNumber").value(numbers.get(45))));
         List<String> dates = JsonPath.read(page, "$.lines[*].issueDate");
         for (int index = 1; index < dates.size(); index++) {
             assertThat(dates.get(index)).isLessThanOrEqualTo(dates.get(index - 1));
         }
-        // An item the period sold none of, and one never sold.
         detail("name", "Bolt", "period", "last-year")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.item").value("Bolt"))
@@ -422,8 +386,7 @@ class ItemSalesIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("items come a page at a time, the total counting every one of them")
-    void paging() throws Exception {
+    void pagesWithFullTotal() throws Exception {
         String[] lines = new String[12];
         for (int index = 0; index < lines.length; index++) {
             lines[index] = line("Item " + (char) ('A' + index), String.valueOf(100 * (index + 1)), "1");
@@ -442,7 +405,6 @@ class ItemSalesIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the currency is chosen as the overview chooses it, and a period that sold nothing lists nothing")
     void currencyAndEmpty() throws Exception {
         sales("period", "30d")
                 .andExpect(status().isOk())
@@ -467,9 +429,7 @@ class ItemSalesIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a viewer may see both, they count only their business, the catalog is unchanged, and a period"
-            + " from no list is refused")
-    void route() throws Exception {
+    void itemSalesRouteAccess() throws Exception {
         issue("Invoice", acme, today, line("Design", "500", "1"));
 
         send(get("/api/v1/item"), "").andExpect(status().isOk());

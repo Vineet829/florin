@@ -9,10 +9,6 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// Sign-ups whose email was never verified. Whoever made one may not own the
-// address, so it holds the email and username only for a while: it goes with
-// its empty business when its email signs up again, so the owner is never
-// locked out and only the newest link works, and in any case after a week.
 @Service
 public class UnverifiedSignUps {
 
@@ -35,7 +31,6 @@ public class UnverifiedSignUps {
         userRepository.flush();
     }
 
-    // For the daily jobs: how many were removed.
     @Transactional
     public int removeExpired() {
         List<User> expired = userRepository.findUnverifiedCreatedBefore(clock.instant().minus(KEPT));

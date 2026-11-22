@@ -10,20 +10,12 @@ import {
 } from "../dashboardModel";
 import { overviewPanel, panelLink } from "./DashboardPanels";
 
-// A row: the item, its bar, how many were sold and its share of income,
-// then what it brought in, which can widen the column.
 const row =
   "grid grid-cols-[minmax(0,1fr)_minmax(96px,auto)] items-baseline gap-2.5 py-[7px]";
 
 const sold = (quantity) =>
   `${Number(quantity || 0).toLocaleString("en", { maximumFractionDigits: 2 })} sold`;
 
-// What sold the most in the period shown, in the overview's currency, as
-// income counts it: before tax, after discounts, less what credit notes
-// took back. Each row opens that item's sales for the same period, and
-// Sales by item every item's, in the same currency when one was chosen.
-// The rest of the lines aren't shown, so the shares add up to less than
-// all the income.
 const TopItemsPanel = ({ snapshot, currencyChosen }) => {
   const { currency } = snapshot;
   const chosen = currencyChosen ? currency : undefined;

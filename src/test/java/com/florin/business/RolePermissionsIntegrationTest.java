@@ -15,7 +15,6 @@ import com.jayway.jsonpath.JsonPath;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -80,8 +79,7 @@ class RolePermissionsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a viewer reads and downloads the business's records, and changes nothing")
-    void viewer() throws Exception {
+    void viewerOnlyReads() throws Exception {
         String viewer = as(BusinessRole.VIEWER);
         String document = document();
 
@@ -103,7 +101,6 @@ class RolePermissionsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a viewer sees that a share link is on and how it is used, but not its address or an email with it")
     void viewerAndLinks() throws Exception {
         String viewer = as(BusinessRole.VIEWER);
         String member = as(BusinessRole.MEMBER);
@@ -121,8 +118,7 @@ class RolePermissionsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a member works on records, but can't delete them, change settings or download everything")
-    void member() throws Exception {
+    void memberEditsButCannotDelete() throws Exception {
         String member = as(BusinessRole.MEMBER);
         String document = document();
 
@@ -133,8 +129,6 @@ class RolePermissionsIntegrationTest extends IntegrationTest {
                 .andExpect(status().isCreated());
         refused(send(delete("/api/v1/document/" + document), member, ""), Permission.DELETE_RECORDS);
         refused(send(delete("/api/v1/customer/" + clientId), member, ""), Permission.DELETE_RECORDS);
-        // Nor payments, refunds, expenses, items or recurring schedules: the role is
-        // refused before anything is looked up.
         for (String path : List.of(
                 "/api/v1/document/" + document + "/payment/" + UUID.randomUUID(),
                 "/api/v1/document/" + document + "/refund/" + UUID.randomUUID(),
@@ -150,8 +144,7 @@ class RolePermissionsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an admin deletes drafts and clients, voids documents, changes settings and downloads everything")
-    void admin() throws Exception {
+    void adminDeletesVoidsAndExports() throws Exception {
         String admin = as(BusinessRole.ADMIN);
 
         send(delete("/api/v1/document/" + document(true)), admin, "").andExpect(status().isOk());
@@ -164,7 +157,6 @@ class RolePermissionsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("each business lists what the member's role allows there")
     void permissionsListed() throws Exception {
         send(get("/api/v1/businesses"), as(BusinessRole.VIEWER), "")
                 .andExpect(jsonPath("$.businesses[?(@.role == 'VIEWER')].permissions[*]")

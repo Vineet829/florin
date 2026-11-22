@@ -1,4 +1,3 @@
-// A line's or item's name, with its HSN or SAC code under it when it has one.
 const LineName = ({ name, hsnSac }) => (
   <>
     {name}

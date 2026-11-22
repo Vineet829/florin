@@ -68,10 +68,6 @@ public class ShareService {
         this.clock = clock;
     }
 
-    // The token's hash finds the link; the token is also kept sealed with the
-    // app's key, when there is one, so the link can be shown again. A new link
-    // replaces the document's current one. A draft isn't shared. The document
-    // is locked, as when a link is sent, so links made at once take turns.
     @Transactional
     public ShareLinkResponse create(BusinessAccess access, String id) {
         Document document = requireInBusiness(access, id, true);
@@ -102,10 +98,6 @@ public class ShareService {
         return new ShareLinkResponse(true, address(token), now, link.getTokenSealed() != null);
     }
 
-    // What an email draft can say about the document's link: the link itself
-    // when it can be shown again, or, when it can't, the day it was made, as
-    // sending will replace it. With no link yet, neither: one is made when
-    // the email is sent.
     public record EmailLink(String url, String replaces) {}
 
     @Transactional(readOnly = true)
@@ -119,24 +111,13 @@ public class ShareService {
                 .orElseGet(() -> new EmailLink(null, null));
     }
 
-    // The link an email being sent carries: the document's current one when
-    // it can be shown again, or a new one. A new one that replaces a link
-    // that can't be shown again is made only once the email has gone (keep),
-    // so an email that fails leaves the old link working. An email sent
-    // automatically never replaces a link that can't be shown again, and goes
-    // without one.
     @Transactional
     public Optional<SentLink> linkForEmail(BusinessAccess access, UUID documentId, boolean mayReplace, User actor) {
         return linkToSend(access, documentId, mayReplace, actor, "for an email", true);
     }
 
-    // A link to send someone, and whether making it replaced one that
-    // couldn't be shown again. One that waits to replace it until its email
-    // has gone carries the token it is made from.
     public record SentLink(String url, boolean replaced, String token) {}
 
-    // Makes the link an email that has gone carries, when it waited to
-    // replace the document's current one.
     @Transactional
     public void keep(BusinessAccess access, UUID documentId, SentLink link, User actor) {
         if (link.token() != null) {
@@ -144,8 +125,6 @@ public class ShareService {
         }
     }
 
-    // The document is locked, so two messages at once share one new link,
-    // unless each waits for its email to replace one.
     private Optional<SentLink> linkToSend(
             BusinessAccess access, UUID documentId, boolean mayReplace, User actor, String detail, boolean later) {
         Document document = lockInBusiness(access, documentId);
@@ -170,8 +149,6 @@ public class ShareService {
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "That document does not exist"));
     }
 
-    // A WhatsApp message with the document's link, to its client's number
-    // when there is one WhatsApp can use.
     @Transactional
     public WhatsAppShareResponse whatsApp(BusinessAccess access, String id) {
         Document document = requireInBusiness(access, id);
@@ -190,9 +167,6 @@ public class ShareService {
         return new WhatsAppShareResponse(true, WhatsAppLink.of(client.getPhoneNumber(), indian, text), link.replaced());
     }
 
-    // Everyone in the business sees whether a link is on and how it is used.
-    // Its address lets whoever has it accept a quotation or report a payment,
-    // so only members who can send it see that.
     @Transactional(readOnly = true)
     public ShareStatusResponse status(BusinessAccess access, String id) {
         return shareLinkRepository.findByDocumentAndRevokedAtIsNull(requireInBusiness(access, id))
@@ -206,8 +180,6 @@ public class ShareService {
                 .orElseGet(() -> new ShareStatusResponse(true, false, null, null, 0, null));
     }
 
-    // A link's address again, when its token was kept sealed and the key in
-    // use opens it.
     Optional<String> recovered(ShareLink link) {
         if (link.getTokenSealed() == null || !secretBox.available()) {
             return Optional.empty();
@@ -232,8 +204,6 @@ public class ShareService {
         activity.record(document, DocumentEventType.SHARE_REVOKED, null, access.user());
     }
 
-    // A view is counted every time, but the timeline and the business hear of it
-    // at most once an hour, so a client reloading the page doesn't flood them.
     @Transactional
     public PublicDocumentResponse view(String token) {
         ShareLink link = requireLink(token);
@@ -292,8 +262,6 @@ public class ShareService {
         return document;
     }
 
-    // The link's document, locked as it is first read, so a client's answer
-    // and any other change to it take turns.
     private Document lockedDocument(String token) {
         return documentRepository.findForUpdateByPkid(requireLink(token).getDocument().getPkid())
                 .orElseThrow(ShareService::linkGone);

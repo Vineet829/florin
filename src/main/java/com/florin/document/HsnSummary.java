@@ -8,15 +8,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-// A GST invoice's tax by HSN or SAC code, within each rate. Each component of
-// a rate's tax is apportioned among the codes by their taxable value at that
-// component's rate (the lowest code first on a tie, lines without a code
-// last), so each rate's rows add up to its tax exactly, as the GST returns
-// need.
 final class HsnSummary {
 
     private static final BigDecimal TWO = BigDecimal.valueOf(2);
-    // Codes in order, lines without one last.
     private static final Comparator<String> CODES = Comparator.comparing(String::isEmpty).thenComparing(code -> code);
 
     record Row(String hsnSac, BigDecimal rate, BigDecimal taxable, BigDecimal cgst, BigDecimal sgst, BigDecimal igst) {

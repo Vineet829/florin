@@ -6,12 +6,6 @@ import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
-// Whether an unpaid invoice gets an automatic reminder today, by the
-// business's calendar: some days before it is due, on the day, then every
-// few days after, never twice in a day and never more than the most allowed.
-// A reminder the job missed, because it didn't run that day, goes out the
-// next time it runs, once, unless one went out since or the invoice was
-// issued after that day. One before the due date is only sent until then.
 final class ReminderPlanner {
 
     private ReminderPlanner() {}
@@ -32,7 +26,6 @@ final class ReminderPlanner {
                 .isPresent();
     }
 
-    // The latest day, up to today, that the schedule asks for a reminder on.
     private static Optional<LocalDate> latestScheduled(LocalDate due, BusinessSettings settings, LocalDate today) {
         LocalDate latest = null;
         int before = settings.getReminderDaysBefore();

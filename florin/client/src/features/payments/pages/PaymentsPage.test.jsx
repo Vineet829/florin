@@ -3,11 +3,6 @@ import { createRoot } from "react-dom/client";
 import { act } from "react-dom/test-utils";
 import fixture from "./PaymentsPage.fixture.json";
 
-// The page as the app draws it, through its own store and RTK Query, with
-// only fetch faked. The answers follow the server's shapes for the demo
-// account on Oct 4, 2026: the fixture has the payments list, and the
-// summary of the last 90 days, the same 44,562.29 as the overview's
-// Received. The signed-in shell is left out.
 vi.mock("../../dashboard/components/DashboardShell", () => ({
   default: ({ children }) => children,
 }));
@@ -52,16 +47,11 @@ const summary = {
   receivedLast30Days: { total: 22763.97, payments: 7 },
 };
 
-// The days the server applies for the last 90 days.
 const ninetyDays = (address) =>
   address.searchParams.get("period") === "90d"
     ? { from: "2026-07-07", to: "2026-10-04" }
     : {};
 
-// Answers each request by its path; `answers` replaces any of them with a
-// body or a Response, a promise of either, or a function of the request's
-// address giving one.
-// Receipts alone are 2 of the 18.
 const serve = (answers = {}) =>
   vi.stubGlobal(
     "fetch",
@@ -98,7 +88,6 @@ const serve = (answers = {}) =>
     }),
   );
 
-// The list's own table, below the summary's.
 const listTable = (page) =>
   [...page.querySelectorAll("table")].find(
     (table) => table.querySelector("caption").textContent === "Payments",
@@ -131,7 +120,6 @@ const open = async (path, answers) => {
   return container;
 };
 
-// A sortable column's header holds a button with its name.
 const headings = (page) =>
   [...listTable(page).querySelectorAll("thead th")].map(
     (header) =>
@@ -141,13 +129,10 @@ const rows = (page) =>
   [...listTable(page).querySelectorAll("tbody tr")].map((row) =>
     [...row.children].map((cell) => cell.textContent),
   );
-// The styled dropdown with this label: its trigger, which carries the value
-// chosen.
 const select = (page, label) =>
   [...page.querySelectorAll("label")]
     .find((element) => element.textContent.startsWith(label))
     ?.querySelector('[role="combobox"]');
-// What the dropdown offers, opening it to look and closing it again.
 const options = async (combobox) => {
   await act(async () => combobox.click());
   const words = [...document.querySelectorAll('[role="option"]')].map(
@@ -160,7 +145,6 @@ const options = async (combobox) => {
   );
   return words;
 };
-// Opens the dropdown and picks the option with this value.
 const choose = async (combobox, value) => {
   await act(async () => combobox.click());
   await act(async () =>
@@ -168,7 +152,7 @@ const choose = async (combobox, value) => {
   );
 };
 
-it("lists payments, receipts and refunds as the Received figure opens them", async () => {
+it("lists payments, receipts and refunds", async () => {
   const page = await open("/payments?period=90d");
   expect(requests).toContain(
     "/api/v1/payments?page=1&size=10&sort=date&dir=desc&period=90d",
@@ -187,7 +171,7 @@ it("lists payments, receipts and refunds as the Received figure opens them", asy
     [
       "1",
       "Oct 4, 2026",
-      "Harbor & Pine Architects",
+      "Kale & Deshpande Architects",
       "INV-1038",
       "Bank Transfer",
       "Deposit",
@@ -197,17 +181,17 @@ it("lists payments, receipts and refunds as the Received figure opens them", asy
     [
       "2",
       "Oct 2, 2026",
-      "Quill & Co. Publishing",
+      "Deshmukh & Associates",
       "REC-0304",
       "On a receipt",
-      "—",
+      "-",
       "USD9,598.88",
       "View",
     ],
     [
       "3",
       "Sep 20, 2026",
-      "Tidewater Logistics",
+      "Jadhav Roadlines",
       "INV-1019",
       "Refund · Credit Card",
       "REF-0042",
@@ -223,7 +207,7 @@ it("lists payments, receipts and refunds as the Received figure opens them", asy
     "/document/doc-304",
   ]);
   expect(links[1].getAttribute("aria-label")).toBe("View REC-0304");
-  expect(page.querySelector('[role="status"]').textContent).toBe("1–3 of 18");
+  expect(page.querySelector('[role="status"]').textContent).toBe("1-3 of 18");
 });
 
 const line = (page) =>
@@ -231,12 +215,11 @@ const line = (page) =>
     .find((button) => button.textContent === "Clear filters")
     ?.parentElement.querySelector("p").textContent;
 
-it("says how many payments the filters found and what came in, with receipts counted apart", async () => {
+it("summarizes filtered payments", async () => {
   const page = await open("/payments?period=90d");
   expect(line(page)).toBe(
-    "18 payments from Jul 7 – Oct 4, 2026, ·Received 44,562.29, ·2 of them on receipts",
+    "18 payments from Jul 7 - Oct 4, 2026, ·Received 44,562.29, ·2 of them on receipts",
   );
-  // The totals count the receipts, so nothing else is asked.
   expect(
     requests.filter((request) => request.startsWith("/api/v1/payments?")),
   ).toEqual(["/api/v1/payments?page=1&size=10&sort=date&dir=desc&period=90d"]);
@@ -246,16 +229,12 @@ it("says how many payments the filters found and what came in, with receipts cou
   await act(async () => clear.click());
   expect(address).toBe("");
   expect(page.textContent).not.toContain("Clear filters");
-  // Clear filters is gone, so focus moves to the search box.
   expect(document.activeElement).toBe(
     page.querySelector('input[type="search"]'),
   );
 });
 
-// At 5 in the morning of Jan 1, 2027 in Kolkata it is still Dec 31, 2026 in
-// Los Angeles, where the business is: this year is still 2026 there. The
-// line above the list names the days the server took.
-it("lists this year's payments up to the business's today", async () => {
+it("this year ends at business today", async () => {
   const zone = process.env.TZ;
   process.env.TZ = "Asia/Kolkata";
   vi.useFakeTimers({ toFake: ["Date"] });
@@ -280,7 +259,7 @@ it("lists this year's payments up to the business's today", async () => {
     });
     await act(() =>
       vi.waitFor(() =>
-        expect(line(page)).toMatch(/^18 payments from Jan 1 – Dec 31, 2026,/),
+        expect(line(page)).toMatch(/^18 payments from Jan 1 - Dec 31, 2026,/),
       ),
     );
     expect(
@@ -297,7 +276,7 @@ it("lists this year's payments up to the business's today", async () => {
   }
 });
 
-it("says only what the next method's answer counts", async () => {
+it("summary waits for new results", async () => {
   const page = await open("/payments?period=90d", {
     "/payments": (url) =>
       url.searchParams.get("method") === "Bank Transfer"
@@ -318,13 +297,13 @@ it("says only what the next method's answer counts", async () => {
   await act(() =>
     vi.waitFor(() =>
       expect(line(page)).toBe(
-        "1 payment from Jul 7 – Oct 4, 2026, ·Received 262.76",
+        "1 payment from Jul 7 - Oct 4, 2026, ·Received 262.76",
       ),
     ),
   );
 });
 
-it("filters by method, date, and sorts as the menus offer", async () => {
+it("filters and sorts from menus", async () => {
   const page = await open("/payments");
   expect(await options(select(page, "Payment method"))).toEqual([
     "All methods",
@@ -340,7 +319,7 @@ it("filters by method, date, and sorts as the menus offer", async () => {
     "Oldest first",
     "Highest amount",
     "Lowest amount",
-    "Customer A–Z",
+    "Customer A-Z",
   ]);
   expect((await options(select(page, "Date paid")))[1]).toBe("Last 30 days");
   await choose(select(page, "Payment method"), "receipt");
@@ -352,7 +331,6 @@ it("filters by method, date, and sorts as the menus offer", async () => {
       ),
     ),
   );
-  // Sorting by a column's header turns it around on the next click.
   const amount = [...page.querySelectorAll("thead button")].find(
     (button) => button.textContent === "Amount",
   );
@@ -360,7 +338,7 @@ it("filters by method, date, and sorts as the menus offer", async () => {
   expect(address).toBe("?method=receipt&sort=amount&dir=desc");
 });
 
-it("sits beside All documents, Receivables, Sales and Recurring", async () => {
+it("shows the documents tab row", async () => {
   const page = await open("/payments");
   const tabs = [
     ...page.querySelectorAll('nav[aria-label="Documents views"] a'),
@@ -381,10 +359,10 @@ it("sits beside All documents, Receivables, Sales and Recurring", async () => {
   expect(page.querySelector("h1").textContent).toBe("Documents.");
 });
 
-it("shows the money bar, with the last 30 days' payments as the part shown", async () => {
+it("highlights recent payments in bar", async () => {
   const page = await open("/payments?period=30d");
   const bar = () =>
-    page.querySelector('[aria-label="What is owed and what came in"]');
+    page.querySelector('[aria-label="What\'s owed and what came in"]');
   await act(() => vi.waitFor(() => expect(bar()).not.toBeNull()));
   expect(
     bar()
@@ -395,11 +373,11 @@ it("shows the money bar, with the last 30 days' payments as the part shown", asy
 });
 
 it.each(["/payments?period=90d", "/payments?period=30d&method=receipt"])(
-  "doesn't ring the last 30 days' payments for %s",
+  "no highlight for %s",
   async (path) => {
     const page = await open(path);
     const bar = () =>
-      page.querySelector('[aria-label="What is owed and what came in"]');
+      page.querySelector('[aria-label="What\'s owed and what came in"]');
     await act(() => vi.waitFor(() => expect(bar()).not.toBeNull()));
     expect(
       [...bar().querySelectorAll("a")].map((link) =>
@@ -409,7 +387,6 @@ it.each(["/payments?period=90d", "/payments?period=30d&method=receipt"])(
   },
 );
 
-// The summary above the list, and its tables.
 const summed = (page) =>
   [...page.querySelectorAll("section")].find(
     (section) => section.querySelector("h2")?.textContent === "What came in",
@@ -429,23 +406,21 @@ const cells = (element) =>
 const summaries = () =>
   requests.filter((request) => request.startsWith("/api/v1/payments/summary"));
 
-it("sums up what came in over the list's period by method and by who paid most, against the period before", async () => {
+it("shows the period summary", async () => {
   const page = await open("/payments?period=90d");
   await summedUp(page);
   expect(summaries()).toEqual(["/api/v1/payments/summary?period=90d"]);
   const summary = summed(page);
-  // The same total as the overview's Received for the last 90 days.
   expect(summary.textContent).toContain(
-    "Received44,562.29from 18 payments, Jul 7 – Oct 4, 2026",
+    "Received44,562.29from 18 payments, Jul 7 - Oct 4, 2026",
   );
   const compared = [...summary.querySelectorAll("p")].find((line) =>
     line.textContent.includes("vs "),
   );
   expect(compared.textContent).toBe(
-    "down 25.6%vs 59,864.82 in Apr 8 – Jul 6, 2026",
+    "down 25.6%vs 59,864.82 in Apr 8 - Jul 6, 2026",
   );
   expect(compared.querySelector(".text-change-down")).not.toBeNull();
-  // Every method, receipts included, largest first.
   const methods = breakdown(page, "Received by method");
   expect(cells(methods)).toEqual([
     ["Bank Transfer", "6", "17,342.70"],
@@ -454,14 +429,13 @@ it("sums up what came in over the list's period by method and by who paid most, 
     ["PayPal", "3", "4,248.20"],
     ["Mobile Money", "2", "2,000.00"],
   ]);
-  // The clients who paid the most, each linked one opening the client.
   const payers = breakdown(page, "Who paid most");
   expect(cells(payers)).toEqual([
-    ["Quill & Co. Publishing", "3", "11,490.77"],
-    ["Kestrel Outdoor", "2", "10,317.45"],
-    ["Atlas Robotics", "2", "4,331.10"],
-    ["Verdant Farms", "2", "3,278.96"],
-    ["Bluefin Analytics", "1", "2,500.00"],
+    ["Deshmukh & Associates", "3", "11,490.77"],
+    ["Casa Fernandes Homestay", "2", "10,317.45"],
+    ["Pai Electricals", "2", "4,331.10"],
+    ["Nisarg Organic Farms", "2", "3,278.96"],
+    ["Shinde Constructions", "1", "2,500.00"],
   ]);
   expect(
     [...payers.querySelectorAll("a")].map((link) => [
@@ -470,26 +444,28 @@ it("sums up what came in over the list's period by method and by who paid most, 
     ]),
   ).toEqual([
     [
-      "Quill & Co. Publishing",
+      "Deshmukh & Associates",
       "/single-customer/00000000-0000-0000-0000-00000000c107",
     ],
     [
-      "Kestrel Outdoor",
+      "Casa Fernandes Homestay",
       "/single-customer/00000000-0000-0000-0000-00000000c109",
     ],
-    ["Atlas Robotics", "/single-customer/00000000-0000-0000-0000-00000000c101"],
     [
-      "Bluefin Analytics",
+      "Pai Electricals",
+      "/single-customer/00000000-0000-0000-0000-00000000c101",
+    ],
+    [
+      "Shinde Constructions",
       "/single-customer/00000000-0000-0000-0000-00000000c103",
     ],
   ]);
-  // It sits between the money bar and the list.
   const sections = [...page.querySelectorAll("section")];
   expect(sections.indexOf(summary)).toBe(1);
   expect(sections[2].contains(listTable(page))).toBe(true);
 });
 
-it("follows the list's period and currency, but not its method", async () => {
+it("summary ignores method filter", async () => {
   const page = await open("/payments?period=90d&currency=EUR");
   await summedUp(page);
   expect(summaries()).toEqual([
@@ -515,7 +491,7 @@ it("follows the list's period and currency, but not its method", async () => {
   );
 });
 
-it("sums up every date until a period is chosen, with nothing to compare with", async () => {
+it("defaults to all dates", async () => {
   const page = await open("/payments", {
     "/payments/summary": {
       ...fixture.summary,
@@ -538,7 +514,7 @@ it("sums up every date until a period is chosen, with nothing to compare with", 
   expect(summed(page).textContent).not.toContain("Jul 7");
 });
 
-it("names each amount's currency when the business bills in several", async () => {
+it("names currencies when several", async () => {
   const page = await open("/payments?period=90d", {
     "/payments/summary": { ...fixture.summary, currencies: ["USD", "EUR"] },
   });
@@ -552,7 +528,7 @@ it("names each amount's currency when the business bills in several", async () =
   ]);
 });
 
-it("says when nothing came in over the period", async () => {
+it("empty period message", async () => {
   const page = await open("/payments?period=30d", {
     "/payments/summary": {
       ...fixture.summary,
@@ -574,14 +550,13 @@ it("says when nothing came in over the period", async () => {
   expect(summed(page).querySelector("table")).toBeNull();
 });
 
-it("holds the summary's place while it loads", async () => {
+it("shows placeholder while loading", async () => {
   let answer;
   const page = await open("/payments?period=90d", {
     "/payments/summary": new Promise((resolve) => {
       answer = resolve;
     }),
   });
-  // Blocks between the money bar and the list, and no figures yet.
   const sections = [...page.querySelectorAll("section")];
   const held = sections[0].nextElementSibling;
   expect(held.getAttribute("aria-hidden")).toBe("true");
@@ -592,7 +567,7 @@ it("holds the summary's place while it loads", async () => {
   expect(page.querySelector(".animate-ov-pulse")).toBeNull();
 });
 
-it("says when the summary can't be loaded, with a way to try again, and keeps the list", async () => {
+it("summary load error keeps list", async () => {
   let fails = true;
   const page = await open("/payments?period=90d", {
     "/payments/summary": () =>
@@ -604,7 +579,7 @@ it("says when the summary can't be loaded, with a way to try again, and keeps th
     ),
   );
   const alert = page.querySelector('[role="alert"]');
-  expect(alert.textContent).toBe("We couldn’t sum up these payments.Try again");
+  expect(alert.textContent).toBe("We couldn't sum up these payments.Try again");
   expect(rows(page)).toHaveLength(3);
   fails = false;
   await act(async () => alert.querySelector("button").click());

@@ -11,7 +11,6 @@ import com.florin.user.User;
 import com.jayway.jsonpath.JsonPath;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -71,8 +70,7 @@ class CustomerAccountIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a client's summary totals what was billed, paid, still owed and overdue, per currency")
-    void totals() throws Exception {
+    void totalsPerCurrency() throws Exception {
         String client = customer("Northwind");
         pay(document(client, "Invoice", 100, "USD", FUTURE), 40);
         document(client, "Invoice", 30, "USD", PAST);
@@ -96,7 +94,6 @@ class CustomerAccountIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a client without documents has no totals, and only the client's owner sees them")
     void emptyAndOwnership() throws Exception {
         String client = customer("Quiet");
 

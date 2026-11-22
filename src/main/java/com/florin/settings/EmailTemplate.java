@@ -17,7 +17,6 @@ import java.time.Instant;
 import lombok.Getter;
 import lombok.Setter;
 
-// A business's own subject and message for one kind of email.
 @Entity
 @Table(name = "email_templates")
 @Getter

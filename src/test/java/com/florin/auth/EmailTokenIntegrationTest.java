@@ -11,7 +11,6 @@ import com.florin.common.SecretTokens;
 import com.florin.user.User;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,8 +19,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.test.web.servlet.ResultActions;
 
-// The token in a password reset link is kept only as its hash: the link
-// works, and what the database holds doesn't work as a link.
 class EmailTokenIntegrationTest extends IntegrationTest {
 
     private static final Pattern LINK_TOKEN = Pattern.compile("emailToken=([0-9a-f]{64})&userId=");
@@ -39,7 +36,6 @@ class EmailTokenIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a reset link's token is kept hashed: the link works, the stored hash doesn't")
     void keptHashed() throws Exception {
         User user = createUser();
         mockMvc.perform(post("/api/v1/auth/reset_password_request")

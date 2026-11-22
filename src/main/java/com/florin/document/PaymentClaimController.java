@@ -26,7 +26,6 @@ public class PaymentClaimController {
         this.paymentClaimService = paymentClaimService;
     }
 
-    // Reports waiting anywhere in the business.
     @GetMapping("/api/v1/payment-claims")
     public WaitingClaimsResponse waiting(@Requires(Permission.VIEW_RECORDS) BusinessAccess access) {
         return new WaitingClaimsResponse(true, paymentClaimService.waiting(access));

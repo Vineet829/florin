@@ -15,17 +15,12 @@ import com.jayway.jsonpath.JsonPath;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// A document keeps the business's details and the name of its tax as they
-// were when it was issued. Changing either later leaves it as it went out; a
-// document issued afterwards is made out by the business as it is, and a
-// draft shows the business as it is until it is issued.
 class SellerSnapshotIntegrationTest extends IntegrationTest {
 
     private String session;
@@ -52,7 +47,7 @@ class SellerSnapshotIntegrationTest extends IntegrationTest {
     void setUp() throws Exception {
         session = bearer(createUser());
         send(patch("/api/v1/business"), """
-                {"name": "Ada Analytics", "legalName": "Ada Analytics Private Limited",
+                {"name": "Apte Analytics", "legalName": "Apte Analytics Private Limited",
                  "address": "12 MG Road", "city": "Pune", "taxId": "27AAPFU0939F1ZV"}
                 """).andExpect(status().isOk());
         taxCalled("GST");
@@ -76,8 +71,6 @@ class SellerSnapshotIntegrationTest extends IntegrationTest {
                 "$.newDocument._id");
     }
 
-    // The business renames itself, moves, drops its legal name and tax ID,
-    // and calls its tax something else.
     private void businessChanges() throws Exception {
         send(patch("/api/v1/business"), """
                 {"name": "Borealis Studio", "legalName": "", "address": "1 Hill Road", "city": "Mumbai",
@@ -95,37 +88,35 @@ class SellerSnapshotIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("changing the business or the name of its tax later leaves a document as it went out")
-    void kept() throws Exception {
+    void issuedKeepsSellerSnapshot() throws Exception {
         String id = created();
         send(post("/api/v1/document/{id}/payment", id), "{\"amountPaid\": 50}").andExpect(status().isCreated());
         businessChanges();
 
         send(get("/api/v1/document/{id}", id), "")
-                .andExpect(jsonPath("$.document.seller.name").value("Ada Analytics"))
-                .andExpect(jsonPath("$.document.seller.legalName").value("Ada Analytics Private Limited"))
+                .andExpect(jsonPath("$.document.seller.name").value("Apte Analytics"))
+                .andExpect(jsonPath("$.document.seller.legalName").value("Apte Analytics Private Limited"))
                 .andExpect(jsonPath("$.document.seller.city").value("Pune"))
                 .andExpect(jsonPath("$.document.seller.taxId").value("27AAPFU0939F1ZV"))
                 .andExpect(jsonPath("$.document.taxLabel").value("GST"));
         assertThat(pdf("/api/v1/document/{id}/pdf", id))
-                .contains("Ada Analytics Private Limited", "12 MG Road, Pune", "Tax ID 27AAPFU0939F1ZV", "GST (18%)")
+                .contains("Apte Analytics Private Limited", "12 MG Road, Pune", "Tax ID 27AAPFU0939F1ZV", "GST (18%)")
                 .doesNotContain("Borealis", "Hill Road", "VAT");
         String payment = JsonPath.<List<String>>read(
                         body(send(get("/api/v1/document/{id}", id), "")), "$.document.paymentRecords[*]._id")
                 .get(0);
         assertThat(pdf("/api/v1/document/{id}/payment/{payment}/receipt", id, payment))
-                .contains("Ada Analytics", "12 MG Road, Pune")
+                .contains("Apte Analytics", "12 MG Road, Pune")
                 .doesNotContain("Borealis");
         String url = JsonPath.read(body(send(post("/api/v1/document/{id}/share", id), "")), "$.url");
         mockMvc.perform(get("/api/v1/public/share/{token}", url.substring(url.lastIndexOf('/') + 1)))
-                .andExpect(jsonPath("$.business.name").value("Ada Analytics"))
+                .andExpect(jsonPath("$.business.name").value("Apte Analytics"))
                 .andExpect(jsonPath("$.business.lines", hasItem("Tax ID 27AAPFU0939F1ZV")))
                 .andExpect(jsonPath("$.taxLabel").value("GST"));
     }
 
     @Test
-    @DisplayName("a document issued afterwards and a statement show the business as it is")
-    void current() throws Exception {
+    void laterDocumentsShowCurrentSeller() throws Exception {
         created();
         businessChanges();
 
@@ -135,15 +126,14 @@ class SellerSnapshotIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.document.taxLabel").value("VAT"));
         assertThat(pdf("/api/v1/document/{id}/pdf", newer))
                 .contains("Borealis Studio", "1 Hill Road, Mumbai", "VAT (18%)")
-                .doesNotContain("Ada Analytics", "GST");
+                .doesNotContain("Apte Analytics", "GST");
         assertThat(pdf("/api/v1/customer/{id}/statement", client))
                 .contains("Borealis Studio")
-                .doesNotContain("Ada Analytics");
+                .doesNotContain("Apte Analytics");
     }
 
     @Test
-    @DisplayName("a draft keeps nothing and shows the business as it is, until it is issued and keeps it")
-    void drafts() throws Exception {
+    void draftSnapshotsOnIssue() throws Exception {
         String draft = created(true);
         send(get("/api/v1/document/{id}", draft), "")
                 .andExpect(jsonPath("$.document.seller").doesNotExist())
@@ -152,7 +142,7 @@ class SellerSnapshotIntegrationTest extends IntegrationTest {
 
         assertThat(pdf("/api/v1/document/{id}/pdf", draft))
                 .contains("Borealis Studio", "VAT (18%)")
-                .doesNotContain("Ada Analytics", "GST");
+                .doesNotContain("Apte Analytics", "GST");
         send(post("/api/v1/document/{id}/issue", draft), "{}")
                 .andExpect(jsonPath("$.updatedDocument.seller.name").value("Borealis Studio"))
                 .andExpect(jsonPath("$.updatedDocument.taxLabel").value("VAT"));

@@ -13,11 +13,8 @@ import {
 
 const navLink =
   "inline-flex min-h-11 items-center whitespace-nowrap rounded-xl px-3.5 text-[14px] transition-colors max-[480px]:px-2.5";
-// Narrow phones drop the arrow so the header keeps to one line.
 const headerButton = "max-[480px]:px-3 max-[400px]:[&>svg]:hidden";
 
-// The header's colours: on the pastel canvas, or on the homepage's dark
-// stage, where everything is white or lilac.
 const TONES = {
   light: {
     brand: brandMark,
@@ -37,14 +34,6 @@ const TONES = {
   },
 };
 
-// The top of every public page. Signed-in visitors get the way back to
-// their workspace, their profile and sign out, as in the workspace sidebar.
-// signUp={false} drops the sign-up button where the page offers sign-up
-// itself, and Log in takes the button's place; signUpLabel names the
-// sign-up button. sections lists parts of the page to link
-// to, as { id, label }, beside the logo: a link scrolls to its section,
-// smoothly unless the visitor prefers less motion. tone="dark" dresses the
-// header for a dark ground.
 const PublicHeader = ({
   sections = [],
   signUp = true,
@@ -67,10 +56,6 @@ const PublicHeader = ({
     .join("")
     .toUpperCase();
 
-  // Each visit to a section's address scrolls to it, so a link works again
-  // after the visitor has scrolled away, and the page's own address, from
-  // a section, goes back to the top. A visitor arriving at a section waits
-  // for the fonts, so the section sits where it will stay.
   const arrival = useRef(key);
   useEffect(() => {
     if (!sections.length) return undefined;
@@ -102,8 +87,6 @@ const PublicHeader = ({
     navigate("/login", { replace: true });
   };
 
-  // Phones keep to Log in and the sign-up button; on the narrowest the
-  // links take a second row, on the right.
   return (
     <header className="flex min-h-16 flex-wrap items-center gap-x-3 gap-y-1">
       <Link to="/" className={look.brand} aria-label="Florin home">

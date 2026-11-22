@@ -20,8 +20,6 @@ import { share } from "../../reports/reportModel";
 const NO_ROWS = [];
 const partTitle = "mb-1 text-[14px] font-medium text-spot-ink";
 
-// While the figures load, blocks keep the summary's room, so the list below
-// stays where it is when they arrive.
 const Placeholder = () => (
   <div className={panel} aria-hidden="true">
     <div className="flex flex-col gap-2">
@@ -42,8 +40,6 @@ const Placeholder = () => (
   </div>
 );
 
-// A table of what each method, or each client, brought in, with a bar
-// against the largest.
 const Breakdown = ({ title, rows, name, rowKey, tone, currency, several }) => {
   const largest = Math.max(0, ...rows.map((row) => Number(row.amount)));
   return (
@@ -87,11 +83,6 @@ const Breakdown = ({ title, rows, name, rowKey, tone, currency, several }) => {
   );
 };
 
-// What came in over the Payments list's period, in its currency or the
-// business's first: the total against the period before when there is one,
-// then by method, receipts included, and the clients who paid the most. It
-// follows the list's period and currency, but not its search or method, so
-// the figures stay those of the whole period while the list narrows.
 const PaymentsSummary = ({ query }) => {
   const summary = query.data;
   if (!summary) {
@@ -101,7 +92,7 @@ const PaymentsSummary = ({ query }) => {
         role="alert"
       >
         <FiAlertCircle aria-hidden="true" />
-        We couldn’t sum up these payments.
+        We couldn't sum up these payments.
         <button
           type="button"
           className={`${textLink} bg-transparent p-0 text-[13px] coarse:min-h-11`}

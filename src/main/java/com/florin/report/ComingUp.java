@@ -20,11 +20,6 @@ import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
-// What is coming up in one currency: the invoices schedules that are neither
-// paused nor finished will make over the next 90 days, and the issued
-// quotations nobody has accepted or declined. A quotation awaits an answer
-// until the last day it is valid has gone by, or for as long as it has none,
-// and has expired after, as a document counts it.
 @Repository
 class ComingUp {
 
@@ -33,7 +28,6 @@ class ComingUp {
     private static final int RUNS = 5;
     private static final int QUOTATIONS = 3;
 
-    // The currency's issued quotations nobody accepted or declined.
     private static final String UNANSWERED = """
             d.business_pkid = :business and %s and d.document_type = 'Quotation'
               and coalesce(d.currency, '') = :currency and d.accepted_at is null and d.declined_at is null
@@ -49,19 +43,11 @@ class ComingUp {
         this.schedules = schedules;
     }
 
-    // Today is the business's, in its time zone.
     OverviewComingUp read(long businessPkid, String currency, ZoneId zone, LocalDate today) {
         return new OverviewComingUp(
                 recurring(businessPkid, currency, today), quotations(businessPkid, currency, zone, today));
     }
 
-    // The running schedules whose invoice is in the currency, and the
-    // invoices they will make from today through the 89 days after it, each
-    // on the day its schedule counts it as it counts its next run, for what
-    // the invoice it copies comes to. A run whose day has gone by, on a
-    // schedule resumed since or that the daily run missed, is made at the
-    // next daily run, so it counts as today's. The five soonest are listed,
-    // those on one day in the order their schedules were made.
     private OverviewComingUp.Recurring recurring(long businessPkid, String currency, LocalDate today) {
         LocalDate last = today.plusDays(DAYS - 1);
         List<RecurringSchedule> running = schedules.findRunning(businessPkid).stream()
@@ -94,12 +80,6 @@ class ComingUp {
                 runs.stream().limit(RUNS).toList());
     }
 
-    // How many of the unanswered quotations await an answer and how many
-    // have expired, what each come to, the three that expire soonest, those
-    // valid for as long as it takes last, and the three that expired most
-    // recently, latest first. Those whose last day was the same day stay in
-    // the order they were made. A last day is a day in the business's time
-    // zone.
     private OverviewComingUp.Quotations quotations(long businessPkid, String currency, ZoneId zone, LocalDate today) {
         Map<String, Object> params = Map.of(
                 "business", businessPkid,

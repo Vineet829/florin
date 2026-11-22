@@ -13,7 +13,6 @@ import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
-// Gives a controller the business the request's session is working in.
 @Component
 public class ActiveBusinessResolver implements HandlerMethodArgumentResolver {
 
@@ -43,7 +42,6 @@ public class ActiveBusinessResolver implements HandlerMethodArgumentResolver {
         BusinessAccess access = activeBusinesses
                 .resolve(user, CurrentSession.id().orElse(null), CurrentSession.businessPkid().orElse(null))
                 .orElseThrow(BusinessChangedException::none);
-        // A tab still showing another business must not write into this one.
         String shown = webRequest.getHeader(HEADER);
         if (shown != null && !shown.isBlank() && !shown.trim().equalsIgnoreCase(access.businessId().toString())) {
             throw BusinessChangedException.to(access.businessId());

@@ -11,9 +11,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-// A database of its own in the tests' Postgres, migrated up to a chosen
-// version, so a later migration can be run over data shaped the way it was
-// before that migration.
 final class MigrationDatabase implements AutoCloseable {
 
     private final PostgreSQLContainer<?> postgres;
@@ -46,10 +43,6 @@ final class MigrationDatabase implements AutoCloseable {
         migrate(MigrationVersion.LATEST);
     }
 
-    // The records a migration must carry over unchanged, as they were at V21:
-    // clients, documents and payments, column by column. The one change is
-    // V62's: a document without a currency takes its business's default,
-    // which is USD for these.
     String recordsFingerprint() {
         return jdbc.queryForObject("""
                 select md5(coalesce((select string_agg(row(pkid, id, created_by_pkid, name, email, account_no,

@@ -5,10 +5,6 @@ import { PERIODS, currencyOf, periodQuery } from "../documents/documentFilters";
 import { amountsOf } from "../documents/listTotals";
 import { cents } from "../documents/taxWithheld";
 
-// The Expenses list's search, category, period, currency and page, as kept
-// in the URL. It has the Documents list's periods and currencies. Expenses
-// are always listed newest first, so only the page and its size come from
-// the shared list helpers.
 const NEWEST_FIRST = { date: { first: "desc" } };
 
 export const readExpenseList = (params) => {
@@ -48,9 +44,6 @@ export const expenseListSearch = ({
 export const isFiltered = ({ q, category, period, currency }) =>
   Boolean(q || category || period || currency);
 
-// The list's filters as the server reads them, with the overview's periods
-// by name and the others as dates; an export of the list sends these
-// without a page.
 export const expenseFilterQuery = (
   { q, category, period, currency },
   today = new Date(),
@@ -67,12 +60,6 @@ export const expenseQuery = (list, today) => ({
   ...expenseFilterQuery(list, today),
 });
 
-// The line above a filtered list: how many expenses it holds, from the days
-// the server applied, and what they cost, as Profit counts it, from the
-// totals the server sends with each page.
-// Amounts name their currency when the business bills in more than one, and
-// whenever one isn't its main currency, the first of `currencies`: an
-// expense can be paid in any currency.
 export const expenseResults = (data, currencies = []) => {
   const totals = data?.totals || [];
   const [main] = currencies;
@@ -91,10 +78,6 @@ export const expenseResults = (data, currencies = []) => {
   ].filter(Boolean);
 };
 
-// The dialog's fields for an expense, or for a new one paid today in the
-// business's currency. People type what they paid and the tax in it; the
-// server keeps the amount before tax. A rate to a currency the business no
-// longer reports in is left out, so saving removes it.
 export const expenseForm = (expense, { today, currency, base }) => ({
   date: expense?.date || today,
   category: expense?.category || "",
@@ -112,7 +95,6 @@ export const expenseForm = (expense, { today, currency, base }) => ({
   notes: expense?.notes || "",
 });
 
-// The tax has to leave something paid for.
 export const taxError = ({ total, tax }) =>
   total !== "" && cents(tax) > 0 && cents(tax) >= cents(total)
     ? "The tax has to be less than the total paid."

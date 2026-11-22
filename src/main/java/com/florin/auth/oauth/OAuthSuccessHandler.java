@@ -18,10 +18,6 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
-// Finishes a sign-in the provider confirmed: a session and on to the app,
-// the two-factor step, or back to the sign-in page saying why not. The
-// two-factor challenge travels in the fragment, so it never reaches a server
-// log or a Referer header. Nothing of the provider's sign-in is kept.
 @Component
 public class OAuthSuccessHandler implements AuthenticationSuccessHandler {
 
@@ -66,8 +62,6 @@ public class OAuthSuccessHandler implements AuthenticationSuccessHandler {
             failed(provider);
             response.sendRedirect(refused(exception.code(), provider));
         } catch (RuntimeException exception) {
-            // Such as two first sign-ins at once both making the account: the
-            // sign-in page rather than a bare error page.
             LOGGER.warn("A sign-in with a provider failed", exception);
             failed(provider);
             response.sendRedirect(refused("failed", provider));
@@ -76,7 +70,6 @@ public class OAuthSuccessHandler implements AuthenticationSuccessHandler {
         }
     }
 
-    // Counted under the provider; a sign-in without one is nobody's.
     private void failed(String provider) {
         SignInProvider.of(provider).ifPresent(known -> metrics.signInFailed(known.id()));
     }

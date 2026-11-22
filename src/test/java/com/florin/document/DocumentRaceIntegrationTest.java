@@ -30,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -41,13 +40,6 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-// Whatever changes a document locks it first, so a change that arrives while
-// another holds it waits, then sees what that one did: an edit or a delete
-// never lands on a draft that was issued meanwhile, two conversions of a
-// quotation make one invoice, and a reminder undoes no payment. A client's
-// answer to a quotation, or report of a payment, takes its turn too. Each
-// test holds the document locked in a transaction of its own while the
-// requests arrive.
 class DocumentRaceIntegrationTest extends IntegrationTest {
 
     private static final AtomicInteger NETWORKS = new AtomicInteger();
@@ -102,9 +94,6 @@ class DocumentRaceIntegrationTest extends IntegrationTest {
                 "$.newDocument._id");
     }
 
-    // Runs the requests while a transaction of the test's own holds the
-    // document locked and does `meanwhile` to it, then lets it go once each
-    // request waits for it, and gives each request's status.
     private List<Integer> whileLocked(String id, Consumer<Document> meanwhile, List<Callable<ResultActions>> requests)
             throws Exception {
         CountDownLatch held = new CountDownLatch(1);
@@ -148,8 +137,6 @@ class DocumentRaceIntegrationTest extends IntegrationTest {
         }
     }
 
-    // How many connections to the test's database wait for a lock, as a
-    // request does for the held document, whether it reads or writes it.
     private int waitingForLocks() {
         return jdbc.queryForObject(
                 "select count(*) from pg_stat_activity"
@@ -157,14 +144,11 @@ class DocumentRaceIntegrationTest extends IntegrationTest {
                 Integer.class);
     }
 
-    // Issued by the same code the issue endpoint uses, inside the holder's
-    // transaction.
     private void issue(Document document) {
         documentIssuer.issue(document, null, null);
     }
 
     @Test
-    @DisplayName("an edit to a draft's lines that waits while the draft is issued is refused, and the lines stay")
     void editWhileIssued() throws Exception {
         String id = document("Invoice", true);
 
@@ -180,7 +164,6 @@ class DocumentRaceIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a delete that waits while the draft is issued is refused, and the document stays")
     void deleteWhileIssued() throws Exception {
         String id = document("Invoice", true);
 
@@ -192,7 +175,6 @@ class DocumentRaceIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("two conversions of one quotation at once take turns, so it becomes one invoice")
     void convertTwice() throws Exception {
         String quotation = document("Quotation", false);
 
@@ -208,14 +190,11 @@ class DocumentRaceIntegrationTest extends IntegrationTest {
                 .isEqualTo(1);
     }
 
-    // A reminder written by hand, without the document's link, so nothing
-    // locks the invoice before the reminder is counted.
     private ResultActions remind(String id) throws Exception {
         return send(post("/api/v1/document/{id}/remind", id), "{\"message\": \"Please pay.\"}");
     }
 
     @Test
-    @DisplayName("a reminder counted while the daily run counts one is counted as well")
     void remindWhileReminded() throws Exception {
         String invoice = document("Invoice", false);
 
@@ -229,7 +208,6 @@ class DocumentRaceIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a reminder counted while the invoice is paid leaves it paid")
     void remindWhilePaid() throws Exception {
         String invoice = document("Invoice", false);
 
@@ -246,7 +224,6 @@ class DocumentRaceIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.document.remindersSent").value(1));
     }
 
-    // A quotation, issued, and the token of its share link.
     private String[] sharedQuotation() throws Exception {
         String id = document("Quotation", false);
         String url = JsonPath.read(body(send(post("/api/v1/document/{id}/share", id), "")), "$.url");
@@ -257,13 +234,11 @@ class DocumentRaceIntegrationTest extends IntegrationTest {
         return JsonPath.read(body(send(get("/api/v1/document/{id}", id), "")), "$.document.documentNumber");
     }
 
-    // The token of the client's portal link.
     private String portal() throws Exception {
         String url = JsonPath.read(body(send(post("/api/v1/customer/{id}/portal", client), "")), "$.url");
         return url.substring(url.lastIndexOf('/') + 1);
     }
 
-    // A request from the client, by a link, with no sign-in.
     private ResultActions fromClient(MockHttpServletRequestBuilder request, String json) throws Exception {
         return mockMvc.perform(request.with(sent -> {
                     sent.setRemoteAddr(network);
@@ -277,7 +252,6 @@ class DocumentRaceIntegrationTest extends IntegrationTest {
         return jdbc.queryForObject(sql, Integer.class, UUID.fromString(id));
     }
 
-    // The answers the quotation's timeline records.
     private int answers(String id) {
         return count(
                 "select count(*) from document_events where type in ('ACCEPTED', 'DECLINED')"
@@ -286,7 +260,6 @@ class DocumentRaceIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a quotation accepted and declined at once takes one answer, and the other is refused")
     void answerTwice() throws Exception {
         String[] quotation = sharedQuotation();
 
@@ -299,7 +272,6 @@ class DocumentRaceIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a quotation answered at once through its link and its client's portal takes one answer")
     void answerTwiceThroughPortal() throws Exception {
         String[] quotation = sharedQuotation();
         String number = number(quotation[0]);
@@ -315,7 +287,6 @@ class DocumentRaceIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a quotation withdrawn while its client accepts it stays withdrawn, and the answer is refused")
     void acceptWhileWithdrawn() throws Exception {
         String[] quotation = sharedQuotation();
 
@@ -334,7 +305,6 @@ class DocumentRaceIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a payment reported through the portal while the invoice is voided is refused, and nothing waits")
     void reportWhileVoided() throws Exception {
         String invoice = document("Invoice", false);
         String number = number(invoice);

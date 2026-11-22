@@ -5,8 +5,6 @@ import com.florin.tax.GstStates;
 import com.florin.tax.SupplyType;
 import com.florin.tax.TaxRegime;
 
-// A GST document's supply: the seller's state, where it goes and how it is
-// taxed. Within a union territory without a legislature SGST is UTGST.
 public record GstResponse(
         String sellerStateCode,
         String sellerStateName,

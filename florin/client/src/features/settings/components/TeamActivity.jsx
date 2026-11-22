@@ -12,8 +12,6 @@ import { panelNote } from "../../../components/workspace/pastel";
 import { useGetTeamActivityQuery } from "../../business/businessApiSlice";
 import { eventLabel, whenLabel } from "../auditEvents";
 
-// Changes to the business's team, newest first, for its owner and admins:
-// who was invited, joined, left or changed role, and who handed it over.
 const TeamActivity = ({ business }) => {
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
@@ -66,7 +64,7 @@ const TeamActivity = ({ business }) => {
               {
                 label: "About",
                 type: "email",
-                render: (event) => event.email || "—",
+                render: (event) => event.email || "-",
               },
               {
                 label: "By",
@@ -78,7 +76,7 @@ const TeamActivity = ({ business }) => {
                       <span className={panelNote}>{event.actorEmail}</span>
                     </span>
                   ) : (
-                    "—"
+                    "-"
                   ),
               },
               { label: "When", render: (event) => whenLabel(event.occurredAt) },

@@ -10,9 +10,6 @@ import java.util.OptionalLong;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-// Time-based one-time codes (RFC 6238): HMAC-SHA1 over 30-second steps, six
-// digits, as authenticator apps make them. A code from the step before or
-// after is accepted too, for clocks that drift.
 final class Totp {
 
     static final int SECRET_BYTES = 20;
@@ -53,7 +50,6 @@ final class Totp {
         return String.format("%0" + digits + "d", binary % (int) Math.pow(10, digits));
     }
 
-    // The step a code belongs to, near now, compared in constant time.
     static OptionalLong match(byte[] secret, String code, Instant now) {
         long current = step(now);
         for (long step = current - 1; step <= current + 1; step++) {

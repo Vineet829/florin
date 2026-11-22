@@ -17,7 +17,6 @@ import jakarta.servlet.http.Cookie;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +43,6 @@ class PasswordChangeIntegrationTest extends IntegrationTest {
         return userRepository.save(user);
     }
 
-    // An access token a minute old, as the browser holds before the change.
     private String earlierToken(User user, SessionService.Continued session) {
         Clock minuteAgo = Clock.fixed(Instant.now().minusSeconds(60), ZoneOffset.UTC);
         return "Bearer " + new JwtService(properties, minuteAgo).issueAccessToken(user, session.session().getId());
@@ -67,8 +65,7 @@ class PasswordChangeIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a new password signs out the other devices, keeps this one signed in and emails the owner")
-    void changes() throws Exception {
+    void changeSignsOutOtherDevices() throws Exception {
         User user = withPassword();
         SessionService.Continued mine = sessionService.start(user);
         SessionService.Continued other = sessionService.start(user);
@@ -97,7 +94,6 @@ class PasswordChangeIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a wrong current password is refused and counted; after five, the account waits")
     void wrongPassword() throws Exception {
         User user = withPassword();
         String authorization = bearer(user);
@@ -110,8 +106,7 @@ class PasswordChangeIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the new password must match its confirmation, be strong and differ from the current one")
-    void rules() throws Exception {
+    void enforcesNewPasswordRules() throws Exception {
         String authorization = bearer(withPassword());
         change(authorization, PASSWORD, NEW_PASSWORD, "N3w!passwurd")
                 .andExpect(status().isBadRequest())
@@ -125,8 +120,7 @@ class PasswordChangeIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the shared demo account's password can't be changed")
-    void demo() throws Exception {
+    void demoPasswordIsLocked() throws Exception {
         User demo = demoUser();
         demo.setPassword(passwordEncoder.encode(PASSWORD));
         userRepository.save(demo);

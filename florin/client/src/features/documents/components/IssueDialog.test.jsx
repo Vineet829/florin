@@ -4,9 +4,6 @@ import { act } from "react-dom/test-utils";
 import IssueDialog from "./IssueDialog";
 import { useGetSettingsQuery } from "../../settings/settingsApiSlice";
 
-// The dialog reads the business's settings, and the business it works in,
-// from these hooks, so it needs no store or server; the browser's modal is
-// left out.
 vi.mock("../documentsApiSlice", () => ({
   useIssueDocMutation: () => [vi.fn(), { isLoading: false }],
 }));
@@ -51,7 +48,6 @@ const render = (draft) => {
   return container;
 };
 
-// The exchange rate field and what it says under it, if it is shown.
 const rateField = (container) => {
   const label = [...container.querySelectorAll("label")].find((element) =>
     element.textContent.startsWith("Exchange rate"),
@@ -66,7 +62,7 @@ const rateField = (container) => {
   return { input, hint: hint?.textContent };
 };
 
-it("asks for the rate a GST invoice or receipt in another currency is issued with", () => {
+it("requires rate for foreign GST", () => {
   inRegime("GST_INDIA");
   for (const documentType of ["Invoice", "Receipt"]) {
     const { input, hint } = rateField(render({ documentType }));
@@ -75,7 +71,7 @@ it("asks for the rate a GST invoice or receipt in another currency is issued wit
   }
 });
 
-it("leaves the rate optional on a quotation, and outside GST mode", () => {
+it("rate optional for quotations", () => {
   inRegime("GST_INDIA");
   const quotation = rateField(render({ documentType: "Quotation" }));
   expect(quotation.input.required).toBe(false);
@@ -86,7 +82,7 @@ it("leaves the rate optional on a quotation, and outside GST mode", () => {
   expect(invoice.hint).toMatch(/^Optional/);
 });
 
-it("doesn't offer to change a credit note's rate, which stays its invoice's", () => {
+it("credit note keeps invoice rate", () => {
   inRegime("GST_INDIA");
   expect(
     rateField(
@@ -99,9 +95,7 @@ it("doesn't offer to change a credit note's rate, which stays its invoice's", ()
   ).toBeNull();
 });
 
-// The server refuses a document dated after the business's today. At 5 in
-// the morning of Oct 8 in Kolkata it is still Oct 7 in Los Angeles.
-it("dates a draft on the business's today, due the payment terms after it", () => {
+it("dates draft with payment terms", () => {
   inRegime("STANDARD");
   const zone = process.env.TZ;
   process.env.TZ = "Asia/Kolkata";
@@ -120,7 +114,7 @@ it("dates a draft on the business's today, due the payment terms after it", () =
   }
 });
 
-it("takes a rate with up to the 10 decimals the server keeps", () => {
+it("accepts up to 10 decimals", () => {
   inRegime("STANDARD");
   const { input } = rateField(render({ documentType: "Invoice" }));
   input.value = "0.012048192771084338";

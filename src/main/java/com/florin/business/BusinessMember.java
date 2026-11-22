@@ -16,7 +16,6 @@ import java.time.Instant;
 import lombok.Getter;
 import lombok.Setter;
 
-// Someone who works in a business, and what they may do there.
 @Entity
 @Table(name = "business_members")
 @Getter

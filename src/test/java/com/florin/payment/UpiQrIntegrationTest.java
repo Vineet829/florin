@@ -24,7 +24,6 @@ import org.apache.pdfbox.pdmodel.graphics.PDXObject;
 import org.apache.pdfbox.pdmodel.graphics.form.PDFormXObject;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -39,7 +38,7 @@ class UpiQrIntegrationTest extends IntegrationTest {
         mockMvc.perform(put("/api/v1/settings/payment-details")
                         .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"accountHolder\": \"Ada & Co\", \"upiId\": \"ada@okhdfcbank\"}"))
+                        .content("{\"accountHolder\": \"Apte & Co\", \"upiId\": \"apte@okhdfcbank\"}"))
                 .andExpect(status().isOk());
     }
 
@@ -91,8 +90,6 @@ class UpiQrIntegrationTest extends IntegrationTest {
                 .getContentAsByteArray();
     }
 
-    // What every image in the PDF says as a QR code, page by page, looking
-    // inside forms too.
     private static List<String> qrCodes(byte[] pdf) {
         try (PDDocument document = PDDocument.load(pdf)) {
             List<String> codes = new ArrayList<>();
@@ -124,13 +121,12 @@ class UpiQrIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a rupee invoice's PDF has a QR code that reads as its share page's UPI link for the balance")
-    void rupees() throws Exception {
+    void rupeeInvoiceHasQrCode() throws Exception {
         String id = invoice("INR", 750);
 
         String upi = JsonPath.read(shared(id), "$.payment.upi.uri");
         assertThat(upi).isEqualTo(
-                "upi://pay?pa=ada@okhdfcbank&pn=Ada%20%26%20Co&am=1500.00&cu=INR&tn=Invoice%20INV-0001");
+                "upi://pay?pa=apte@okhdfcbank&pn=Apte%20%26%20Co&am=1500.00&cu=INR&tn=Invoice%20INV-0001");
         byte[] pdf = pdf(id);
         assertThat(qrCodes(pdf)).containsExactly(upi);
         assertThat(text(pdf)).contains("Scan to pay INR 1,500.00 with any UPI app");
@@ -146,8 +142,7 @@ class UpiQrIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a dollar invoice has no UPI code, and over a lakh the payer enters the amount")
-    void otherwise() throws Exception {
+    void skipsDollarsAndLakhAmounts() throws Exception {
         String dollars = invoice("USD", 750);
         String json = shared(dollars);
         assertThat((Object) JsonPath.read(json, "$.payment.upi")).isNull();

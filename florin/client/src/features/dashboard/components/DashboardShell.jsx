@@ -34,12 +34,7 @@ const navLink =
 const content =
   "block min-h-dvh w-full px-8 pb-12 pt-[30px] outline-none compact:px-6 compact:pt-5 max-[1359px]:px-7 max-[1359px]:pt-7 max-[960px]:min-h-[calc(100dvh_-_68px)] max-[960px]:px-6 max-[960px]:pt-6 max-[700px]:px-4 max-[700px]:pb-10 max-[700px]:pt-5";
 
-// The signed-in shell: sidebar navigation, the drawer below 961px, and the
-// top bar that opens it.
 const ui = {
-  // dashboard-app scopes the workspace's reset in src/index.css. The
-  // sidebar widens with the window, from 260px at 1415px wide to 360px
-  // from 1665px, so the pages keep most of the extra room.
   app: "dashboard-app grid min-h-dvh grid-cols-[var(--sidebar-width)_minmax(0,1fr)] bg-spot-canvas bg-canvas p-0 font-ui font-normal leading-[normal] tracking-normal text-spot-ink [--sidebar-width:clamp(260px,calc(40vw_-_306px),360px)] [color-scheme:light] max-[960px]:grid-cols-[minmax(0,1fr)]",
   skipLink:
     "dashboard-skip-link left-[calc(var(--sidebar-width)+16px)] bg-white text-spot-night max-[960px]:left-6 coarse:inline-flex coarse:min-h-11 coarse:items-center",
@@ -79,10 +74,7 @@ const ui = {
     "flex items-center gap-3.5 text-[13px] text-spot-muted max-[760px]:hidden [&>strong]:font-medium [&>strong]:text-spot-ink [&>svg]:size-3 [&>svg]:text-spot-faint",
   mobileBrand:
     "hidden font-display text-[16px] font-normal leading-[1.2] tracking-[-0.025em] max-[760px]:block coarse:min-h-11",
-  // Pages scroll normally, with the overview's spacing around them.
   content,
-  // Fill pages (documents, clients) stretch their table to 28px above the
-  // bottom of wide windows.
   contentFill: `${content} min-[1360px]:flex min-[1360px]:flex-col min-[1360px]:pb-7`,
 };
 
@@ -128,7 +120,6 @@ const DashboardShell = ({ children, section = "Overview", fill = false }) => {
     };
   }, [menuOpen, desktopWidth]);
 
-  // ⌘K on a Mac, Ctrl+K elsewhere, opens search unless a dialog is open.
   useEffect(() => {
     const onShortcut = (event) => {
       if (

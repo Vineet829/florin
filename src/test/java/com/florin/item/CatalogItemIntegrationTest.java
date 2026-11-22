@@ -11,7 +11,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.florin.IntegrationTest;
 import com.florin.user.User;
 import com.jayway.jsonpath.JsonPath;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -31,8 +30,7 @@ class CatalogItemIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("items are created, listed by name, searched, updated and deleted")
-    void lifecycle() throws Exception {
+    void createListUpdateDelete() throws Exception {
         User owner = createUser();
         String id =
                 createdId(owner, "{\"name\": \"Logo design\", \"description\": \"Two concepts\", \"unitPrice\": 450}");
@@ -60,7 +58,6 @@ class CatalogItemIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an item keeps a tax rate and a unit for its lines, and either can be cleared")
     void rateAndUnit() throws Exception {
         User owner = createUser();
         String id = JsonPath.read(
@@ -94,7 +91,6 @@ class CatalogItemIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an item keeps an HSN or SAC code for GST, without spaces, and anything but 4 to 8 digits is refused")
     void hsnSac() throws Exception {
         User owner = createUser();
         String id = createdId(owner, "{\"name\": \"Consulting\", \"unitPrice\": 80, \"hsnSac\": \" 9983 14 \"}");
@@ -118,7 +114,6 @@ class CatalogItemIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("% and _ in a search match themselves, not any text")
     void searchWildcards() throws Exception {
         User owner = createUser();
         createdId(owner, "{\"name\": \"50% deposit\", \"unitPrice\": 100}");
@@ -135,7 +130,6 @@ class CatalogItemIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("names are unique per user in any letter case, on create and on rename")
     void uniqueNames() throws Exception {
         User owner = createUser();
         createdId(owner, "{\"name\": \"Hosting\", \"unitPrice\": 20}");
@@ -153,8 +147,7 @@ class CatalogItemIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("names are required, and prices can't be negative or have too many digits")
-    void validation() throws Exception {
+    void refusesInvalidItems() throws Exception {
         User owner = createUser();
 
         create(owner, "{\"name\": \" \", \"unitPrice\": 1}")
@@ -169,8 +162,7 @@ class CatalogItemIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("another user's items are neither listed nor changeable")
-    void ownership() throws Exception {
+    void itemsStayWithOwner() throws Exception {
         User owner = createUser();
         String id = createdId(owner, "{\"name\": \"Private\", \"unitPrice\": 10}");
         User stranger = createUser();

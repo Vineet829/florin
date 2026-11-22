@@ -19,10 +19,6 @@ import {
 
 const colors = financeTones.peach;
 
-// The bar's parts: what is not due yet in the not-due lavender, then each
-// overdue band in rust, darker the later it is. An older server's answer
-// has no bands, so what is overdue is one part. A part with nothing in it
-// is left out; the rest keep a sliver at least.
 const barParts = (owedNow, bands) =>
   [
     { key: "current", amount: owedNow.notDue, color: "bg-owed-due" },
@@ -37,7 +33,6 @@ const barParts = (owedNow, bands) =>
         ]),
   ].filter((part) => Number(part.amount) > 0);
 
-// An overdue band's amount in the card's ink, its cents smaller and lighter.
 const BandAmount = ({ value, currency }) => {
   const text = formatMoney(value, currency);
   return (
@@ -52,9 +47,6 @@ const BandAmount = ({ value, currency }) => {
   );
 };
 
-// Current or Overdue under the bar: a link to that part of what is owed on
-// the Receivables view, with its key, its figure as large as half the card
-// allows, up to 34px, and how many invoices it is on.
 const Split = ({ to, label, swatch, value, invoices, currency, ariaLabel }) => {
   const text = formatMoney(value, currency);
   return (
@@ -89,13 +81,6 @@ const Split = ({ to, label, swatch, value, invoices, currency, ariaLabel }) => {
   );
 };
 
-// What clients owe today, as Zoho Invoice's total receivables shows it, in
-// a card of its own beside what needs attention: the total, a bar split
-// into what is not due yet and what is overdue by how late it is, then
-// Current and Overdue, and the overdue bands. It is as of today, whatever
-// the period shown. Current opens what is coming in on the Documents tab's
-// Receivables view, and Overdue what is overdue there, in the same
-// currency when one was chosen.
 const ReceivablesCard = ({ snapshot, currencyChosen }) => {
   const { currency, owedNow } = snapshot;
   const chosen = currencyChosen ? currency : undefined;
@@ -105,7 +90,6 @@ const ReceivablesCard = ({ snapshot, currencyChosen }) => {
   const total = formatMoney(owedNow.total, currency);
   return (
     <section className={receivablesCard} aria-labelledby="receivables-title">
-      {/* The name keeps to one line, and "as of today" sits on its baseline. */}
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h2
           id="receivables-title"
@@ -126,15 +110,12 @@ const ReceivablesCard = ({ snapshot, currencyChosen }) => {
             decimalClass={colors.decimal}
           />
         </span>
-        {/* Outstanding, as the Documents list says: the invoices with money
-            still owed, part paid ones too. */}
         <span className={`text-[16px] ${colors.muted}`}>
           {owedNow.invoices
             ? `across ${countOf(owedNow.invoices, "outstanding invoice", "outstanding invoices")}`
             : "No unpaid invoices"}
         </span>
       </div>
-      {/* The same figures are words below, so the bar is left to the eye. */}
       <div
         className={`flex h-4 gap-0.5 overflow-hidden rounded-full ${parts.length ? "" : "bg-white/50"}`}
         aria-hidden="true"
@@ -147,9 +128,6 @@ const ReceivablesCard = ({ snapshot, currencyChosen }) => {
           />
         ))}
       </div>
-      {/* Current and Overdue side by side, then the overdue bands in one
-          panel split into cells by hairlines, four across when the card is
-          wide enough and two across when not. */}
       <div className="flex flex-col gap-5">
         <div className="grid grid-cols-2 gap-4">
           <Split
@@ -159,7 +137,7 @@ const ReceivablesCard = ({ snapshot, currencyChosen }) => {
             value={owedNow.notDue}
             invoices={current}
             currency={currency}
-            ariaLabel={`Current, not due yet: ${money(owedNow.notDue, currency)} on ${invoiceCount(current)}. View what is coming in`}
+            ariaLabel={`Current, not due yet: ${money(owedNow.notDue, currency)} on ${invoiceCount(current)}. View what's coming in`}
           />
           <Split
             to={receivablesLink("overdue", chosen)}

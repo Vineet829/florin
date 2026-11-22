@@ -8,8 +8,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
-// The invoice or receipt a credit note credits, and what is left to credit
-// on it besides the note's own draft.
 public record CreditedDocumentResponse(
         @JsonProperty("_id") UUID id,
         String documentNumber,

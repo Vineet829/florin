@@ -16,7 +16,6 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -25,9 +24,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// An issued document keeps what it went out with: its client, lines,
-// currency, tax, issue date and amounts. Its due date, notes and terms still
-// change, and only a draft is deleted, unless a schedule repeats it.
 class DocumentLockIntegrationTest extends IntegrationTest {
 
     private static final String LOCKED =
@@ -73,8 +69,7 @@ class DocumentLockIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an issued document keeps its client, type, lines, currency, tax and issue date")
-    void locked() throws Exception {
+    void issuedDocumentFieldsLocked() throws Exception {
         String id = document("Invoice", false);
 
         for (String json : List.of(
@@ -95,8 +90,7 @@ class DocumentLockIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("its due date, notes and terms still change, and a draft changes freely")
-    void details() throws Exception {
+    void detailsStillEditable() throws Exception {
         String id = document("Invoice", false);
 
         change(id, """
@@ -117,7 +111,6 @@ class DocumentLockIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a receipt has no due date to change, and an accepted quotation stays as it was")
     void receiptsAndQuotations() throws Exception {
         String receipt = document("Receipt", false);
         change(receipt, "{\"dueDate\": \"2026-12-01T12:00:00Z\"}")
@@ -135,7 +128,6 @@ class DocumentLockIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a receipt never takes a due date: not made, saved as a draft, turned into one, issued or copied")
     void receiptsHaveNoDueDate() throws Exception {
         String due = "\"dueDate\": \"2026-12-01T12:00:00Z\"";
         String made = JsonPath.read(
@@ -164,9 +156,7 @@ class DocumentLockIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("only a draft is deleted, and not while it repeats: an issued document is voided instead, and a void"
-            + " one is kept")
-    void deleting() throws Exception {
+    void deletesOnlyUnscheduledDrafts() throws Exception {
         String issued = document("Invoice", false);
         send(delete("/api/v1/document/{id}", issued), "")
                 .andExpect(status().isConflict())
@@ -190,7 +180,6 @@ class DocumentLockIntegrationTest extends IntegrationTest {
         send(delete("/api/v1/document/{id}", repeating), "")
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("This draft repeats. Stop its schedule before deleting it"));
-        // A paused schedule still copies it.
         send(post("/api/v1/recurring/{id}/pause", schedule), "").andExpect(status().isOk());
         send(delete("/api/v1/document/{id}", repeating), "").andExpect(status().isConflict());
         send(get("/api/v1/document/{id}/recurring", repeating), "")
@@ -201,10 +190,8 @@ class DocumentLockIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("payments settle an issued document without working its amounts out again")
     void amountsKept() throws Exception {
         String id = document("Invoice", false);
-        // An amount worked out differently when the document was made.
         jdbc.update("update documents set total = 110.01 where id = ?", UUID.fromString(id));
 
         String payment = JsonPath.read(

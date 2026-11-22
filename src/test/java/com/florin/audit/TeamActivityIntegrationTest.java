@@ -13,7 +13,6 @@ import com.florin.business.BusinessRole;
 import com.florin.business.Permission;
 import com.florin.user.User;
 import java.util.List;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -21,7 +20,6 @@ import org.springframework.http.MediaType;
 class TeamActivityIntegrationTest extends IntegrationTest {
 
     @Test
-    @DisplayName("owners and admins see who changed role or left their business, without addresses or devices")
     void teamActivity() throws Exception {
         User owner = createUser();
         Business business = businessOf(owner);
@@ -62,7 +60,6 @@ class TeamActivityIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the admin log names the business each team change happened in")
     void adminLogNamesTheBusiness() throws Exception {
         User owner = createUser();
         Business business = businessOf(owner);

@@ -43,11 +43,10 @@ import { useBusiness } from "../../business/permissions";
 
 const NO_SCHEDULES = [];
 
-// A schedule can copy a draft, which has no number yet.
 const templateName = (schedule) => schedule.documentNumber || "Draft invoice";
 
 const RecurringPage = () => {
-  useTitle("Recurring invoices — Florin");
+  useTitle("Recurring invoices - Florin");
   const query = useGetSchedulesQuery(undefined, {
     refetchOnMountOrArgChange: 60,
   });
@@ -68,7 +67,7 @@ const RecurringPage = () => {
       }).unwrap();
       toast.success(result.message);
     } catch (error) {
-      toast.error(errorMessage(error, "The schedule could not be changed."));
+      toast.error(errorMessage(error, "The schedule couldn't be changed."));
     }
   };
   const confirmRemove = async () => {
@@ -77,7 +76,7 @@ const RecurringPage = () => {
       toast.success(result.message);
       setRemoving(null);
     } catch (error) {
-      toast.error(errorMessage(error, "The schedule could not be removed."));
+      toast.error(errorMessage(error, "The schedule couldn't be removed."));
     }
   };
   const columns = [
@@ -184,8 +183,6 @@ const RecurringPage = () => {
       ),
     },
   ];
-  // Viewers see the schedules, but not the ways to change them; members
-  // don't see the way to stop one for good.
   const shown = columns.filter(
     (column) =>
       !(editRefusal && ["Edit", "Pause", "Stop"].includes(column.label)) &&
@@ -195,7 +192,7 @@ const RecurringPage = () => {
     <WorkspacePage section="Documents">
       <PageHeader
         title="Documents"
-        description="Invoices, quotations, and receipts. All your paperwork in one place."
+        description="Invoices, quotations, receipts and credit notes."
         actions={
           <>
             <DocumentsTabs />
@@ -212,7 +209,7 @@ const RecurringPage = () => {
       ) : (
         <Panel
           title="Recurring invoices"
-          description="Each schedule makes a new invoice from its template on the day it is due."
+          description="Each schedule makes a new invoice from its template on the day it's due."
         >
           {schedules.length ? (
             <DataTable

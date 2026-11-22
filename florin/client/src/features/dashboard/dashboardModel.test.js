@@ -43,7 +43,7 @@ it("formats amounts safely", () => {
 });
 
 describe("periods", () => {
-  it("reads a period from the address, and the last 90 days otherwise", () => {
+  it("reads period, defaults to 90 days", () => {
     expect(findPeriod("12m").name).toBe("Last 12 months");
     expect(findPeriod("ytd").compared).toBe("vs same period last year");
     expect(findPeriod(null).key).toBe("90d");
@@ -51,11 +51,11 @@ describe("periods", () => {
   });
 
   it.each([
-    ["2026-07-07", "2026-10-04", true, "Jul 7 – Oct 4, 2026"],
-    ["2026-07-07", "2026-10-04", false, "Jul 7 – Oct 4"],
-    ["2025-11-01", "2026-10-04", true, "Nov 1, 2025 – Oct 4, 2026"],
-    ["2025-12-06", "2026-01-04", false, "Dec 6, 2025 – Jan 4, 2026"],
-  ])("writes %s to %s as one span", (from, to, withYear, text) => {
+    ["2026-07-07", "2026-10-04", true, "Jul 7 - Oct 4, 2026"],
+    ["2026-07-07", "2026-10-04", false, "Jul 7 - Oct 4"],
+    ["2025-11-01", "2026-10-04", true, "Nov 1, 2025 - Oct 4, 2026"],
+    ["2025-12-06", "2026-01-04", false, "Dec 6, 2025 - Jan 4, 2026"],
+  ])("formats span %s to %s", (from, to, withYear, text) => {
     expect(dateSpan(from, to, withYear)).toBe(text);
   });
 
@@ -68,7 +68,7 @@ describe("periods", () => {
         previousFrom: "2026-04-08",
         previousTo: "2026-07-06",
       },
-      "Last 90 days, Jul 7 – Oct 4, 2026 · compared with Apr 8 – Jul 6",
+      "Last 90 days, Jul 7 - Oct 4, 2026 · compared with Apr 8 - Jul 6",
     ],
     [
       {
@@ -78,7 +78,7 @@ describe("periods", () => {
         previousFrom: "2026-08-06",
         previousTo: "2026-09-04",
       },
-      "Last 30 days, Sep 5 – Oct 4, 2026 · compared with Aug 6 – Sep 4",
+      "Last 30 days, Sep 5 - Oct 4, 2026 · compared with Aug 6 - Sep 4",
     ],
     [
       {
@@ -88,7 +88,7 @@ describe("periods", () => {
         previousFrom: "2024-11-01",
         previousTo: "2025-10-31",
       },
-      "Last 12 months, Nov 1, 2025 – Oct 4, 2026 · compared with Nov 1, 2024 – Oct 31, 2025",
+      "Last 12 months, Nov 1, 2025 - Oct 4, 2026 · compared with Nov 1, 2024 - Oct 31, 2025",
     ],
     [
       {
@@ -98,13 +98,13 @@ describe("periods", () => {
         previousFrom: "2025-01-01",
         previousTo: "2025-10-04",
       },
-      "This year, Jan 1 – Oct 4, 2026 · compared with Jan 1 – Oct 4, 2025",
+      "This year, Jan 1 - Oct 4, 2026 · compared with Jan 1 - Oct 4, 2025",
     ],
-  ])("names the period and the one it is compared with", (period, text) => {
+  ])("names period and comparison", (period, text) => {
     expect(periodSubtitle(period, true)).toBe(text);
   });
 
-  it("leaves the comparison out when nothing came before the period", () => {
+  it("omits comparison without history", () => {
     expect(
       periodSubtitle(
         {
@@ -116,12 +116,12 @@ describe("periods", () => {
         },
         false,
       ),
-    ).toBe("Last 90 days, Jul 7 – Oct 4, 2026");
+    ).toBe("Last 90 days, Jul 7 - Oct 4, 2026");
   });
 });
 
-describe("links to the Reports page", () => {
-  it("carries the period, and a chosen currency, which Reports also has", () => {
+describe("report links", () => {
+  it("carries period and currency", () => {
     expect(reportLink("income", "ytd", "EUR")).toBe(
       "/reports?period=ytd&currency=EUR#income",
     );
@@ -132,14 +132,14 @@ describe("links to the Reports page", () => {
     );
   });
 
-  it("names no period for a section that is as of today", () => {
+  it("no period for current sections", () => {
     expect(reportLink("ageing", null)).toBe("/reports#ageing");
     expect(reportLink("ageing", null, "EUR")).toBe(
       "/reports?currency=EUR#ageing",
     );
   });
 
-  it("leaves out its default 12 months", () => {
+  it("omits the default 12 months", () => {
     expect(reportLink("ageing", "12m")).toBe("/reports#ageing");
     expect(reportLink("profit", "12m", "EUR")).toBe(
       "/reports?currency=EUR#profit",
@@ -147,8 +147,8 @@ describe("links to the Reports page", () => {
   });
 });
 
-describe("links to what is owed today", () => {
-  it("opens what is coming in or what is overdue on the Receivables view, in a chosen currency", () => {
+describe("receivables links", () => {
+  it("builds receivables links", () => {
     expect(receivablesLink()).toBe("/receivables");
     expect(receivablesLink(undefined, "EUR")).toBe("/receivables?currency=EUR");
     expect(receivablesLink("overdue")).toBe("/receivables?mode=overdue");
@@ -157,7 +157,7 @@ describe("links to what is owed today", () => {
     );
   });
 
-  it("writes them as the Receivables view writes its own address", async () => {
+  it("matches the receivables URL format", async () => {
     const { readReceivables, receivablesSearch } =
       await import("../documents/receivablesModel");
     for (const link of [
@@ -175,19 +175,19 @@ describe("links to what is owed today", () => {
   });
 });
 
-describe("what is owed by days late", () => {
-  it("names the server's overdue bands in order, each in a deeper rust", () => {
+describe("overdue bands", () => {
+  it("orders overdue bands", () => {
     expect(
       AGE_BANDS.map(({ key, label, color }) => [key, label, color]),
     ).toEqual([
-      ["days1to15", "1–15 days", "bg-owed-age-1"],
-      ["days16to30", "16–30 days", "bg-owed-age-2"],
-      ["days31to45", "31–45 days", "bg-owed-age-3"],
+      ["days1to15", "1-15 days", "bg-owed-age-1"],
+      ["days16to30", "16-30 days", "bg-owed-age-2"],
+      ["days31to45", "31-45 days", "bg-owed-age-3"],
       ["over45", "Over 45 days", "bg-owed-age-4"],
     ]);
   });
 
-  it("reads the bands by key, and none from an older server", () => {
+  it("reads bands by key", () => {
     const current = { key: "current", amount: 10, invoices: 1 };
     const late = { key: "over45", amount: 5, invoices: 2 };
     expect(owedBands({ bands: [current, late] })).toEqual({
@@ -199,39 +199,36 @@ describe("what is owed by days late", () => {
   });
 });
 
-describe("links to the records behind each figure", () => {
+describe("figure links", () => {
   it.each([
     ["30d", "30d"],
     ["90d", "90d"],
     ["12m", "12m"],
     ["ytd", "this-year"],
-  ])(
-    "opens what was billed and received over %s as the views' %s",
-    (period, list) => {
-      expect(billedLink(period)).toBe(`/sales?period=${list}`);
-      expect(billedLink(period, "EUR")).toBe(
-        `/sales?period=${list}&currency=EUR`,
-      );
-      expect(receivedLink(period)).toBe(`/payments?period=${list}`);
-      expect(receivedLink(period, "EUR")).toBe(
-        `/payments?period=${list}&currency=EUR`,
-      );
-    },
-  );
+  ])("sales and payments links for %s", (period, list) => {
+    expect(billedLink(period)).toBe(`/sales?period=${list}`);
+    expect(billedLink(period, "EUR")).toBe(
+      `/sales?period=${list}&currency=EUR`,
+    );
+    expect(receivedLink(period)).toBe(`/payments?period=${list}`);
+    expect(receivedLink(period, "EUR")).toBe(
+      `/payments?period=${list}&currency=EUR`,
+    );
+  });
 
   it.each([
     ["30d", "30d"],
     ["90d", "90d"],
     ["12m", "12m"],
     ["ytd", "this-year"],
-  ])("opens every client's sales over %s as the view's %s", (period, list) => {
+  ])("client sales link for %s", (period, list) => {
     expect(salesByCustomerLink(period)).toBe(`/customers/sales?period=${list}`);
     expect(salesByCustomerLink(period, "EUR")).toBe(
       `/customers/sales?period=${list}&currency=EUR`,
     );
   });
 
-  it("writes the Sales view's address as it writes it itself", async () => {
+  it("matches the sales URL format", async () => {
     const { readSales, salesSearch } = await import("../documents/salesModel");
     for (const period of ["30d", "90d", "12m", "ytd"]) {
       const search = billedLink(period, "EUR").split("?")[1];
@@ -247,36 +244,33 @@ it.each([
   ["90d", "90d"],
   ["12m", "12m"],
   ["ytd", "this-year"],
-])(
-  "opens the expenses behind money out over %s as the list's %s, in the overview's currency",
-  (period, list) => {
-    expect(moneyOutLink(period, "USD")).toBe(
-      `/expenses?period=${list}&currency=USD`,
-    );
-  },
-);
+])("money out link for %s", (period, list) => {
+  expect(moneyOutLink(period, "USD")).toBe(
+    `/expenses?period=${list}&currency=USD`,
+  );
+});
 
-describe("the top clients", () => {
-  it("measures each bar against the largest and opens a linked client", () => {
+describe("top clients", () => {
+  it("builds top client rows", () => {
     expect(
       topClientRows([
         {
           clientId: "c-1",
-          client: "Quill",
+          client: "Deshmukh",
           billed: 200,
           owed: 0,
           documents: 2,
         },
         {
           clientId: null,
-          client: "Verdant",
+          client: "Nisarg",
           billed: 50,
           owed: 10,
           documents: 1,
         },
         {
           clientId: "c-3",
-          client: "Atlas",
+          client: "Pai",
           billed: -20,
           owed: 5,
           documents: 1,
@@ -285,7 +279,7 @@ describe("the top clients", () => {
     ).toEqual([
       {
         clientId: "c-1",
-        client: "Quill",
+        client: "Deshmukh",
         billed: 200,
         owed: 0,
         documents: 2,
@@ -294,7 +288,7 @@ describe("the top clients", () => {
       },
       {
         clientId: null,
-        client: "Verdant",
+        client: "Nisarg",
         billed: 50,
         owed: 10,
         documents: 1,
@@ -303,7 +297,7 @@ describe("the top clients", () => {
       },
       {
         clientId: "c-3",
-        client: "Atlas",
+        client: "Pai",
         billed: -20,
         owed: 5,
         documents: 1,
@@ -313,14 +307,14 @@ describe("the top clients", () => {
     ]);
   });
 
-  it("has no rows when no one was billed", () => {
+  it("no rows without billing", () => {
     expect(topClientRows([])).toEqual([]);
     expect(topClientRows()).toEqual([]);
   });
 });
 
-describe("the top items", () => {
-  it("measures each bar against the largest, shares out the income, and opens each item's sales", () => {
+describe("top items", () => {
+  it("builds top item rows", () => {
     const rows = topItemRows(
       [
         { item: "Motion graphics", quantity: 28, amount: 400, documents: 6 },
@@ -344,7 +338,7 @@ describe("the top items", () => {
     ]);
   });
 
-  it("names lines without a name other lines, which open their own page", () => {
+  it("groups unnamed lines as other", () => {
     expect(
       topItemRows(
         [
@@ -364,7 +358,7 @@ describe("the top items", () => {
     );
   });
 
-  it("shares out nothing without income, and draws no bar below zero", () => {
+  it("no share or negative bar", () => {
     expect(
       topItemRows([{ item: "Refund", quantity: -1, amount: -80 }], 0).map(
         ({ bar, share }) => [bar, share],
@@ -379,7 +373,7 @@ describe("the top items", () => {
     ["90d", "90d"],
     ["12m", "12m"],
     ["ytd", "this-year"],
-  ])("opens every item's sales over %s as the view's %s", (period, list) => {
+  ])("item sales link for %s", (period, list) => {
     expect(salesByItemLink(period)).toBe(`/items/sales?period=${list}`);
     expect(salesByItemLink(period, "EUR")).toBe(
       `/items/sales?period=${list}&currency=EUR`,
@@ -387,29 +381,29 @@ describe("the top items", () => {
   });
 });
 
-describe("what is coming up", () => {
-  it("names each schedule's next run and template, and opens the invoice it repeats", () => {
+describe("coming up", () => {
+  it("lists schedule runs", () => {
     expect(
       runRows([
         {
           scheduleId: "s-2",
           templateId: "t-2",
           documentNumber: null,
-          client: "Bluefin",
+          client: "Shinde",
           date: "2027-01-01",
         },
         {
           scheduleId: "s-1",
           templateId: "t-1",
           documentNumber: "INV-1012",
-          client: "Harbor",
+          client: "Kale",
           date: "2026-10-12",
         },
         {
           scheduleId: "s-1",
           templateId: "t-1",
           documentNumber: "INV-1012",
-          client: "Harbor",
+          client: "Kale",
           date: "2026-11-12",
         },
       ]).map(({ day, number, to }) => [day, number, to]),
@@ -421,7 +415,7 @@ describe("what is coming up", () => {
     expect(recurringLink).toBe("/recurring");
   });
 
-  it("leaves a schedule's invoice to what needs attention when it opens it already", () => {
+  it("skips invoices already in attention", () => {
     const opened = attentionDocuments([
       { kind: "overdue", documentId: "t-1" },
       { kind: "recurring", documentId: "t-2" },
@@ -439,7 +433,7 @@ describe("what is coming up", () => {
     expect([...attentionDocuments()]).toEqual([]);
   });
 
-  it("opens each quotation waiting for an answer, named with its last valid day, or as having none", () => {
+  it("lists open quotations", () => {
     expect(
       quotationRows([
         { documentId: "q-1", validUntil: "2026-10-09", days: 5 },
@@ -452,7 +446,7 @@ describe("what is coming up", () => {
     expect(quotationRows()).toEqual([]);
   });
 
-  it("opens each quotation that expired without an answer, named with its last valid day", () => {
+  it("lists expired quotations", () => {
     expect(
       quotationRows([
         {
@@ -472,7 +466,7 @@ describe("what is coming up", () => {
     ]);
   });
 
-  it("opens the quotations in a chosen currency", () => {
+  it("quotations link with currency", () => {
     expect(quotationsLink()).toBe("/documents?type=quotation");
     expect(quotationsLink("EUR")).toBe(
       "/documents?type=quotation&currency=EUR",
@@ -486,7 +480,7 @@ it("counts invoices", () => {
   expect(invoiceCount(1200)).toBe("1,200 invoices");
 });
 
-describe("changes against the period before", () => {
+describe("period changes", () => {
   it.each([
     [68848.08, 53344.02, { direction: "up", percent: 29.1 }],
     [44562.29, 59864.82, { direction: "down", percent: 25.6 }],
@@ -504,14 +498,11 @@ describe("changes against the period before", () => {
     [0, 0],
     [100, undefined],
     [NaN, 100],
-  ])(
-    "has nothing to compare %s with when the earlier figure is %s",
-    (current, previous) => {
-      expect(changeFrom(current, previous)).toBeNull();
-    },
-  );
+  ])("no comparison for %s vs %s", (current, previous) => {
+    expect(changeFrom(current, previous)).toBeNull();
+  });
 
-  it("writes a change to one decimal", () => {
+  it("formats change to one decimal", () => {
     expect(percentLabel(29.1)).toBe("29.1%");
     expect(percentLabel(100)).toBe("100.0%");
     expect(percentLabel(12345.6)).toBe("12,345.6%");
@@ -519,7 +510,7 @@ describe("changes against the period before", () => {
 });
 
 describe("tile trends", () => {
-  it("draws a line from zero up to a tenth above the highest value", () => {
+  it("scales line to the highest value", () => {
     expect(trendPoints([0, 50, 100])).toEqual([
       { x: 0, y: 100 },
       { x: 50, y: expect.closeTo(54.55, 2) },
@@ -527,7 +518,7 @@ describe("tile trends", () => {
     ]);
   });
 
-  it("keeps a line below zero inside the box, and draws flat or lone values", () => {
+  it("handles negative, flat and single values", () => {
     const points = trendPoints([-50, 100]);
     expect(points[0].y).toBe(100);
     expect(points[1].y).toBeCloseTo(6.25, 2);
@@ -535,7 +526,7 @@ describe("tile trends", () => {
     expect(trendPoints([40])).toEqual([{ x: 50, y: expect.closeTo(9.09, 2) }]);
   });
 
-  it("stands profit on zero and hangs a loss below it", () => {
+  it("draws profit and loss around zero", () => {
     expect(trendColumns([0, 50, 100])).toEqual({
       zero: 100,
       columns: [
@@ -557,10 +548,10 @@ describe("tile trends", () => {
   });
 });
 
-describe("the cash flow chart", () => {
+describe("cash flow chart", () => {
   const part = (moneyIn, moneyOut = 0) => ({ moneyIn, moneyOut });
 
-  it("puts round steps above and below zero, money in taking most of the height", () => {
+  it("rounds axis steps around zero", () => {
     const scale = cashFlowScale([part(0), part(4332.9), part(17256.86)]);
     expect(scale.ticks).toEqual([20000, 15000, 10000, 5000, 0, -5000]);
     expect(scale.at(20000)).toBe(0);
@@ -568,7 +559,7 @@ describe("the cash flow chart", () => {
     expect(scale.at(-5000)).toBe(100);
   });
 
-  it("gives money out as many steps as it needs, and money in at least one", () => {
+  it("gives each side enough steps", () => {
     expect(cashFlowScale([part(12000, 3000)]).ticks).toEqual([
       15000, 10000, 5000, 0, -5000,
     ]);
@@ -580,16 +571,16 @@ describe("the cash flow chart", () => {
     ]);
   });
 
-  it("keeps small amounts in whole steps", () => {
+  it("keeps small steps whole", () => {
     expect(cashFlowScale([part(3)]).ticks).toEqual([3, 2, 1, 0, -1]);
   });
 
-  it("has no scale when nothing came in or went out", () => {
+  it("no scale without money", () => {
     expect(cashFlowScale([part(0), part(0)])).toBeNull();
     expect(cashFlowScale([])).toBeNull();
   });
 
-  it("writes axis figures in whole amounts, shortened from a hundred thousand", () => {
+  it("shortens large axis figures", () => {
     const ticks = [20000, 0, -5000];
     expect(ticks.map((tick) => axisLabel(tick, ticks))).toEqual([
       "20,000",
@@ -609,28 +600,28 @@ describe("the cash flow chart", () => {
 
   it.each([
     [{ from: "2026-09-05", to: "2026-09-05" }, "day", "Sep 5", "Sep 5"],
-    [{ from: "2026-07-07", to: "2026-07-13" }, "week", "Jul 7", "Jul 7–13"],
+    [{ from: "2026-07-07", to: "2026-07-13" }, "week", "Jul 7", "Jul 7-13"],
     [
       { from: "2026-07-28", to: "2026-08-03" },
       "week",
       "Jul 28",
-      "Jul 28–Aug 3",
+      "Jul 28-Aug 3",
     ],
     [
       { from: "2025-12-29", to: "2026-01-04" },
       "week",
       "Dec 29",
-      "Dec 29, 2025 – Jan 4, 2026",
+      "Dec 29, 2025 - Jan 4, 2026",
     ],
     [{ from: "2025-11-01", to: "2025-11-30" }, "month", "Nov", "November 2025"],
     [{ from: "2026-02-01", to: "2026-02-28" }, "month", "Feb", "February 2026"],
-    [{ from: "2026-10-01", to: "2026-10-04" }, "month", "Oct", "Oct 1–4, 2026"],
-  ])("names %j by its %s", (bucket, step, label, range) => {
+    [{ from: "2026-10-01", to: "2026-10-04" }, "month", "Oct", "Oct 1-4, 2026"],
+  ])("labels %j by %s", (bucket, step, label, range) => {
     expect(bucketLabel(bucket, step)).toBe(label);
     expect(bucketRange(bucket, step)).toBe(range);
   });
 
-  it("names fewer columns as they get narrower, always keeping the latest", () => {
+  it("thins labels on narrow charts", () => {
     expect(labelStep(13, 800, 46)).toBe(1);
     expect(labelStep(13, 270, 46)).toBe(3);
     expect(labelStep(30, 813, 46)).toBe(2);
@@ -643,8 +634,7 @@ describe("the cash flow chart", () => {
   });
 });
 
-describe("what needs attention", () => {
-  // The business's today, the day the fixture's figures were taken.
+describe("attention list", () => {
   const OCT_4 = new Date(2026, 9, 4);
   const item = (kind, days, date, extra) => ({
     kind,
@@ -685,12 +675,10 @@ describe("what needs attention", () => {
       "Draft",
       "Created Oct 1",
     ],
-  ])("words %j", (entry, label, state, when) => {
+  ])("describes %j", (entry, label, state, when) => {
     expect(attentionRow(entry, OCT_4)).toMatchObject({ label, state, when });
   });
 
-  // An invoice due last December is long gone, not coming up this December;
-  // every kind's day names its year once it isn't this year's.
   it.each([
     [item("overdue", 294, "2025-12-14"), "294 days late", "Due Dec 14, 2025"],
     [
@@ -700,11 +688,11 @@ describe("what needs attention", () => {
     ],
     [item("draft", null, "2025-11-03"), "Draft", "Created Nov 3, 2025"],
     [item("dueSoon", 3, "2027-01-02"), "Due in 3 days", "Due Jan 2, 2027"],
-  ])("names the year of a day in another year: %j", (entry, state, when) => {
+  ])("shows other years: %j", (entry, state, when) => {
     expect(attentionRow(entry, OCT_4)).toMatchObject({ state, when });
   });
 
-  it("leaves the year off a day in the year of the business's today", () => {
+  it("omits the current year", () => {
     expect(
       attentionRow(item("overdue", 17, "2026-12-14"), new Date(2026, 11, 31))
         .when,
@@ -715,19 +703,16 @@ describe("what needs attention", () => {
     ).toBe("Due Dec 14, 2026");
   });
 
-  it.each(["overdue", "dueSoon"])(
-    "gives only the day for %s when the number of days is missing",
-    (kind) => {
-      const row = attentionRow(item(kind, null, "2026-10-07"), OCT_4);
-      expect(row.state).toBe("");
-      expect(row.when).toMatch(/Oct 7$/);
-      expect(
-        attentionRow(item(kind, undefined, "2026-10-07"), OCT_4).state,
-      ).toBe("");
-    },
-  );
+  it.each(["overdue", "dueSoon"])("%s without days shows date only", (kind) => {
+    const row = attentionRow(item(kind, null, "2026-10-07"), OCT_4);
+    expect(row.state).toBe("");
+    expect(row.when).toMatch(/Oct 7$/);
+    expect(attentionRow(item(kind, undefined, "2026-10-07"), OCT_4).state).toBe(
+      "",
+    );
+  });
 
-  it("opens each item's document, and never its client", () => {
+  it("links rows to documents", () => {
     for (const kind of ["paymentReport", "overdue", "dueSoon", "draft"]) {
       const row = attentionRow(
         item(kind, 3, "2026-10-01", { clientId: "c1" }),
@@ -738,7 +723,7 @@ describe("what needs attention", () => {
     }
   });
 
-  it("lists invoices and drafts, leaving quotations and recurring invoices to Coming up", () => {
+  it("lists invoices and drafts only", () => {
     const items = [
       item("paymentReport", null, "2026-10-02", { documentId: "r" }),
       item("overdue", 3, "2026-10-01", { documentId: "o" }),
@@ -758,7 +743,7 @@ describe("what needs attention", () => {
     expect(attentionItems({})).toEqual([]);
   });
 
-  it("names the kinds there is nothing of", () => {
+  it("names empty kinds", () => {
     const counts = { paymentReports: 1, overdue: 1, dueSoon: 1, drafts: 1 };
     const items = ["paymentReport", "overdue", "dueSoon", "draft"].map((kind) =>
       item(kind, 1, "2026-10-05"),
@@ -786,7 +771,7 @@ describe("what needs attention", () => {
     expect(attentionFooter(counts, items)).toBeNull();
   });
 
-  it("names what the list leaves out", () => {
+  it("counts what the list omits", () => {
     const overdue = Array.from({ length: 6 }, () =>
       item("overdue", 9, "2026-09-25"),
     );
@@ -812,7 +797,7 @@ describe("what needs attention", () => {
     ).toBe("Also 1 more due this week and 1 draft.");
   });
 
-  it("names nothing it no longer lists, though an older server counts it", () => {
+  it("ignores quotation and recurring counts", () => {
     expect(
       attentionFooter(
         {

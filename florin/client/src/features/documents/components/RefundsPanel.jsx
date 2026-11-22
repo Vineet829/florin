@@ -27,8 +27,6 @@ import {
 import { PAYMENT_METHODS } from "../paymentMethods";
 import useBusinessToday from "../../business/useBusinessToday";
 
-// The fields of a refund, new or changed; the amount is at most `limit`,
-// and the day no later than `today`.
 const RefundFields = ({
   values,
   update,
@@ -111,7 +109,7 @@ const RefundForm = ({ document, due, today }) => {
       toast.success("The refund was recorded.");
       setValues(blank(today));
     } catch (error) {
-      toast.error(errorMessage(error, "The refund could not be recorded."));
+      toast.error(errorMessage(error, "The refund couldn't be recorded."));
     }
   };
   return (
@@ -132,7 +130,7 @@ const RefundForm = ({ document, due, today }) => {
           disabled={busy || !values.amount || !values.paymentMethod}
         >
           <FiCheck aria-hidden="true" />
-          {busy ? "Recording…" : "Record refund"}
+          {busy ? "Recording..." : "Record refund"}
         </button>
       </div>
     </form>
@@ -182,21 +180,16 @@ const EditRefundForm = ({
         </button>
         <button type="submit" className={primaryButton} disabled={busy}>
           <FiCheck aria-hidden="true" />
-          {busy ? "Saving…" : "Save refund"}
+          {busy ? "Saving..." : "Save refund"}
         </button>
       </div>
     </form>
   );
 };
 
-// Money paid back to the client when a credit note leaves this document
-// overpaid. The form shows while something is due back; the server keeps
-// every refund within it.
 const RefundsPanel = ({ document, refusal, deleteRefusal }) => {
   const due = Number(document.ledger?.refundDue || 0);
   const refunds = document.refunds || [];
-  // A new refund is dated today by the business's calendar, the one the
-  // server counts its days by, and none later.
   const today = dateInput(useBusinessToday());
   const [editing, setEditing] = useState(null);
   const [removing, setRemoving] = useState(null);
@@ -212,7 +205,7 @@ const RefundsPanel = ({ document, refusal, deleteRefusal }) => {
       toast.success("The refund was updated.");
       setEditing(null);
     } catch (error) {
-      toast.error(errorMessage(error, "The refund could not be updated."));
+      toast.error(errorMessage(error, "The refund couldn't be updated."));
     }
   };
   const confirmRemove = async () => {
@@ -221,7 +214,7 @@ const RefundsPanel = ({ document, refusal, deleteRefusal }) => {
       toast.success("The refund was deleted.");
       setRemoving(null);
     } catch (error) {
-      toast.error(errorMessage(error, "The refund could not be deleted."));
+      toast.error(errorMessage(error, "The refund couldn't be deleted."));
     }
   };
   const columns = [
@@ -231,7 +224,7 @@ const RefundsPanel = ({ document, refusal, deleteRefusal }) => {
       render: (refund) => dateLabel(refund.dateRefunded),
     },
     { label: "Method", render: (refund) => refund.paymentMethod },
-    { label: "Reference", render: (refund) => refund.reference || "—" },
+    { label: "Reference", render: (refund) => refund.reference || "-" },
     {
       label: "Amount",
       type: "amount",

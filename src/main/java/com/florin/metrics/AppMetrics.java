@@ -8,15 +8,9 @@ import java.util.Locale;
 import java.util.function.IntSupplier;
 import org.springframework.stereotype.Component;
 
-// The app's own counts, scraped by Prometheus beside Spring's. A tag only
-// ever takes a few fixed values, never an email, id or address, so each
-// metric stays a handful of series.
 @Component
 public class AppMetrics {
 
-    // How someone signed in, besides a provider's id such as google: with a
-    // password alone, or with the code asked for after a password or a
-    // provider.
     public static final String PASSWORD = "password";
     public static final String TWO_FACTOR = "two_factor";
 
@@ -46,7 +40,6 @@ public class AppMetrics {
         registry.counter("invoicespot.documents.issued", "type", tag(type)).increment();
     }
 
-    // Times a step of the daily jobs, as a failure when it throws.
     public int timeJob(String step, IntSupplier job) {
         Timer.Sample started = Timer.start(registry);
         String outcome = "failure";

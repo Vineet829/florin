@@ -1,7 +1,6 @@
 import { afterAll, beforeAll, expect, it } from "vitest";
 import { dateInput, dateLabel } from "./Workspace";
 
-// West of UTC, where a day read as UTC midnight falls on the day before.
 const zone = process.env.TZ;
 beforeAll(() => {
   process.env.TZ = "America/Los_Angeles";
@@ -11,18 +10,16 @@ afterAll(() => {
   else process.env.TZ = zone;
 });
 
-it("reads a due date sent as a day as that day, in any time zone", () => {
+it("reads due dates in any zone", () => {
   expect(dateInput("2026-10-15")).toBe("2026-10-15");
   expect(dateLabel("2026-10-15")).toBe("Oct 15, 2026");
 });
 
-it("gives the local day of a moment", () => {
+it("gives the local day", () => {
   expect(dateInput(new Date(2026, 9, 15, 23, 30).getTime())).toBe("2026-10-15");
 });
 
-// A select field draws the styled dropdown, labelled and described like
-// any other field, and reports a choice as a change event.
-it("draws a select field as the styled dropdown and reports choices as changes", async () => {
+it("select field uses styled dropdown", async () => {
   window.IS_REACT_ACT_ENVIRONMENT = true;
   const { createRoot } = await import("react-dom/client");
   const { act } = await import("react-dom/test-utils");
@@ -77,9 +74,7 @@ it("draws a select field as the styled dropdown and reports choices as changes",
   container.remove();
 });
 
-// A date field draws the calendar, named by its label and the day it
-// shows, described by its hint, and reports a day as a change event.
-it("draws a date field as the calendar and reports days as changes", async () => {
+it("date field uses the calendar", async () => {
   window.IS_REACT_ACT_ENVIRONMENT = true;
   const { createRoot } = await import("react-dom/client");
   const { act } = await import("react-dom/test-utils");
@@ -129,9 +124,7 @@ it("draws a date field as the calendar and reports days as changes", async () =>
   container.remove();
 });
 
-// A month field draws the calendar's months, and reports a month as a
-// change event.
-it("draws a month field as the calendar's months and reports months as changes", async () => {
+it("month field uses month picker", async () => {
   window.IS_REACT_ACT_ENVIRONMENT = true;
   const { createRoot } = await import("react-dom/client");
   const { act } = await import("react-dom/test-utils");

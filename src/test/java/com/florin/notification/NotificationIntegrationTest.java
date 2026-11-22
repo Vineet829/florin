@@ -12,7 +12,6 @@ import com.florin.user.User;
 import com.jayway.jsonpath.JsonPath;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -23,7 +22,6 @@ class NotificationIntegrationTest extends IntegrationTest {
     private User owner;
     private String quotation;
 
-    // A quotation shared by link, viewed twice by the client and accepted.
     @BeforeEach
     void sharedQuotation() throws Exception {
         owner = createUser();
@@ -71,7 +69,6 @@ class NotificationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a client viewing a shared document, once an hour, and accepting it tell the owner")
     void clientActivity() throws Exception {
         latest(owner)
                 .andExpect(status().isOk())
@@ -85,7 +82,6 @@ class NotificationIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("notifications are read one at a time or all at once, and only by their owner")
     void markRead() throws Exception {
         String first = JsonPath.read(
                 latest(owner).andReturn().getResponse().getContentAsString(), "$.notifications[0]._id");

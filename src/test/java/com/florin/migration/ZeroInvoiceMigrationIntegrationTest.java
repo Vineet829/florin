@@ -4,23 +4,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.florin.IntegrationTest;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-// An invoice whose lines come to nothing has counted as paid since its
-// payments are worked out that way, but invoices from before then were left
-// unpaid, and nothing can be paid on them to change it. From V60 they read
-// paid, as the app would have them.
 class ZeroInvoiceMigrationIntegrationTest extends IntegrationTest {
 
     @Autowired
     private PostgreSQLContainer<?> postgres;
 
     @Test
-    @DisplayName("an old invoice whose lines come to nothing is paid; one with money owed, or no lines, stays unpaid")
     void zeroInvoicesPaid() {
         try (MigrationDatabase database = MigrationDatabase.create(postgres)) {
             database.migrateTo("1");

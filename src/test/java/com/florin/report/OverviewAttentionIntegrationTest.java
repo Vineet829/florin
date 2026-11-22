@@ -21,7 +21,6 @@ import java.time.ZoneId;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -32,11 +31,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-// What needs attention on the overview, most urgent first: payments clients
-// reported, overdue invoices, invoices due within the week, and drafts.
-// Quotations about to expire and invoices a schedule is about to make are
-// what is coming up instead. Clients answer and report from a network of
-// their own each time, so no limit is shared.
 class OverviewAttentionIntegrationTest extends IntegrationTest {
 
     private static final AtomicInteger NETWORKS = new AtomicInteger();
@@ -51,7 +45,6 @@ class OverviewAttentionIntegrationTest extends IntegrationTest {
 
     private record Made(String id, String number) {}
 
-    // A business with two clients.
     @BeforeEach
     void business() throws Exception {
         owner = createUser();
@@ -59,7 +52,6 @@ class OverviewAttentionIntegrationTest extends IntegrationTest {
         birch = client("Birch Studio");
     }
 
-    // Puts the business in the time zone, and dates what follows from its today.
     private void inZone(ZoneId zone) throws Exception {
         send(put("/api/v1/settings"), """
                 {"defaultCurrency": "USD", "paymentTermsDays": 15, "defaultTaxRate": 0,
@@ -87,8 +79,6 @@ class OverviewAttentionIntegrationTest extends IntegrationTest {
                 "$.createdCustomer._id");
     }
 
-    // A document dated well before its due date, or valid-until date for a
-    // quotation; a draft is only planned for that day.
     private Made create(String type, String client, String currency, String amount, LocalDate due, boolean draft)
             throws Exception {
         String made = body(send(post("/api/v1/document/create"), """
@@ -118,7 +108,6 @@ class OverviewAttentionIntegrationTest extends IntegrationTest {
                 .andExpect(status().isOk());
     }
 
-    // The client opens the document's link and does something there.
     private ResultActions fromLink(Made document, String action, String json) throws Exception {
         String url = JsonPath.read(body(send(post("/api/v1/document/{id}/share", document.id()), "")), "$.url");
         String network = "10.70." + NETWORKS.incrementAndGet() + ".1";
@@ -145,7 +134,6 @@ class OverviewAttentionIntegrationTest extends IntegrationTest {
                 .andExpect(status().isOk());
     }
 
-    // A schedule making the invoice again each month from the given day.
     private String repeat(Made invoice, LocalDate start) throws Exception {
         return JsonPath.read(
                 body(send(post("/api/v1/recurring"), """
@@ -161,9 +149,7 @@ class OverviewAttentionIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("each kind is listed in turn, with what the client reported or owes, and the drafts to issue;"
-            + " quotations and schedules are left to what is coming up")
-    void kinds(ZoneId zone) throws Exception {
+    void listsEachAttentionKind(ZoneId zone) throws Exception {
         inZone(zone);
         Made reported = invoice(acme, "500", today.plusDays(30));
         report(reported, "120", today.minusDays(1));
@@ -172,16 +158,9 @@ class OverviewAttentionIntegrationTest extends IntegrationTest {
         Made dueSoon = invoice(acme, "150", today.plusDays(3));
         Made draft = create("Invoice", birch, "USD", "250", today.minusDays(10), true);
 
-        // Coming up instead: a quotation whose last day is this week, and a
-        // schedule making an invoice this week.
         Made quotation = quotation("900", today.plusDays(6));
         Made repeating = invoice(acme, "400", today.plusDays(40));
         repeat(repeating, today.plusDays(5));
-        // None of these: a report dismissed, and one on an invoice in euros;
-        // an invoice paid, a void one, one in euros, and one due in a week;
-        // quotations valid for longer, accepted, declined, expired, void or
-        // in euros; schedules paused, running in a week, finished or making
-        // an invoice in euros; a draft in euros.
         report(reported, "50", today);
         dismissNewestReport(reported);
         Made euros = create("Invoice", acme, "EUR", "700", today.minusDays(5), false);
@@ -248,7 +227,6 @@ class OverviewAttentionIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("the newest report and the latest invoice come first, and six are listed while all are counted")
     void mostUrgentFirst(ZoneId zone) throws Exception {
         inZone(zone);
         Made first = invoice(acme, "500", today.plusDays(30));
@@ -260,7 +238,6 @@ class OverviewAttentionIntegrationTest extends IntegrationTest {
         Made thirtyDays = invoice(acme, "130", today.minusDays(30));
         invoice(acme, "140", today.plusDays(5));
         Made dueToday = invoice(acme, "150", today);
-        // Seven drafts: more of one kind than are ever listed.
         for (int draft = 0; draft < 7; draft++) {
             create("Invoice", acme, "USD", "160", today.plusDays(5), true);
         }
@@ -290,9 +267,7 @@ class OverviewAttentionIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("quotations about to expire and schedules about to run are left to what is coming up, and the"
-            + " newest draft comes first")
-    void comingUpInstead(ZoneId zone) throws Exception {
+    void upcomingShownUnderComingUp(ZoneId zone) throws Exception {
         inZone(zone);
         Made fourDays = quotation("900", today.plusDays(4));
         Made oneDay = quotation("800", today.plusDays(1));
@@ -300,8 +275,6 @@ class OverviewAttentionIntegrationTest extends IntegrationTest {
         repeat(sixDays, today.plusDays(6));
         Made runsToday = invoice(birch, "600", today.plusDays(40));
         repeat(runsToday, today);
-        // A quotation that is still a draft isn't offered yet, though its last
-        // day is this week.
         Made older = create("Quotation", acme, "USD", "500", today.plusDays(2), true);
         Made newer = create("Receipt", birch, "USD", "400", today, true);
 
@@ -320,7 +293,6 @@ class OverviewAttentionIntegrationTest extends IntegrationTest {
 
     @ParameterizedTest(name = "in {0}")
     @ArgumentsSource(AwayFromUtc.class)
-    @DisplayName("once a client is deleted, each kind still names it as its document does, with no client id")
     void deletedClient(ZoneId zone) throws Exception {
         inZone(zone);
         String cedar = client("Cedar Works");
@@ -341,8 +313,7 @@ class OverviewAttentionIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a business with nothing to do has an empty list")
-    void nothing() throws Exception {
+    void emptyWhenNothingToDo() throws Exception {
         overview()
                 .andExpect(jsonPath("$.attention.items").isEmpty())
                 .andExpect(jsonPath("$.attention.counts.paymentReports").value(0))

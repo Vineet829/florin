@@ -6,8 +6,6 @@ import com.florin.user.User;
 import java.time.Instant;
 import java.util.UUID;
 
-// A change to a business's team as its owner and admins see it: who did it,
-// who it was about, and when. Addresses and devices stay in the admin log.
 public record TeamActivityResponse(
         @JsonProperty("_id") UUID id,
         String type,

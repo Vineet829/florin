@@ -2,7 +2,6 @@ package com.florin.auth.session;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -23,8 +22,7 @@ class DeviceNameTest {
                 "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:130.0) Gecko/20100101 Firefox/130.0|Firefox on Linux",
                 "curl/8.7.1|Unknown device",
             })
-    @DisplayName("reads the browser and system from a user agent")
-    void names(String userAgent, String expected) {
+    void readsBrowserAndSystem(String userAgent, String expected) {
         assertThat(DeviceName.of(userAgent)).isEqualTo(expected);
     }
 }

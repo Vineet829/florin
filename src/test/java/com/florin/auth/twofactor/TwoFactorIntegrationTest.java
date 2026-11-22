@@ -27,7 +27,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import org.apache.commons.codec.binary.Base32;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -85,8 +84,6 @@ class TwoFactorIntegrationTest extends IntegrationTest {
                 "$.challenge");
     }
 
-    // Sets it up and turns it on with the code for this step, so a sign-in
-    // right after needs the next step's code.
     private Enabled enabled() throws Exception {
         User user = withPassword();
         String authorization = bearer(user);
@@ -107,7 +104,6 @@ class TwoFactorIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("turning it on takes the password and a code from the app, and gives ten recovery codes")
     void turnOn() throws Exception {
         Enabled enabled = enabled();
 
@@ -122,7 +118,6 @@ class TwoFactorIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a password then earns only a challenge; a code completes it, and never twice")
     void signIn() throws Exception {
         Enabled enabled = enabled();
         String challenge = challenge(enabled.user());
@@ -152,7 +147,6 @@ class TwoFactorIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a recovery code works once, and wrong codes are limited")
     void recoveryCodes() throws Exception {
         Enabled enabled = enabled();
         String code = enabled.recoveryCodes().get(0);
@@ -169,7 +163,6 @@ class TwoFactorIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("two sign-ins racing with one code, from the app or a recovery code, take turns: one gets in")
     void oneCodeOnce() throws Exception {
         Enabled enabled = enabled();
 
@@ -178,8 +171,6 @@ class TwoFactorIntegrationTest extends IntegrationTest {
         assertThat(race(enabled.user(), enabled.recoveryCodes().get(0))).containsExactlyInAnyOrder(200, 400);
     }
 
-    // Two sign-ins send the same code while the account is held locked, and
-    // go on together once it is let go.
     private List<Integer> race(User user, String code) throws Exception {
         List<String> challenges = List.of(challenge(user), challenge(user));
         CountDownLatch held = new CountDownLatch(1);
@@ -215,7 +206,6 @@ class TwoFactorIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("turning it off takes the password and a code; then a password signs in again")
     void turnOff() throws Exception {
         Enabled enabled = enabled();
         String authorization = bearer(enabled.user());
@@ -229,7 +219,6 @@ class TwoFactorIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("with it on, deleting the account takes a code as well as the password")
     void deletingTakesACode() throws Exception {
         Enabled enabled = enabled();
         String authorization = bearer(enabled.user());
@@ -251,14 +240,12 @@ class TwoFactorIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("turning it on in a change that rolls back emails nobody; turned on, the owner is told")
     void turnOnRolledBack() {
         User user = withPassword();
         UUID session = sessionService.start(user).session().getId();
         TwoFactorSetupResponse setup = twoFactorService.setup(user, PASSWORD);
         String code = Totp.code(new Base32().decode(setup.secret()), Totp.step(Instant.now()));
 
-        // As when saving it fails at the very end.
         new TransactionTemplate(transactionManager).executeWithoutResult(transaction -> {
             twoFactorService.enable(user, session, code);
             transaction.setRollbackOnly();
@@ -273,7 +260,6 @@ class TwoFactorIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("turning it on, or off, signs out every other device and keeps this one signed in")
     void signsOutOtherDevices() throws Exception {
         User user = withPassword();
         String here = bearer(user);
@@ -307,8 +293,7 @@ class TwoFactorIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("the shared demo account can't turn it on")
-    void demo() throws Exception {
+    void demoCannotTurnOn() throws Exception {
         User demo = demoUser();
         demo.setPassword(passwordEncoder.encode(PASSWORD));
         userRepository.save(demo);

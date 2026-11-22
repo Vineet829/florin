@@ -39,9 +39,6 @@ public class NotificationService {
         this.clock = clock;
     }
 
-    // News about a document goes to those who run its business, the owner
-    // and the admins, and to whoever made the document while they're still a
-    // member. Each reads their own copy.
     @Transactional
     public void notify(Document document, NotificationType type, String message) {
         Long businessPkid = document.getBusiness().getPkid();
@@ -84,7 +81,6 @@ public class NotificationService {
                         .toList());
     }
 
-    // One notification, or all of them when no id is given.
     @Transactional
     public void markRead(BusinessAccess access, String id) {
         Instant now = Instant.now(clock);

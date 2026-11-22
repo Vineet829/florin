@@ -2,16 +2,12 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createRoot } from "react-dom/client";
 import { act } from "react-dom/test-utils";
 
-// The page as the app draws it, through its own store and RTK Query, with
-// only fetch faked. The answers follow the server's shapes for the demo
-// account on Oct 4, 2026; the signed-in shell is left out.
 vi.mock("../../dashboard/components/DashboardShell", () => ({
   default: ({ children }) => children,
 }));
 
 window.IS_REACT_ACT_ENVIRONMENT = true;
 
-// jsdom has no modal dialogs; these stand in for the browser's.
 HTMLDialogElement.prototype.showModal = function showModal() {
   this.open = true;
 };
@@ -25,8 +21,6 @@ let where;
 let navigate;
 let root;
 let container;
-// Each CSV the page saves. jsdom has no object URLs, and a download would
-// leave the page.
 let saves;
 const { createObjectURL, revokeObjectURL } = URL;
 beforeEach(() => {
@@ -113,8 +107,6 @@ const summary = {
   receivedLast30Days: { total: 22763.97, payments: 7 },
 };
 
-// The business the session works in, as its owner, and as a viewer, who
-// sees the records and exports lists but changes nothing.
 const business = (role, permissions) => ({
   businesses: [
     { _id: "b-1", name: "Studio Demo", role, active: true, permissions },
@@ -133,9 +125,6 @@ const owner = business("OWNER", [
 ]);
 const viewer = business("VIEWER", ["VIEW_RECORDS", "EXPORT_LISTS"]);
 
-// Answers each request by its path; `answers` replaces any of them with a
-// body or a Response, a promise of either, or a function of the request's
-// address giving one.
 const serve = (answers = {}) =>
   vi.stubGlobal(
     "fetch",
@@ -165,7 +154,6 @@ const serve = (answers = {}) =>
 const listed = (page) =>
   vi.waitFor(() => expect(page.querySelector("table")).not.toBeNull());
 
-// Opens `path`, after the addresses in `before` in the history.
 const open = async (path, answers, before = []) => {
   serve(answers);
   const { Provider } = await import("react-redux");
@@ -201,14 +189,11 @@ const open = async (path, answers, before = []) => {
 
 const listRequests = () =>
   requests.filter((request) => /\/expense(\?|$)/.test(request));
-// The styled dropdown with this label: its trigger, which carries the value
-// chosen and shows that option's words.
 const select = (page, label) =>
   [...page.querySelectorAll("label")]
     .find((element) => element.textContent.startsWith(label))
     ?.querySelector('[role="combobox"]');
 const shown = (combobox) => combobox.firstChild.firstChild.textContent;
-// What the dropdown offers, opening it to look and closing it again.
 const options = async (combobox) => {
   await act(async () => combobox.click());
   const words = [...document.querySelectorAll('[role="option"]')].map(
@@ -221,14 +206,12 @@ const options = async (combobox) => {
   );
   return words;
 };
-// Opens the dropdown and picks the option with this value.
 const choose = async (combobox, value) => {
   await act(async () => combobox.click());
   await act(async () =>
     document.querySelector(`[role="option"][data-value="${value}"]`).click(),
   );
 };
-// Downloads the list as CSV and waits for the file to be saved.
 const download = async (page) => {
   const saved = saves.mock.calls.length;
   await act(async () =>
@@ -243,7 +226,7 @@ const download = async (page) => {
 const csvRequests = () =>
   requests.filter((request) => request.includes("/expense/csv"));
 
-it("asks for the overview's periods by name and the others as dates, in the list and its CSV", async () => {
+it("sends periods by name or dates", async () => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date(2026, 9, 4, 12));
   const page = await open("/expenses?category=Travel&period=30d");
@@ -266,9 +249,7 @@ it("asks for the overview's periods by name and the others as dates, in the list
   ]);
 });
 
-// At 5 in the morning of Jan 1, 2027 in Kolkata it is still Dec 31, 2026 in
-// Los Angeles, where the business is: this year is still 2026 there.
-it("runs this year to the business's today, in the list and its CSV", async () => {
+it("this year ends at business today", async () => {
   const zone = process.env.TZ;
   process.env.TZ = "Asia/Kolkata";
   vi.useFakeTimers({ toFake: ["Date"] });
@@ -300,13 +281,13 @@ it("runs this year to the business's today, in the list and its CSV", async () =
   }
 });
 
-it("offers no currency when the business bills in only one", async () => {
+it("no currency filter for one currency", async () => {
   const page = await open("/expenses");
   expect(requests).toContain("/api/v1/document/summary");
   expect(select(page, "Currency")).toBeUndefined();
 });
 
-it("offers each currency when the business bills in more than one, and asks for the one chosen, in the list and its CSV", async () => {
+it("filters by a chosen currency", async () => {
   const page = await open("/expenses", {
     "/document/summary": { ...summary, currencies: ["USD", "EUR"] },
   });
@@ -323,7 +304,6 @@ it("offers each currency when the business bills in more than one, and asks for 
   expect(csvRequests()).toEqual(["/api/v1/expense/csv?currency=EUR"]);
 });
 
-// The two contractor payments behind a category on the overview.
 const contractors = (url) =>
   url.searchParams.get("category") === "Contractors"
     ? {
@@ -349,7 +329,7 @@ const line = (page) =>
     .find((button) => button.textContent === "Clear filters")
     ?.parentElement.querySelector("p").textContent;
 
-it("says how many expenses a category's link finds over its days and what they cost, then clears every filter, the currency too", async () => {
+it("category link sets filters and total", async () => {
   const page = await open(
     "/expenses?category=Contractors&period=90d&currency=USD",
     { "/expense": contractors },
@@ -358,11 +338,9 @@ it("says how many expenses a category's link finds over its days and what they c
     "/api/v1/expense?page=1&size=10&category=Contractors&period=90d&currency=USD",
   ]);
   expect(line(page)).toBe(
-    "2 expenses from Jul 7 – Oct 4, 2026, ·Spent 3,600.00",
+    "2 expenses from Jul 7 - Oct 4, 2026, ·Spent 3,600.00",
   );
   expect(select(page, "Category").value).toBe("Contractors");
-  // A currency the address names stays in sight, though the business bills
-  // in one.
   expect(select(page, "Currency").value).toBe("USD");
   const clear = [...page.querySelectorAll("button")].find(
     (button) => button.textContent === "Clear filters",
@@ -373,27 +351,25 @@ it("says how many expenses a category's link finds over its days and what they c
   expect(listRequests()[1]).toBe("/api/v1/expense?page=1&size=10");
   expect(line(page)).toBeUndefined();
   expect(select(page, "Currency")).toBeUndefined();
-  // Clear filters is gone, so focus moves to the search box.
   expect(document.activeElement).toBe(
     page.querySelector('input[type="search"]'),
   );
 });
 
-it("says nothing above the list while no filter is set", async () => {
+it("no summary without filters", async () => {
   const page = await open("/expenses");
   expect(page.querySelectorAll("tbody tr")).toHaveLength(3);
   expect(line(page)).toBeUndefined();
 });
 
 const dialog = () => document.querySelector("dialog");
-// The form's first field: the day paid, a calendar's button.
 const dayPaid = () => dialog().querySelector('button[aria-haspopup="dialog"]');
 const button = (element, text) =>
   [...element.querySelectorAll("button")].find((candidate) =>
     candidate.textContent.includes(text),
   );
 
-it("opens the add dialog from a link once, on its first field, leaving the rest of the address", async () => {
+it("opens add dialog from link", async () => {
   const page = await open("/expenses?new=1&period=90d", {}, ["/dashboard"]);
   await act(() =>
     vi.waitFor(() => expect(dialog().querySelector("form")).not.toBeNull()),
@@ -406,16 +382,13 @@ it("opens the add dialog from a link once, on its first field, leaving the rest 
   await act(async () => button(dialog(), "Cancel").click());
   expect(dialog().open).toBe(false);
   expect(where).toBe("/expenses?period=90d");
-  // The link that led here is gone, so focus goes to New expense.
   expect(document.activeElement).toBe(button(page, "New expense"));
-  // `new` left the address in place, so Back leaves the page rather than
-  // opening the dialog again.
   await act(async () => navigate(-1));
   expect(where).toBe("/dashboard");
   expect(dialog().open).toBe(false);
 });
 
-it("waits for the settings the form starts from, then opens on its first field", async () => {
+it("waits for settings before opening", async () => {
   let answer;
   const page = await open("/expenses?new=1", {
     "/settings": () => new Promise((resolve) => (answer = resolve)),
@@ -432,7 +405,7 @@ it("waits for the settings the form starts from, then opens on its first field",
   expect(page.querySelector("h1").textContent).toBe("Expenses.");
 });
 
-it("opens nothing for any other value of new", async () => {
+it("ignores other values of new", async () => {
   await open("/expenses?new=0");
   await act(() =>
     vi.waitFor(() =>
@@ -446,7 +419,7 @@ it("opens nothing for any other value of new", async () => {
   expect(dialog().querySelector("form")).toBeNull();
 });
 
-it("keeps the add dialog closed for a viewer, who can't add expenses", async () => {
+it("no add dialog for viewers", async () => {
   const page = await open("/expenses?new=1", { "/businesses": viewer });
   await act(() => vi.waitFor(() => expect(address).toBe("")));
   expect(dialog().open).toBe(false);

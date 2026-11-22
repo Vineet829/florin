@@ -33,7 +33,7 @@ const press = (element, key) =>
     ),
   );
 
-it("draws billed and received side by side for each month, each month named in words", async () => {
+it("draws paired monthly bars", async () => {
   await draw([
     { month: "2026-08", billed: 1000, received: 600 },
     { month: "2026-09", billed: 400, received: 900 },
@@ -47,11 +47,7 @@ it("draws billed and received side by side for each month, each month named in w
     "August 2026: billed 1,000.00, received 600.00",
     "September 2026: billed 400.00, received 900.00",
   ]);
-  // The axis runs from zero to a tidy step above the largest figure, in
-  // whole amounts.
   expect(axis()).toEqual(["1,000", "750", "500", "250", "0"]);
-  // Billed first, in blue, then received, in violet, each as tall as its
-  // share of the axis.
   const [august, september] = monthsShown();
   expect(
     [...august.children].map(
@@ -60,11 +56,10 @@ it("draws billed and received side by side for each month, each month named in w
   ).toEqual(["bg-card-blue-bar", "bg-card-lilac-bar"]);
   expect(heights(august)).toEqual([100, 60]);
   expect(heights(september)).toEqual([40, 90]);
-  // Month names under the columns, the year under the first.
   expect(container.textContent).toContain("Aug2026Sep");
 });
 
-it("shows a month's figures on hover or focus while the others fade, and the keys move between months", async () => {
+it("shows figures on hover or focus", async () => {
   await draw(
     ["2026-07", "2026-08", "2026-09"].map((month, index) => ({
       month,
@@ -73,7 +68,6 @@ it("shows a month's figures on hover or focus while the others fade, and the key
     })),
   );
   const [july, august, september] = monthsShown();
-  // The latest month is the one stop for Tab.
   expect(monthsShown().map((month) => month.tabIndex)).toEqual([-1, -1, 0]);
   await act(async () =>
     august.dispatchEvent(new MouseEvent("mouseover", { bubbles: true })),
@@ -105,8 +99,7 @@ it("shows a month's figures on hover or focus while the others fade, and the key
   expect(document.activeElement).toBe(september);
 });
 
-// The last 30 days hold the end of September and the start of October.
-it("names a month the period holds only part of by its days, as its column and its card read it", async () => {
+it("labels partial months by days", async () => {
   await act(async () =>
     root.render(
       <IncomeChart
@@ -123,20 +116,19 @@ it("names a month the period holds only part of by its days, as its column and i
   expect(
     monthsShown().map((month) => month.getAttribute("aria-label")),
   ).toEqual([
-    "Sep 8–30, 2026: billed 1,000.00, received 600.00",
-    "Oct 1–7, 2026: billed 400.00, received 900.00",
+    "Sep 8-30, 2026: billed 1,000.00, received 600.00",
+    "Oct 1-7, 2026: billed 400.00, received 900.00",
   ]);
   await act(async () =>
     monthsShown()[1].dispatchEvent(
       new MouseEvent("mouseover", { bubbles: true }),
     ),
   );
-  expect(card().textContent).toBe("Oct 1–7, 2026Billed400.00Received900.00");
-  // The axis keeps each month's short name.
+  expect(card().textContent).toBe("Oct 1-7, 2026Billed400.00Received900.00");
   expect(container.textContent).toContain("Sep2026Oct");
 });
 
-it("draws only its zero line when nothing was billed or received", async () => {
+it("draws only the zero line", async () => {
   await draw([{ month: "2026-09", billed: 0, received: 0 }]);
   expect(axis()).toEqual(["0"]);
   expect(heights(monthsShown()[0])).toEqual([0, 0]);

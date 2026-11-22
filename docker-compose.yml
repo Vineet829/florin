@@ -1,9 +1,3 @@
-# The whole app in containers: cp .env.example .env, fill in the secrets, then
-#   docker compose --profile mail up -d --build
-# and open http://localhost:8088. It has its own project name, network and
-# volumes, and publishes only the web port (and, with the mail profile,
-# Mailpit's inbox on this machine), so it runs next to the dev setup without
-# touching it.
 name: invoicespot-stack
 
 services:
@@ -25,13 +19,10 @@ services:
   backend:
     build: .
     restart: unless-stopped
-    # Everything in .env reaches the app, so any Spring property can be set
-    # there as an environment variable, such as SPRING_MAIL_USERNAME.
     env_file: .env
     environment:
       POSTGRES_HOST: db
       POSTGRES_PORT: "5432"
-      # A mail server being down shouldn't mark the app unhealthy.
       MANAGEMENT_HEALTH_MAIL_ENABLED: "false"
     volumes:
       - app_data:/app/data
@@ -55,9 +46,6 @@ services:
       backend:
         condition: service_healthy
 
-  # Catches every email the app sends; the backend reaches it as mailpit:1025.
-  # Its inbox shows sign-in and password-reset links and has no login, so it
-  # is published on this machine only.
   mailpit:
     image: axllent/mailpit:v1.15
     profiles:

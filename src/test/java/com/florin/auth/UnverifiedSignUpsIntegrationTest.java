@@ -9,7 +9,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.florin.IntegrationTest;
 import com.florin.user.User;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -36,7 +35,7 @@ class UnverifiedSignUpsIntegrationTest extends IntegrationTest {
                 })
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                        {"email": "%s", "username": "%s", "firstName": "Ada", "lastName": "Lovelace",
+                        {"email": "%s", "username": "%s", "firstName": "Neha", "lastName": "Apte",
                          "password": "%s", "passwordConfirm": "%s"}
                         """.formatted(email, username, password, password)));
     }
@@ -49,14 +48,13 @@ class UnverifiedSignUpsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a sign-up never verified gives way to a new one with its email, which keeps the new password")
-    void givesWay() throws Exception {
+    void signUpReplacesUnverifiedAccount() throws Exception {
         String email = "owner-" + UUID.randomUUID() + "@example.test";
         User pending = unverified(email);
 
         signUp(email, "own" + UUID.randomUUID().toString().substring(0, 8), "N3w!password")
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value(startsWith("A new user Ada")));
+                .andExpect(jsonPath("$.message").value(startsWith("A new user Neha")));
 
         assertThat(userRepository.findById(pending.getPkid())).isEmpty();
         User replacement = userRepository.findByEmailIgnoreCase(email).orElseThrow();
@@ -65,14 +63,13 @@ class UnverifiedSignUpsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("an email with a verified account gets the same answer, and the account stays as it was")
-    void taken() throws Exception {
+    void verifiedAccountStaysUnchanged() throws Exception {
         User owner = createUser();
         String hash = owner.getPassword();
 
         signUp(owner.getEmail(), "own" + UUID.randomUUID().toString().substring(0, 8), "N3w!password")
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value(startsWith("A new user Ada")));
+                .andExpect(jsonPath("$.message").value(startsWith("A new user Neha")));
 
         User kept = userRepository.findById(owner.getPkid()).orElseThrow();
         assertThat(kept.getPassword()).isEqualTo(hash);
@@ -80,7 +77,6 @@ class UnverifiedSignUpsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("sign-ups never verified go after a week; newer ones and verified accounts stay")
     void removedAfterAWeek() {
         User old = unverified("old-" + UUID.randomUUID() + "@example.test");
         User recent = unverified("recent-" + UUID.randomUUID() + "@example.test");

@@ -36,7 +36,7 @@ const ResendEmailTokenPage = () => {
   return (
     <PublicPage>
       <CardHeading icon={FiSend} title="Resend verification email">
-        Enter the email you signed up with and we’ll send you a new verification
+        Enter the email you signed up with and we'll send you a new verification
         link.
       </CardHeading>
       <Formik
@@ -54,11 +54,10 @@ const ResendEmailTokenPage = () => {
             setStatus({ success: true });
             setSubmitting(false);
           } catch (err) {
-            // A server that can't be reached sends no message of its own.
             toast.error(
               errorMessage(
                 err,
-                "A new link could not be requested. Please try again.",
+                "A new link couldn't be requested. Please try again.",
               ),
             );
             setStatus({ success: false });
@@ -118,7 +117,7 @@ const ResendEmailTokenPage = () => {
                   disabled={!values.email || isLoading}
                 >
                   <FiSend aria-hidden="true" />
-                  {isLoading ? "Sending…" : "Resend verification email"}
+                  {isLoading ? "Sending..." : "Resend verification email"}
                 </button>
                 <button
                   type="button"

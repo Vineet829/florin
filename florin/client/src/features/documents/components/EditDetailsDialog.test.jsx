@@ -3,8 +3,6 @@ import { createRoot } from "react-dom/client";
 import { act } from "react-dom/test-utils";
 import EditDetailsDialog from "./EditDetailsDialog";
 
-// The dialog saves through this hook, so it needs no store or server; the
-// browser's modal is left out.
 vi.mock("../documentsApiSlice", () => ({
   useUpdateDocMutation: () => [vi.fn(), { isLoading: false }],
 }));
@@ -17,7 +15,6 @@ window.IS_REACT_ACT_ENVIRONMENT = true;
 let root;
 afterEach(() => act(() => root.unmount()));
 
-// The due date field of an issued invoice dated 15 January.
 const dueField = (dueDate) => {
   const container = document.createElement("div");
   root = createRoot(container);
@@ -39,7 +36,6 @@ const dueField = (dueDate) => {
   return container.querySelector('input[type="date"]');
 };
 
-// A day picked in the field, as the browser sends it.
 const pick = (input, day) =>
   act(() => {
     Object.getOwnPropertyDescriptor(
@@ -49,7 +45,7 @@ const pick = (input, day) =>
     input.dispatchEvent(new Event("input", { bubbles: true }));
   });
 
-it("moves a due date no earlier than the day the invoice is dated", () => {
+it("due date not before issue date", () => {
   const field = dueField("2026-02-14");
   pick(field, "2026-01-10");
   expect(field.min).toBe("2026-01-15");
@@ -58,7 +54,7 @@ it("moves a due date no earlier than the day the invoice is dated", () => {
   expect(field.validity.valid).toBe(true);
 });
 
-it("keeps a due date saved before the issue date, so the notes still save", () => {
+it("keeps saved early due date", () => {
   const field = dueField("2026-01-10");
   expect(field.validity.valid).toBe(true);
 });

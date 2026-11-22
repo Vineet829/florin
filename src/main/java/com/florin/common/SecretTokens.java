@@ -7,8 +7,6 @@ import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.HexFormat;
 
-// Random tokens handed out once, and the SHA-256 hashes they are kept as, so
-// a copy of the database can't open a shared link or continue a session.
 public final class SecretTokens {
 
     private static final SecureRandom RANDOM = new SecureRandom();

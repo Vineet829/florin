@@ -9,8 +9,6 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.pdfbox.text.TextPosition;
 
-// The text a PDF shows, as PDFBox reads it, so tests can check a PDF by what
-// it says rather than by the HTML it was made from.
 public final class PdfText {
 
     private PdfText() {}
@@ -23,7 +21,6 @@ public final class PdfText {
         }
     }
 
-    // Each page's text on its own.
     static List<String> pages(byte[] pdf) {
         try (PDDocument document = PDDocument.load(pdf)) {
             List<String> pages = new ArrayList<>();
@@ -39,12 +36,6 @@ public final class PdfText {
         }
     }
 
-    // Text printed over other text: each pair of pieces whose glyphs cross on
-    // one line of a page, as "first / second". A piece is what one Tj or TJ
-    // draws, which is how a table cell's text is drawn, so a heading that
-    // hangs out of its cell crosses the one beside it. The same piece painted
-    // twice in one spot looks like one, so it isn't counted: openhtmltopdf
-    // paints a table's headings twice like that when it breaks across pages.
     static List<String> overlaps(byte[] pdf) {
         record Piece(int page, String text, float left, float right, float baseline) {}
         List<Piece> pieces = new ArrayList<>();
@@ -69,7 +60,6 @@ public final class PdfText {
                     text = null;
                 }
 
-                // TJ: its strings, with the spacing between them, are one piece.
                 @Override
                 public void showTextStrings(COSArray array) throws IOException {
                     start();
@@ -93,8 +83,6 @@ public final class PdfText {
                     finish();
                 }
 
-                // Spaces print nothing, so only the other glyphs set where a
-                // piece starts and ends.
                 @Override
                 protected void processTextPosition(TextPosition glyph) {
                     if (text != null) {
@@ -128,8 +116,6 @@ public final class PdfText {
         return overlaps;
     }
 
-    // The size, in points, of the type a piece of text is set in where it
-    // first appears, or -1 when the PDF doesn't show it.
     static float fontSizeOf(byte[] pdf, String text) {
         float[] size = {-1};
         try (PDDocument document = PDDocument.load(pdf)) {
@@ -149,12 +135,7 @@ public final class PdfText {
         }
     }
 
-    // How far, in points, a piece of text starts from the end of whatever is
-    // printed before it on its line, where it last appears. Closer than a
-    // space, the two read as one word.
     static float gapBefore(byte[] pdf, String text) {
-        // Everything the PDF shows, in the order it is drawn, and the glyph
-        // behind each of its characters.
         StringBuilder shown = new StringBuilder();
         List<TextPosition> glyphs = new ArrayList<>();
         try (PDDocument document = PDDocument.load(pdf)) {

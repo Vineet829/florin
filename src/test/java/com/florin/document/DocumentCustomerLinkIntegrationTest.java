@@ -9,7 +9,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.florin.IntegrationTest;
 import com.florin.user.User;
 import com.jayway.jsonpath.JsonPath;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -42,7 +41,6 @@ class DocumentCustomerLinkIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a document links to the chosen client and copies its details from the database")
     void linksChosenCustomer() throws Exception {
         User owner = createUser();
         String customerId = createCustomer(owner, "Northwind");
@@ -57,7 +55,6 @@ class DocumentCustomerLinkIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("another user's client can't be used, even with its id")
     void refusesForeignCustomer() throws Exception {
         String foreign = createCustomer(createUser(), "Contoso");
 
@@ -67,7 +64,6 @@ class DocumentCustomerLinkIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a request that names the client by account number alone still links it")
     void linksByAccountNumber() throws Exception {
         User owner = createUser();
         String customerId = createCustomer(owner, "Fabrikam");
@@ -84,7 +80,6 @@ class DocumentCustomerLinkIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("deleting a client keeps its documents and their copy of its details")
     void deletingCustomerKeepsDocuments() throws Exception {
         User owner = createUser();
         String customerId = createCustomer(owner, "Tailspin");

@@ -35,7 +35,7 @@ const PasswordResetRequestPage = () => {
   return (
     <PublicPage>
       <CardHeading icon={FiMail} title="Reset your password">
-        Enter the email address for your account and we’ll email you a link to
+        Enter the email address for your account and we'll email you a link to
         reset your password.
       </CardHeading>
       <Formik
@@ -52,11 +52,10 @@ const PasswordResetRequestPage = () => {
             setStatus({ success: true });
             setSubmitting(false);
           } catch (err) {
-            // A server that can't be reached sends no message of its own.
             toast.error(
               errorMessage(
                 err,
-                "A reset link could not be requested. Please try again.",
+                "A reset link couldn't be requested. Please try again.",
               ),
             );
             setStatus({ success: false });
@@ -116,7 +115,7 @@ const PasswordResetRequestPage = () => {
                   disabled={!values.email || isLoading}
                 >
                   <FiSend aria-hidden="true" />
-                  {isLoading ? "Sending…" : "Send password reset email"}
+                  {isLoading ? "Sending..." : "Send password reset email"}
                 </button>
                 <button
                   type="button"

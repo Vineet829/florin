@@ -58,7 +58,7 @@ import { RefusalNote, useBusiness } from "../../business/permissions";
 const NO_CLIENTS = [];
 
 const CustomersPage = () => {
-  useTitle("Clients — Florin");
+  useTitle("Clients - Florin");
   const [list, update] = useListState(readClientList, clientListSearch);
   const [downloadCsv, exporting] = useFileDownload(useGetCustomersCsvMutation);
   const [importing, setImporting] = useState(false);
@@ -76,7 +76,6 @@ const CustomersPage = () => {
     setPage: (page) => update({ page: page + 1 }),
     setSize: (size) => update({ size, page: 1 }),
   });
-  // A page past the end, after a delete or from an old link, shows the last.
   const pages = query.currentData?.numberOfPages;
   useEffect(() => {
     if (pages && list.page > pages) update({ page: pages });
@@ -93,10 +92,9 @@ const CustomersPage = () => {
       toast.success("Customer deleted successfully.");
       setSelected(null);
     } catch (error) {
-      toast.error(errorMessage(error, "The customer could not be deleted."));
+      toast.error(errorMessage(error, "The customer couldn't be deleted."));
     }
   };
-  // A new account has nothing to search yet.
   const showTools = Boolean(query.data) && (count > 0 || Boolean(list.q));
 
   const columns = [
@@ -116,7 +114,7 @@ const CustomersPage = () => {
       type: "email",
       render: (row) => row.email,
     },
-    { label: "Phone", render: (row) => row.phoneNumber || "—" },
+    { label: "Phone", render: (row) => row.phoneNumber || "-" },
     { label: "Account no.", render: (row) => row.accountNo },
     {
       label: "Documents",
@@ -128,7 +126,6 @@ const CustomersPage = () => {
       label: "Balance",
       type: "amount",
       sortBy: "balance",
-      // What the client's unpaid invoices still owe, in each currency.
       render: (row) =>
         row.balances?.length ? (
           <span className="inline-flex flex-col items-end gap-0.5 stacked:items-start">
@@ -141,7 +138,7 @@ const CustomersPage = () => {
             ))}
           </span>
         ) : (
-          <span className="text-spot-faint">—</span>
+          <span className="text-spot-faint">-</span>
         ),
     },
     {
@@ -212,8 +209,8 @@ const CustomersPage = () => {
     />
   ) : (
     <EmptyState
-      title="A place for every client."
-      text="Add a client’s contact details to start creating documents for them."
+      title="No clients yet."
+      text="Add a client's contact details to start creating documents for them."
       icon={FiUsers}
     />
   );
@@ -222,7 +219,7 @@ const CustomersPage = () => {
     <WorkspacePage section="Clients" fill>
       <PageHeader
         title="Clients"
-        description="The people behind your work. Keep their details close at hand."
+        description="Your clients and what they owe."
         actions={
           <>
             <ClientsTabs />

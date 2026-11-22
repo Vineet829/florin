@@ -26,20 +26,11 @@ public final class DocumentTotals {
                 .divide(ONE_HUNDRED, 2, RoundingMode.HALF_UP);
     }
 
-    // A draft's amounts, worked out from its lines, and what has been paid.
-    // Once a document is issued its amounts are what it went out with, and
-    // only settle runs again.
     public static void apply(Document document) {
         compute(document);
         settle(document);
     }
 
-    // Lines taxed at the same rate are added up first, and the tax on each
-    // rate's total is rounded half up to the cent; 18 and 18.00 are one rate.
-    // Under India's GST a supply within the state halves the rate into CGST
-    // and SGST, each rounded, so the two always match; any other supply is
-    // IGST at the full rate. When the recipient pays under reverse charge the
-    // tax is worked out and kept, but not billed.
     static void compute(Document document) {
         BigDecimal subTotal = BigDecimal.ZERO.setScale(2);
         Map<BigDecimal, BigDecimal> taxable = new TreeMap<>();
@@ -64,8 +55,6 @@ public final class DocumentTotals {
         document.setTotal(subTotal.add(salesTax));
     }
 
-    // The rate a line is taxed at: its own, or none on an export under a LUT,
-    // whose draft keeps its lines' rates until it is issued at 0%.
     static BigDecimal rate(Document document, BillingItem item) {
         return document.getSupplyType() == SupplyType.EXPORT_LUT ? BigDecimal.ZERO : orZero(item.getTaxRate());
     }
@@ -82,7 +71,6 @@ public final class DocumentTotals {
                 : new TaxSummary(scaled, taxable, tax, ZERO, ZERO, tax);
     }
 
-    // The one rate every line is taxed at, or none when they differ.
     public static BigDecimal singleRate(Document document) {
         List<TaxSummary> summaries = document.getTaxSummaries();
         if (summaries.size() > 1) {
@@ -91,10 +79,6 @@ public final class DocumentTotals {
         return summaries.isEmpty() ? BigDecimal.ZERO : summaries.get(0).getRate();
     }
 
-    // What has been paid on a document, and so its payment status: money
-    // received and tax the client withheld settle it, less what was paid back,
-    // and so do its issued credit notes. A receipt is paid in full as it is
-    // made. A credit note is never paid, nor credited itself.
     public static void settle(Document document) {
         BigDecimal total = orZero(document.getTotal());
         if (document.getDocumentType() == DocumentType.CREDIT_NOTE) {
@@ -117,7 +101,6 @@ public final class DocumentTotals {
         BigDecimal withheld = withheld(document);
         document.setTotalAmountReceived(received);
         document.setTotalTds(withheld);
-        // An invoice whose lines come to nothing has nothing left to pay.
         boolean free = document.getDocumentType() == DocumentType.INVOICE
                 && !document.getBillingItems().isEmpty()
                 && total.signum() == 0;
@@ -129,9 +112,6 @@ public final class DocumentTotals {
                         document.getTotalCredited()));
     }
 
-    // What is still owed: the total less what was credited, the money
-    // received and the tax the client withheld, plus what was paid back,
-    // never below nothing. Nothing is owed on a credit note.
     public static BigDecimal balanceDue(Document document) {
         if (document.getDocumentType() == DocumentType.CREDIT_NOTE) {
             return ZERO;
@@ -144,10 +124,6 @@ public final class DocumentTotals {
                 .max(BigDecimal.ZERO);
     }
 
-    // What is due back to the client: on an invoice, what they paid beyond
-    // what they owe once credits are taken off, never more than the money
-    // itself; on a receipt, what its credit notes took off. Less what was
-    // already paid back.
     public static BigDecimal refundDue(Document document) {
         BigDecimal refunded = orZero(document.getTotalRefunded());
         BigDecimal credited = orZero(document.getTotalCredited());
@@ -173,7 +149,6 @@ public final class DocumentTotals {
                 .reduce(ZERO, BigDecimal::add);
     }
 
-    // The total of a document's issued credit notes that aren't void.
     public static BigDecimal credited(Document document) {
         return document.getCreditNotes().stream()
                 .filter(note -> note.state() == DocumentState.ISSUED)
@@ -181,7 +156,6 @@ public final class DocumentTotals {
                 .reduce(ZERO, BigDecimal::add);
     }
 
-    // What credit notes can still take off an issued invoice or receipt.
     public static BigDecimal creditable(Document document) {
         return orZero(document.getTotal()).subtract(credited(document)).max(BigDecimal.ZERO);
     }
@@ -200,8 +174,6 @@ public final class DocumentTotals {
                 .reduce(BigDecimal.ZERO.setScale(2), BigDecimal::add);
     }
 
-    // Only an issued invoice falls due; a draft isn't owed yet, a void one no
-    // longer is, and one for nothing never was.
     public static boolean isOverdue(Document document, Instant startOfToday) {
         return document.getDocumentType() == DocumentType.INVOICE
                 && document.state() == DocumentState.ISSUED
@@ -215,8 +187,6 @@ public final class DocumentTotals {
         return status(total, settled, BigDecimal.ZERO);
     }
 
-    // Credit notes alone can settle an invoice, which then counts as paid;
-    // only money or tax withheld makes it partly paid.
     public static DocumentStatus status(BigDecimal total, BigDecimal paid, BigDecimal credited) {
         if (total.signum() > 0 && paid.add(credited).compareTo(total) >= 0) {
             return DocumentStatus.PAID;

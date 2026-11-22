@@ -17,13 +17,13 @@ import fixture from "./pages/ItemSalesPage.fixture.json";
 const read = (search) => readItemSales(new URLSearchParams(search));
 const readDetail = (search) => readItemDetail(new URLSearchParams(search));
 
-describe("sales by item in the URL", () => {
-  it("opens at every date, ten to a page", () => {
+describe("item sales URL state", () => {
+  it("starts with the defaults", () => {
     expect(read("")).toEqual({ period: "", currency: "", page: 1, size: 10 });
     expect(itemSalesSearch(read("")).toString()).toBe("");
   });
 
-  it("reads and writes the period, the currency and the page", () => {
+  it("round-trips URL parameters", () => {
     const list = read("size=25&page=2&currency=EUR&period=12m");
     expect(list).toEqual({
       period: "12m",
@@ -42,7 +42,7 @@ describe("sales by item in the URL", () => {
     });
   });
 
-  it("asks for the period by name and the currency when chosen", () => {
+  it("builds the server query", () => {
     expect(itemSalesQuery(read("period=this-year&page=3"))).toEqual({
       period: "this-year",
       page: 3,
@@ -56,8 +56,8 @@ describe("sales by item in the URL", () => {
   });
 });
 
-describe("an item's sales page", () => {
-  it("reads the item's name, the period and the currency", () => {
+describe("single item page", () => {
+  it("reads item and filters", () => {
     expect(
       readDetail("name=+Consulting+%28hourly%29+&period=90d&currency=EUR"),
     ).toEqual({ name: "Consulting (hourly)", period: "90d", currency: "EUR" });
@@ -68,7 +68,7 @@ describe("an item's sales page", () => {
     });
   });
 
-  it("opens from a name, for a period and a currency when one was chosen", () => {
+  it("builds the item link", () => {
     expect(itemSalesLink("Consulting (hourly)", "90d")).toBe(
       "/items/sales/item?name=Consulting+%28hourly%29&period=90d",
     );
@@ -83,7 +83,7 @@ describe("an item's sales page", () => {
     ).toBe("name=Copywriting&currency=EUR");
   });
 
-  it("asks for the item by name, with the period and currency when given", () => {
+  it("builds the item query", () => {
     expect(itemDetailQuery(readDetail("name=Copywriting&period=30d"))).toEqual({
       name: "Copywriting",
       period: "30d",
@@ -95,14 +95,14 @@ describe("an item's sales page", () => {
 });
 
 describe("the figures", () => {
-  it("names an item as its lines spell it, and lines saved without one as other lines", () => {
+  it("names items and other lines", () => {
     expect(itemName(" Copywriting ")).toBe("Copywriting");
     expect(itemName("Other lines")).toBe("Other lines");
     expect(itemName(" ")).toBe("Other lines");
     expect(itemName(null)).toBe("Other lines");
   });
 
-  it("gives an item's share of income as a whole percentage, and a tiny one as under 1%", () => {
+  it("shows whole percent shares", () => {
     expect(shareLabel(0.2835)).toBe("28%");
     expect(shareLabel(1)).toBe("100%");
     expect(shareLabel(0.004)).toBe("<1%");
@@ -110,8 +110,7 @@ describe("the figures", () => {
     expect(shareLabel(-0.1)).toBe("0%");
   });
 
-  // Each share rounded on its own, the demo's ten items came to 98%.
-  it("rounds the shares of every item so they add up to 100%", () => {
+  it("shares add up to 100%", () => {
     const labels = shareLabels(fixture.sales.items, fixture.sales.total);
     expect(labels).toEqual([
       "28%",
@@ -128,26 +127,24 @@ describe("the figures", () => {
     expect(labels.reduce((sum, label) => sum + parseInt(label, 10), 0)).toBe(
       100,
     );
-    // Three equal thirds: the point left over goes to the first.
     const thirds = [{ amount: 100 }, { amount: 100 }, { amount: 100 }];
     expect(shareLabels(thirds, 300)).toEqual(["34%", "33%", "33%"]);
   });
 
-  it("counts the items on other pages as one share, so a page's shares stay whole", () => {
-    // Two items of 1,000.00: the other 334.00 rounds up, these down.
+  it("groups other pages as one share", () => {
     expect(shareLabels([{ amount: 333 }, { amount: 333 }], 1000)).toEqual([
       "33%",
       "33%",
     ]);
   });
 
-  it("shows a share that rounds to nothing as under 1%, and an item that sold nothing as 0%", () => {
+  it("labels tiny and zero shares", () => {
     expect(
       shareLabels([{ amount: 9990 }, { amount: 10 }, { amount: 0 }], 10000),
     ).toEqual(["100%", "<1%", "0%"]);
   });
 
-  it("rounds each share on its own when a credit note leaves an item below nothing", () => {
+  it("rounds negative shares separately", () => {
     expect(
       shareLabels(
         [
@@ -160,7 +157,7 @@ describe("the figures", () => {
     expect(shareLabels([{ amount: 0, share: 0 }], 0)).toEqual(["0%"]);
   });
 
-  it("counts what was sold to two places at most", () => {
+  it("rounds quantities to two places", () => {
     expect(soldCount(28)).toBe("28");
     expect(soldCount(2.5)).toBe("2.5");
     expect(soldCount(1234.567)).toBe("1,234.57");

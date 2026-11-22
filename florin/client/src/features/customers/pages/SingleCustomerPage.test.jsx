@@ -2,8 +2,6 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createRoot } from "react-dom/client";
 import { act } from "react-dom/test-utils";
 
-// The client's page as the app draws it, through its own store and RTK
-// Query, with only fetch faked. The signed-in shell is left out.
 vi.mock("../../dashboard/components/DashboardShell", () => ({
   default: ({ children }) => children,
 }));
@@ -29,8 +27,6 @@ const json = (body, status = 200) =>
     headers: { "content-type": "application/json" },
   });
 
-// A client billed 1,500.00, of which 900.00 came in: payments on invoices
-// and a receipt.
 const ANSWERS = {
   "/customer/c-1": {
     success: true,
@@ -91,7 +87,6 @@ const open = async () => {
   return container;
 };
 
-// Each figure's label, amount and the note under it.
 const figures = (page) =>
   [...page.querySelectorAll("dl > div")]
     .filter((figure) => figure.querySelector("dd")?.childElementCount === 2)
@@ -101,7 +96,7 @@ const figures = (page) =>
       figure.querySelector("dd").lastElementChild.textContent,
     ]);
 
-it("calls the money that came in from the client Received, as the rest of the app does", async () => {
+it("labels payments as Received", async () => {
   const page = await open();
   const received = figures(page).find(([label]) => label === "Received");
   expect(received).toBeDefined();

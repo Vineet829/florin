@@ -51,8 +51,6 @@ const NO_ROWS = [];
 
 const partTitle = "mb-1 text-[14px] font-medium text-spot-ink";
 
-// While the figures load, blocks keep the summary's room, so the list below
-// stays where it is when they arrive.
 const SummaryPlaceholder = () => (
   <div className={panel} aria-hidden="true">
     <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
@@ -76,12 +74,6 @@ const SummaryPlaceholder = () => (
   </div>
 );
 
-// What was billed in the period, in one currency: the total against the
-// period before when there is one, then by type, credit notes taking off,
-// then the tax in it by rate. The server lists every type, those with
-// nothing billed too, so the types give way to a note only when none has
-// any. The period and currency menus sit beside the total, and the list
-// below follows them.
 const Summary = ({ sales, period, onPeriod, onCurrency, busy }) => {
   const { currency } = sales;
   const several = sales.currencies?.length > 1;
@@ -208,22 +200,14 @@ const Summary = ({ sales, period, onPeriod, onCurrency, busy }) => {
   );
 };
 
-// Documents › Sales: what was billed in a period, as the overview's Billed
-// figure counts it, explained by type and tax rate, above the documents
-// behind it, newest first. The period, the currency and the page are kept
-// in the address.
 const SalesPage = () => {
-  useTitle("Sales — Florin");
+  useTitle("Sales - Florin");
   const [list, update] = useListState(readSales, salesSearch);
   const summaryQuery = useGetSalesQuery(salesQuery(list), {
     refetchOnMountOrArgChange: 60,
   });
   const sales = summaryQuery.data;
-  // The documents are in the total's currency: the one the address names,
-  // or else the one the server answered in.
   const currency = list.currency || sales?.currency;
-  // The calendar's periods are days of the business's calendar, as the
-  // summary's are.
   const today = useBusinessToday();
   const query = useGetAllMyDocsQuery(billedQuery(list, currency, today), {
     skip: !list.currency && !sales,
@@ -238,7 +222,6 @@ const SalesPage = () => {
     setPage: (page) => update({ page: page + 1 }),
     setSize: (size) => update({ size, page: 1 }),
   });
-  // A page past the end, from an old link, shows the last.
   const pages = query.currentData?.numberOfPages;
   useEffect(() => {
     if (pages && list.page > pages) update({ page: pages });
@@ -259,7 +242,7 @@ const SalesPage = () => {
       label: "Type",
       render: (row) => <Badge>{row.documentType}</Badge>,
     },
-    { label: "Client", render: (row) => row.customer?.name || "—" },
+    { label: "Client", render: (row) => row.customer?.name || "-" },
     { label: "Issued", render: (row) => dateLabel(row.issueDate) },
     {
       label: "Amount",
@@ -272,7 +255,7 @@ const SalesPage = () => {
     <WorkspacePage section="Documents">
       <PageHeader
         title="Documents"
-        description="Invoices, quotations, and receipts. All your paperwork in one place."
+        description="Invoices, quotations, receipts and credit notes."
         actions={
           <>
             <DocumentsTabs />
@@ -323,7 +306,7 @@ const SalesPage = () => {
                       ? "Nothing was billed in this period."
                       : "Nothing billed yet."
                   }
-                  text="Invoices, receipts and credit notes show up here once they are issued, newest first."
+                  text="Invoices, receipts and credit notes show up here once they're issued, newest first."
                   icon={FiFileText}
                 />
               )}

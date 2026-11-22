@@ -5,12 +5,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.florin.tax.SupplyType;
 import com.florin.tax.TaxRegime;
 import java.math.BigDecimal;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-// How India's GST splits each rate's tax: halved into CGST and SGST within
-// the state, IGST at the full rate otherwise, kept but not billed under
-// reverse charge, and nothing on an export under a LUT.
 class TaxBreakdownTest {
 
     private static Document gst(SupplyType supply, boolean reverseCharge) {
@@ -38,7 +34,6 @@ class TaxBreakdownTest {
     }
 
     @Test
-    @DisplayName("within the state each half is rounded on its own, so CGST equals SGST and tax can gain a paisa")
     void intraState() {
         Document document = gst(SupplyType.INTRA, false);
         DocumentTotals.apply(document);
@@ -53,7 +48,6 @@ class TaxBreakdownTest {
     }
 
     @Test
-    @DisplayName("to another state, or an export with IGST, the whole rate is IGST")
     void interState() {
         for (SupplyType supply : new SupplyType[] {SupplyType.INTER, SupplyType.EXPORT_IGST}) {
             Document document = gst(supply, false);
@@ -66,7 +60,6 @@ class TaxBreakdownTest {
     }
 
     @Test
-    @DisplayName("under reverse charge the tax is kept per rate for the recipient to pay, and not billed")
     void reverseCharge() {
         Document document = gst(SupplyType.INTER, true);
         DocumentTotals.apply(document);
@@ -77,7 +70,6 @@ class TaxBreakdownTest {
     }
 
     @Test
-    @DisplayName("an export under a LUT is issued at 0% and charges nothing")
     void underLut() {
         Document document = gst(SupplyType.EXPORT_LUT, false);
         GstSupply.zeroRatedExport(document);
@@ -88,7 +80,6 @@ class TaxBreakdownTest {
     }
 
     @Test
-    @DisplayName("an export under a LUT charges nothing, and its draft lines keep their rates")
     void lutDraft() {
         Document document = gst(SupplyType.EXPORT_LUT, false);
         DocumentTotals.apply(document);
@@ -102,8 +93,7 @@ class TaxBreakdownTest {
     }
 
     @Test
-    @DisplayName("a standard document isn't split")
-    void standard() {
+    void standardDocumentNotSplit() {
         Document document = gst(SupplyType.INTRA, false);
         document.setTaxRegime(TaxRegime.STANDARD);
         DocumentTotals.apply(document);

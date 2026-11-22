@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -17,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
-// Reads every mapped endpoint of the running app.
 class EndpointPermissionsTest extends IntegrationTest {
 
     private static final Set<String> BUSINESS_PACKAGES = Set.of(
@@ -25,8 +23,6 @@ class EndpointPermissionsTest extends IntegrationTest {
             "com.florin.report", "com.florin.export", "com.florin.settings", "com.florin.expense",
             "com.florin.notification", "com.florin.upload");
 
-    // Writes that concern only the member themselves, such as marking a
-    // notification read or leaving, which any member may do.
     private static final Set<String> MEMBER_OWN_WRITES =
             Set.of("POST /api/v1/notification/read", "POST /api/v1/business/leave");
 
@@ -35,8 +31,6 @@ class EndpointPermissionsTest extends IntegrationTest {
     private RequestMappingHandlerMapping mapping;
 
     @Test
-    @DisplayName("every endpoint in a business needs a permission, writes need more than reading, "
-            + "and none takes the signed-in account instead")
     void everyEndpointDeclaresItsPermission() {
         List<String> missing = new ArrayList<>();
         List<String> readOnlyWrites = new ArrayList<>();

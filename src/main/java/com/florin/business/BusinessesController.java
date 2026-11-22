@@ -18,8 +18,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-// The businesses someone works in, and which one this session works in. These
-// belong to the account, not to a business, so they work in any of them.
 @RestController
 @RequestMapping("/api/v1/businesses")
 public class BusinessesController {
@@ -45,7 +43,6 @@ public class BusinessesController {
             @AuthenticationPrincipal User principal, @Valid @RequestBody CreateBusinessRequest request) {
         Business business = businessService.create(principal, request.name());
         activeBusinesses.use(principal, session(), business.getId());
-        // A business just started has no news yet.
         return BusinessSummaryResponse.from(
                 business, BusinessRole.OWNER, true, 0, activeBusinesses.timeZone(business.getPkid()));
     }

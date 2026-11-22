@@ -18,7 +18,6 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -26,8 +25,6 @@ import org.springframework.test.web.servlet.ResultActions;
 
 class PaymentIntegrationTest extends IntegrationTest {
 
-    // UTC+14, the time zone furthest ahead: a day after its today is still to
-    // come everywhere.
     private static final ZoneId FURTHEST_AHEAD = ZoneId.of("Pacific/Kiritimati");
 
     private String createDocument(User owner, String type) throws Exception {
@@ -70,8 +67,6 @@ class PaymentIntegrationTest extends IntegrationTest {
                 .andExpect(status().isOk());
     }
 
-    // A time zone whose today isn't UTC's right now: fourteen hours ahead of
-    // UTC from 10:00 UTC, eleven hours behind it before then.
     private static ZoneId awayFromUtc() {
         return LocalDate.now(FURTHEST_AHEAD).equals(LocalDate.now(ZoneOffset.UTC))
                 ? ZoneId.of("Pacific/Pago_Pago")
@@ -79,7 +74,6 @@ class PaymentIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("recording, editing and deleting payments keeps the amount received and status right")
     void paymentLifecycle() throws Exception {
         User owner = createUser();
         String documentId = createDocument(owner, "Invoice");
@@ -111,7 +105,6 @@ class PaymentIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a payment can come by UPI or by cheque, and its receipt says so")
     void upiAndCheque() throws Exception {
         User owner = createUser();
         String documentId = createDocument(owner, "Invoice");
@@ -139,7 +132,6 @@ class PaymentIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a payment can't exceed what is still owed, on entry or on edit")
     void refusesOverpayment() throws Exception {
         User owner = createUser();
         String documentId = createDocument(owner, "Invoice");
@@ -157,7 +149,6 @@ class PaymentIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("quotations and receipts take no payments")
     void refusesQuotationAndReceipt() throws Exception {
         User owner = createUser();
 
@@ -170,7 +161,6 @@ class PaymentIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("bad amounts and dates are refused, and a timestamp counts as its UTC date")
     void validatesInput() throws Exception {
         User owner = createUser();
         String documentId = createDocument(owner, "Invoice");
@@ -196,8 +186,7 @@ class PaymentIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("another user can't touch the payments, and unknown payments are not found")
-    void ownership() throws Exception {
+    void paymentsStayWithOwner() throws Exception {
         User owner = createUser();
         String documentId = createDocument(owner, "Invoice");
         String body = pay(owner, documentId, "{\"amountPaid\": 10}").andReturn().getResponse().getContentAsString();
@@ -213,7 +202,6 @@ class PaymentIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a payment is dated no later than today somewhere, and today where the business is if no day is given")
     void notAfterToday() throws Exception {
         User owner = createUser();
         ZoneId zone = awayFromUtc();
@@ -241,17 +229,14 @@ class PaymentIntegrationTest extends IntegrationTest {
                         .content("{\"datePaid\": \"%s\"}".formatted(tomorrowFurthestAhead)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("A payment can't be dated after today"));
-        // Without a day, it is dated today where the business is.
         pay(owner, documentId, "{\"amountPaid\": 10, \"paymentMethod\": \"Cash\"}")
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.document.paymentRecords[1].datePaid").value(local.toString()));
     }
 
     @Test
-    @DisplayName("a payment dated today in UTC+14 is taken while it is still the day before where the business is")
-    void todayAheadOfTheBusiness() throws Exception {
+    void acceptsDateAheadOfBusiness() throws Exception {
         User owner = createUser();
-        // Ten hours behind UTC, so always a day behind UTC+14.
         timeZone(owner, ZoneId.of("Pacific/Honolulu"));
         LocalDate latest = LocalDate.now(FURTHEST_AHEAD);
         String documentId = createDocument(owner, "Invoice");

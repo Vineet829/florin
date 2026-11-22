@@ -46,11 +46,6 @@ public class AuthService {
         this.unusedHash = passwordEncoder.encode(UUID.randomUUID().toString());
     }
 
-    // A sign-in starts a session; one the browser still had is ended. With
-    // two-factor sign-in on, a correct password only earns a challenge. The
-    // password is checked before a transaction opens: hashing it takes a
-    // while, and a database connection held meanwhile is one that other
-    // requests can't use.
     public LoginOutcome login(String email, String password, String presentedRefreshToken) {
         if (email == null || email.isBlank() || password == null || password.isBlank()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Please provide an email and password");
@@ -58,8 +53,6 @@ public class AuthService {
 
         Optional<User> account = userRepository.findByEmailIgnoreCase(email.trim());
         String hash = account.map(User::getPassword).orElse(null);
-        // Without an account the password is still checked, against a hash
-        // nobody's password matches, so the answer takes as long either way.
         boolean matches = passwordEncoder.matches(password, hash == null ? unusedHash : hash);
         if (hash == null || !matches) {
             auditLog.signInFailed(
@@ -69,8 +62,6 @@ public class AuthService {
         return transactions.execute(status -> signIn(email, account.get().getPkid(), hash, presentedRefreshToken));
     }
 
-    // The account as it is now, once its password has matched: a password
-    // changed meanwhile has to be signed in with afresh.
     private LoginOutcome signIn(String email, Long pkid, String checkedHash, String presentedRefreshToken) {
         User user = userRepository
                 .findById(pkid)
@@ -98,8 +89,6 @@ public class AuthService {
         return startSession(user, presentedRefreshToken, null);
     }
 
-    // The second step of a two-factor sign-in: the challenge from the first,
-    // and a code from the app or a recovery code.
     @Transactional
     public TokenBundle completeTwoFactor(String challenge, String code, String presentedRefreshToken) {
         Optional<JwtService.Challenge> read = jwtService.readTwoFactorChallenge(challenge);
@@ -115,13 +104,10 @@ public class AuthService {
         return startSession(user, presentedRefreshToken, detail(read.get().via(), method.get().description()));
     }
 
-    // How a sign-in was made, such as "With Google and a recovery code".
     private static String detail(String via, String method) {
         return via == null ? method : via + " and " + method.replaceFirst("^With ", "");
     }
 
-    // A session for someone who has proven who they are; one the browser
-    // still had is ended. `detail` says how they signed in, for the log.
     public TokenBundle startSession(User user, String presentedRefreshToken, String detail) {
         if (presentedRefreshToken != null && !presentedRefreshToken.isBlank()) {
             sessionService.end(presentedRefreshToken);
@@ -132,8 +118,6 @@ public class AuthService {
         return new TokenBundle(jwtService.issueAccessToken(user, sessionId), started.refreshToken(), user);
     }
 
-    // A new access token for the session, and its next refresh token unless a
-    // refresh a moment ago already swapped it.
     @Transactional
     public Optional<TokenBundle> refresh(String presentedRefreshToken) {
         return sessionService.refresh(presentedRefreshToken).map(continued -> {

@@ -4,8 +4,6 @@ import { act } from "react-dom/test-utils";
 import PaymentClaims from "./PaymentClaims";
 import { dateInput } from "../../../components/workspace/Workspace";
 
-// The panel gets the reports and answers them through these hooks, so it
-// needs no store or server; the browser's modal is left out.
 const idle = () => [vi.fn(), { isLoading: false }];
 vi.mock("../documentsApiSlice", () => ({
   useConfirmPaymentClaimMutation: () => idle(),
@@ -33,7 +31,7 @@ vi.mock("../../../components/workspace/Dialog", () => ({
 
 window.IS_REACT_ACT_ENVIRONMENT = true;
 
-it("records a reported payment dated no later than today", () => {
+it("caps claim date at today", () => {
   const container = document.createElement("div");
   const root = createRoot(container);
   act(() => {

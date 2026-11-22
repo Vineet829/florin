@@ -10,9 +10,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// Removes sign-in and email tokens that can no longer be used: verification
-// and reset links past their expiry, sessions that were signed out or ran
-// out, and invitations a month after they ended.
 @Service
 public class TokenCleanup {
 
@@ -36,8 +33,6 @@ public class TokenCleanup {
     public int removeExpired() {
         Instant now = Instant.now(clock);
         int removed = jdbcTemplate.update("delete from verify_reset_tokens where expires_at < ?", Timestamp.from(now));
-        // Invitations are kept a month after they end, so an old link still
-        // says what became of it.
         return removed
                 + sessionRepository.deleteEnded(now)
                 + invitationRepository.deleteFinished(now.minus(Duration.ofDays(30)));

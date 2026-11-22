@@ -14,7 +14,6 @@ import com.florin.metrics.AppMetrics;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.mail.Session;
 import jakarta.mail.internet.MimeMessage;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -41,15 +40,14 @@ class MailServiceTest {
                     null));
 
     @Test
-    @DisplayName("each email is counted by what it is, as sent or as failed when the mail server refuses it")
-    void counted() throws Exception {
+    void countsSentAndFailedEmails() throws Exception {
         when(mailSender.createMimeMessage()).thenAnswer(invocation -> new MimeMessage((Session) null));
         doThrow(new MailSendException("The mail server is down"))
                 .doNothing()
                 .when(mailSender)
                 .send(any(MimeMessage.class));
 
-        mailService.send("ada@example.test", "Verify your email", "Hello");
+        mailService.send("neha@example.test", "Verify your email", "Hello");
         assertThatThrownBy(() -> mailService.sendDocument(
                         "client@example.test", null, "Invoice INV-1", "Attached", "INV-1.pdf", new byte[] {1}))
                 .isInstanceOf(MailSendException.class);
@@ -62,7 +60,6 @@ class MailServiceTest {
     }
 
     @Test
-    @DisplayName("a line break in a name a subject carries becomes a space: one subject line, and no header of its own")
     void oneLineSubjects() throws Exception {
         when(mailSender.createMimeMessage()).thenAnswer(invocation -> new MimeMessage((Session) null));
 
@@ -75,7 +72,7 @@ class MailServiceTest {
                 "Attached",
                 "INV-1.pdf",
                 new byte[] {1});
-        mailService.send("ada@example.test", "You now own Acme\r\nBcc: eve@example.test", "Hello");
+        mailService.send("neha@example.test", "You now own Acme\r\nBcc: eve@example.test", "Hello");
 
         ArgumentCaptor<MimeMessage> sent = ArgumentCaptor.forClass(MimeMessage.class);
         verify(mailSender, times(2)).send(sent.capture());
@@ -93,14 +90,13 @@ class MailServiceTest {
     }
 
     @Test
-    @DisplayName("an account email that fails is logged on one line, whatever names its subject carries")
     void failureLoggedOnOneLine(CapturedOutput output) {
         doThrow(new MailSendException("The mail server is down")).when(mailSender).send(any(SimpleMailMessage.class));
 
-        mailService.send("ada@example.test", "You now own Acme\nERROR c.i.auth.SignIn : made up", "Hello");
+        mailService.send("neha@example.test", "You now own Acme\nERROR c.i.auth.SignIn : made up", "Hello");
 
         assertThat(output.getOut() + output.getErr())
-                .contains("Failed to send \"You now own Acme ERROR c.i.auth.SignIn : made up\" to ada@example.test")
+                .contains("Failed to send \"You now own Acme ERROR c.i.auth.SignIn : made up\" to neha@example.test")
                 .doesNotContain("Acme\nERROR");
     }
 

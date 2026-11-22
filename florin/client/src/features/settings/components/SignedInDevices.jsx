@@ -34,8 +34,6 @@ const since = (value) => {
   return ago === "Just now" || ago === "Yesterday" ? ago.toLowerCase() : ago;
 };
 
-// Where the account is signed in. Signing a device out ends its session at
-// once, whatever it is doing; this device signs out with Log out.
 const SignedInDevices = ({ demo }) => {
   const query = useGetSessionsQuery(undefined, {
     refetchOnMountOrArgChange: true,
@@ -114,7 +112,7 @@ const SignedInDevices = ({ demo }) => {
                     onClick={() =>
                       run(
                         () => signOut(session._id),
-                        "That device could not be signed out.",
+                        "That device couldn't be signed out.",
                       )
                     }
                     disabled={signingOut}
@@ -131,7 +129,7 @@ const SignedInDevices = ({ demo }) => {
       )}
       {demo && (
         <p className={`mt-4 ${panelNote}`}>
-          This is a shared demo account, so other visitors’ devices aren’t
+          This is a shared demo account, so other visitors' devices aren't
           shown.
         </p>
       )}
@@ -143,7 +141,7 @@ const SignedInDevices = ({ demo }) => {
           if (
             await run(
               () => signOutOthers(),
-              "The other devices could not be signed out.",
+              "The other devices couldn't be signed out.",
             )
           )
             setConfirming(false);

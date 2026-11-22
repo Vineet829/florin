@@ -62,8 +62,6 @@ const timeZones = (current) => {
   }
   return [...new Set(["UTC", current, browserZone(), ...zones])].sort();
 };
-// A zone's offset from UTC today, shown beside it in the menu; worked out
-// once per zone, as there are hundreds.
 const offsets = new Map();
 const zoneOffset = (zone) => {
   if (!offsets.has(zone)) {
@@ -107,8 +105,6 @@ const NUMBERING = [
   },
 ];
 
-// How every PDF can look, with what sets each apart, under its name in the
-// menu.
 const PDF_TEMPLATES = [
   {
     value: "CLASSIC",
@@ -138,7 +134,6 @@ const SettingsForm = ({ settings }) => {
     taxLabel: settings.taxLabel,
     defaultNotes: settings.defaultNotes || "",
     defaultTerms: settings.defaultTerms || "",
-    // A user who never saved settings starts with this browser's zone.
     timeZone:
       settings.timeZone === "UTC" && !settings.saved
         ? browserZone()
@@ -160,7 +155,6 @@ const SettingsForm = ({ settings }) => {
     lutReference: settings.lutReference || "",
     pdfTemplate: settings.pdfTemplate || "CLASSIC",
   });
-  // GST mode needs the business's GSTIN, from its tax ID.
   const business = useGetBusinessQuery().data?.business;
   const gstStates = useGetGstStatesQuery().data?.states;
   const gstin = isValidGstin(business?.taxId)
@@ -191,7 +185,7 @@ const SettingsForm = ({ settings }) => {
       }).unwrap();
       toast.success(result.message || "Your settings were saved.");
     } catch (error) {
-      toast.error(errorMessage(error, "Your settings could not be saved."));
+      toast.error(errorMessage(error, "Your settings couldn't be saved."));
     }
   };
   const locked = saving || Boolean(refusal);
@@ -214,7 +208,7 @@ const SettingsForm = ({ settings }) => {
               >
                 {currencies.map((item) => (
                   <option key={item.code} value={item.code}>
-                    {item.code} — {item.currency}
+                    {item.code} - {item.currency}
                   </option>
                 ))}
               </Field>
@@ -272,7 +266,7 @@ const SettingsForm = ({ settings }) => {
           </Panel>
           <Panel
             title="Payment reminders"
-            description="Emails to clients about unpaid invoices, with the invoice attached. They are checked once a day in your time zone."
+            description="Emails to clients about unpaid invoices, with the invoice attached. They're checked once a day in your time zone."
           >
             <label className="flex items-center gap-3 text-[14px] text-spot-ink">
               <input
@@ -405,7 +399,7 @@ const SettingsForm = ({ settings }) => {
               >
                 {currencies.map((item) => (
                   <option key={item.code} value={item.code}>
-                    {item.code} — {item.currency}
+                    {item.code} - {item.currency}
                   </option>
                 ))}
               </Field>
@@ -426,7 +420,7 @@ const SettingsForm = ({ settings }) => {
           </Panel>
           <Panel
             title="GST"
-            description="India’s GST: CGST and SGST or IGST by place of supply, on tax invoices. Documents already issued stay as they are."
+            description="India's GST: CGST and SGST or IGST by place of supply, on tax invoices. Documents already issued stay as they are."
           >
             <div className="flex flex-col gap-5">
               {gstin ? (
@@ -438,7 +432,7 @@ const SettingsForm = ({ settings }) => {
                 <p className={`m-0 ${panelNote}`}>
                   Add your GSTIN as your tax ID under{" "}
                   <Link className={textLink} to="/settings/business">
-                    Settings → Business
+                    Settings &gt; Business
                   </Link>{" "}
                   to turn on GST mode.
                 </p>
@@ -486,14 +480,13 @@ const SettingsForm = ({ settings }) => {
           title={refusal}
         >
           <FiCheck aria-hidden="true" />
-          {saving ? "Saving…" : "Save settings"}
+          {saving ? "Saving..." : "Save settings"}
         </button>
       </div>
     </form>
   );
 };
 
-// Everything kept in the app, as CSV files for a spreadsheet or another app.
 const YourData = () => {
   const [documents, documentsBusy] = useFileDownload(
     useGetDocumentsCsvMutation,
@@ -585,7 +578,7 @@ const YourData = () => {
 };
 
 const SettingsPage = () => {
-  useTitle("Settings — Florin");
+  useTitle("Settings - Florin");
   const query = useGetSettingsQuery();
   return (
     <WorkspacePage section="Settings">

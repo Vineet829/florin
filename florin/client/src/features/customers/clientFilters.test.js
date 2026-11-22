@@ -9,8 +9,8 @@ import {
 
 const read = (search) => readClientList(new URLSearchParams(search));
 
-describe("the clients list in the URL", () => {
-  it("starts with every client, newest first, ten to a page", () => {
+describe("clients URL state", () => {
+  it("starts with the defaults", () => {
     expect(read("")).toEqual({
       q: "",
       sort: "createdAt",
@@ -20,14 +20,14 @@ describe("the clients list in the URL", () => {
     });
   });
 
-  it("keeps a search, sort and page, and writes only what differs", () => {
+  it("writes only changed values", () => {
     const search = "q=north&sort=balance&dir=desc&page=2&size=25";
     expect(clientListSearch(read(search)).toString()).toBe(search);
     expect(clientListSearch(read("")).toString()).toBe("");
     expect(read("sort=email").sort).toBe("createdAt");
   });
 
-  it("asks the server for the same page, sort and search", () => {
+  it("builds the server query", () => {
     expect(clientQuery(read("q=north&sort=documents"))).toEqual({
       page: 1,
       size: 10,
@@ -45,7 +45,7 @@ describe("the clients list in the URL", () => {
     );
   });
 
-  it("sorts balances and document counts largest first", () => {
+  it("sorts numbers largest first", () => {
     expect(SORT_OPTIONS.map((option) => option.value)).toEqual([
       "createdAt:desc",
       "createdAt:asc",
